@@ -1,0 +1,71 @@
+{
+  "image_descriptions": [
+    {
+      "id": "img_01",
+      "description": "古典大理石雕塑女性戴着金色耳机和蓝色太阳镜坐在长椅上吹泡泡，背景是海洋和山脉",
+      "translation": "A classical marble sculpture of a woman wearing gold headphones and blue sunglasses sits on a bench blowing bubbles, with ocean and mountains in the background",
+      "style": "古典与现代混合"
+    },
+    {
+      "id": "img_02",
+      "description": "文艺复兴风格画作中的戴月桂冠黄裙女子在海边看手机，背景有天使和花卉",
+      "translation": "A Renaissance-style painting of a laurel-crowned woman in yellow dress checking her phone by the sea, with angels and flowers in the background",
+      "style": "古典艺术与科技结合"
+    },
+    {
+      "id": "img_03",
+      "description": "金毛犬叼着报纸走向穿粉裙的幼儿，室内有木质家具和自然光线",
+      "translation": "A golden retriever carrying a newspaper approaches a toddler in pink dress, with wooden furniture and natural light indoors",
+      "style": "温馨家庭场景"
+    },
+    {
+      "id": "img_04",
+      "description": "小人们爬上一只巨大的粉色盒子，盒子里水满溢出，周围是金黄的玉米粒",
+      "translation": "Tiny people climbing a giant pink box overflowing with water, surrounded by golden corn kernels",
+      "style": "奇幻想象场景"
+    },
+    {
+      "id": "img_05",
+      "description": "水下篮球比赛，裁判持口哨，海马在篮筐旁，五彩珊瑚环绕，海洋生物观赛",
+      "translation": "Underwater basketball game with a referee blowing whistle, seahorses near the basket, surrounded by colorful corals and observing marine life",
+      "style": "海底奇幻运动"
+    },
+    {
+      "id": "img_06",
+      "description": "酷猫在沙漠中与休息的狮子自拍，单爪持手机，表情自信",
+      "translation": "Cool cat taking selfie with a resting lion in desert, holding phone with one paw confidently",
+      "style": "动物拟人幽默"
+    },
+    {
+      "id": "img_07",
+      "description": "老鹰俯冲抓取户外餐桌上的披萨，背景为绿色山脉和宁静天空",
+      "translation": "Eagle swooping down to grab pizza from outdoor table against green mountains and calm sky",
+      "style": "野生动物与人类物品互动"
+    },
+    {
+      "id": "img_08",
+      "description": "穿NASA粉色宇航服的猫在月球跳跃，可见头盔细节，背景有宇宙、脚印和登月舱",
+      "translation": "Cat in pink NASA spacesuit jumping on moon with detailed helmet, showing cosmic background, footprints and lunar module",
+      "style": "太空科幻卡通"
+    },
+    {
+      "id": "img_09",
+      "description": "狮子、老虎和猎豹在日落草原自拍，橙红天空树木营造温暖氛围",
+      "translation": "Lion, tiger and cheetah taking group selfie on sunset grassland with orange-red sky creating warm atmosphere",
+      "style": "野生动物拟人"
+    },
+    {
+      "id": "img_10",
+      "description": "猫站冲浪板迎击巨浪，阴云天空有海鸥飞翔，画面动态色彩丰富",
+      "translation": "Cat standing on surfboard riding huge wave with dark cloudy sky and flying seagulls, dynamic and colorful",
+      "style": "极限运动拟人"
+    }
+  ],
+  "metadata": {
+    "total_images": 10,
+    "language_support": ["Chinese", "English"],
+    "description_types": ["literal", "stylistic"],
+    "updated_at": "2023-11-09",
+    "version": "2.0"
+  }
+}
