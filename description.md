@@ -61,7 +61,7 @@ Instructions:
 
 ### API Details
 
-* Kimi API Key: 从系统变量中获取$KIMI_API_KEY
+* Kimi API Key: 从配置文件env中获取 KIMI_API_KEY
 * Helper Function:
   * startDialogue(imageId)
     1. Fetch matching description from descriptions.json.

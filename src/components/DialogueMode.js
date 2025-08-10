@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { startKimiDialogue, sendToKimi } from '../utils/kimiApi';
 
 const DialogueMode = ({ imageId, onFinish, onCancel }) => {
   const [messages, setMessages] = useState([]);
@@ -6,38 +7,54 @@ const DialogueMode = ({ imageId, onFinish, onCancel }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [imageDescription, setImageDescription] = useState('');
 
-  // Load image description
+  // Load image description and initialize AI conversation
   useEffect(() => {
-    const loadDescription = async () => {
+    const initializeConversation = async () => {
       try {
         const response = await fetch('/descriptions.json');
         const descriptions = await response.json();
-        setImageDescription(descriptions[imageId] || 'A beautiful image');
+        const description = descriptions[imageId] || 'A beautiful image';
+        setImageDescription(description);
         
-        // Simulate AI starting the conversation
-        setTimeout(() => {
-          setMessages([{
-            id: 1,
-            sender: 'ai',
-            text: 'What do you see in this image?',
-            timestamp: new Date()
-          }]);
-        }, 1000);
+        // Call Kimi API to start the conversation
+        setIsLoading(true);
+        const firstQuestion = await startKimiDialogue(description);
+        setIsLoading(false);
+        
+        // Set the initial AI message
+        setMessages([{
+          id: 1,
+          sender: 'ai',
+          text: firstQuestion,
+          timestamp: new Date()
+        }]);
       } catch (error) {
-        console.error('Error loading description:', error);
+        console.error('Error initializing conversation:', error);
+        setIsLoading(false);
         setImageDescription('A beautiful image');
+        
+        // Even if there's an error, we still need to start the conversation
+        setMessages([{
+          id: 1,
+          sender: 'ai',
+          text: 'What do you see in this image?',
+          timestamp: new Date()
+        }]);
       }
     };
 
-    loadDescription();
+    if (imageId) {
+      initializeConversation();
+    }
   }, [imageId]);
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (inputValue.trim() === '' || isLoading) return;
 
     // Add user message
+    const newUserMessageId = messages.length + 1;
     const userMessage = {
-      id: messages.length + 1,
+      id: newUserMessageId,
       sender: 'user',
       text: inputValue,
       timestamp: new Date()
@@ -47,23 +64,14 @@ const DialogueMode = ({ imageId, onFinish, onCancel }) => {
     setInputValue('');
     setIsLoading(true);
 
-    // Simulate AI response
-    setTimeout(() => {
-      const aiResponses = [
-        "That's interesting! Can you tell me more about it?",
-        "Great observation! How does this make you feel?",
-        "I see! What else do you notice in the image?",
-        "Wonderful! Let's wrap up with a creative question - if you could step into this image, what would you do?"
-      ];
-      
-      const responseIndex = Math.min(messages.filter(m => m.sender === 'ai').length, aiResponses.length - 1);
+    try {
+      // Call Kimi API to get AI response
+      const aiResponse = await sendToKimi(inputValue, messages);
       
       const aiMessage = {
-        id: messages.length + 2,
+        id: newUserMessageId + 1,
         sender: 'ai',
-        text: messages.filter(m => m.sender === 'ai').length < aiResponses.length 
-          ? aiResponses[responseIndex] 
-          : "Thanks for practicing with me! Let's review your conversation.",
+        text: aiResponse,
         timestamp: new Date()
       };
 
@@ -71,12 +79,26 @@ const DialogueMode = ({ imageId, onFinish, onCancel }) => {
       setIsLoading(false);
 
       // If this was the last question, finish the dialogue
-      if (messages.filter(m => m.sender === 'ai').length >= 3) {
+      const aiMessageCount = messages.filter(m => m.sender === 'ai').length;
+      if (aiMessageCount >= 3) {
         setTimeout(() => {
           onFinish([...messages, userMessage, aiMessage]);
         }, 1500);
       }
-    }, 1500);
+    } catch (error) {
+      console.error('Error getting AI response:', error);
+      setIsLoading(false);
+      
+      // Show error message to user
+      const errorMessage = {
+        id: newUserMessageId + 1,
+        sender: 'ai',
+        text: "Sorry, I'm having trouble responding right now. Please try again.",
+        timestamp: new Date()
+      };
+      
+      setMessages(prev => [...prev, errorMessage]);
+    }
   };
 
   const handleKeyPress = (e) => {
