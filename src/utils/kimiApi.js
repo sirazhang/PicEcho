@@ -10,6 +10,8 @@ loadEnv().then(env => {
   KIMI_API_KEY = env.KIMI_API_KEY || '';
   if (!KIMI_API_KEY) {
     console.warn('KIMI_API_KEY not found in env file');
+  } else {
+    console.log('KIMI_API_KEY loaded successfully');
   }
 });
 
@@ -28,6 +30,8 @@ export const startKimiDialogue = async (imageDescription) => {
     console.error('KIMI_API_KEY is not set');
     return "What do you see in this image?";
   }
+  
+  console.log('Calling Kimi API with image description:', imageDescription);
   
   try {
     const prompt = `You are a friendly and encouraging English tutor. 
@@ -72,6 +76,7 @@ Start with the first question.`;
     }
 
     const data = await response.json();
+    console.log('Kimi API response:', data);
     return data.choices[0].message.content.trim();
   } catch (error) {
     console.error("Error calling Kimi API:", error);
@@ -105,6 +110,8 @@ export const sendToKimi = async (message, conversationHistory) => {
     const aiMessageCount = conversationHistory.filter(m => m.sender === 'ai').length;
     return aiResponses[aiMessageCount] || "Thanks for practicing with me!";
   }
+  
+  console.log('Sending message to Kimi API:', message);
   
   try {
     // Build the conversation history for the API
@@ -148,6 +155,7 @@ export const sendToKimi = async (message, conversationHistory) => {
     }
 
     const data = await response.json();
+    console.log('Kimi API response:', data);
     return data.choices[0].message.content.trim();
   } catch (error) {
     console.error("Error calling Kimi API:", error);
@@ -165,7 +173,7 @@ export const sendToKimi = async (message, conversationHistory) => {
 };
 
 /**
- * Generate feedback using Kimi API based on the conversation
+ * Generate feedback using Kimi API based on the conversation with the new prompt format
  * @param {Array} conversation - The conversation history
  * @param {string} imageDescription - The description of the image
  * @returns {Promise<Object>} - The feedback object
@@ -180,16 +188,13 @@ export const generateKimiFeedback = async (conversation, imageDescription) => {
     console.error('KIMI_API_KEY is not set');
     // Fallback to default feedback
     return {
-      encouragingRemarks: "Great job! You did very well in describing the image and answering all questions. Your English skills are improving!",
-      errorSummary: "Minor grammar issues with article usage (a/the) and some verb tenses. Keep practicing!",
-      corrections: [
-        { error: "I seen", correction: "I saw" },
-        { error: "a beautiful trees", correction: "beautiful trees" },
-        { error: "they was", correction: "they were" }
-      ],
-      suggestions: "Try to use more descriptive adjectives and vary your sentence structures. Practice using past and present tenses correctly."
+      encouragingRemarks: "Great job! 👏 You did very well in describing the image and answering all questions. Your English skills are improving!",
+      errorSummary: "_I seen a beautiful sunset_ → I saw a beautiful sunset\n_they was very happy_ → they were very happy",
+      suggestions: "• Instead of 'I seen', try using 'I saw' or 'I noticed'\n• Instead of simple sentences, try combining ideas: 'The sunset was beautiful and made me feel peaceful'"
     };
   }
+  
+  console.log('Generating feedback with Kimi API');
   
   try {
     // Build the conversation text
@@ -199,25 +204,30 @@ export const generateKimiFeedback = async (conversation, imageDescription) => {
       conversationText += `${sender}: ${msg.text}\n`;
     });
 
-    const prompt = `As an English tutor, please provide detailed feedback on the following conversation between a student and an AI tutor about an image. The image description is: "${imageDescription}"
+    const prompt = `You are an encouraging English tutor. 🧑‍🏫 
+Your task: Based on the previous conversation with the user, give targeted feedback in **three sections**:
+
+1. **Encouraging Remarks with Emoji**  
+   - Give warm, motivating feedback.
+   - Include at least one positive emoji.
+
+2. **Error Summary**  
+   - For each error, show the incorrect part with underscores: \`_incorrect text_\`
+   - Then, immediately after, show the corrected version.  
+   - Format each correction as:
+     \`_incorrect sentence_ → Correct sentence\`
+
+3. **Improvement Suggestions**  
+   - Give at least 2 natural and fluent alternative expressions.
+   - Use clear bullet points.
+
+Formatting rules:  
+- Keep section numbers (1, 2, 3) in the output.  
+- Respond in English only.  
+- Keep it concise but friendly.
 
 Conversation:
-${conversationText}
-
-Please provide feedback in the following JSON format:
-{
-  "encouragingRemarks": "Positive feedback about the student's performance",
-  "errorSummary": "Brief summary of grammar or vocabulary errors",
-  "corrections": [
-    {
-      "error": "incorrect phrase",
-      "correction": "corrected phrase"
-    }
-  ],
-  "suggestions": "Suggestions for improvement"
-}
-
-Focus on 2-3 specific errors and provide clear corrections.`;
+${conversationText}`;
 
     const response = await fetch(KIMI_API_URL, {
       method: 'POST',
@@ -229,16 +239,12 @@ Focus on 2-3 specific errors and provide clear corrections.`;
         model: "moonshot-v1-8k",
         messages: [
           {
-            role: "system",
-            content: "You are an English tutor providing feedback on student conversations. Respond with valid JSON."
-          },
-          {
             role: "user",
             content: prompt
           }
         ],
         temperature: 0.5,
-        max_tokens: 500
+        max_tokens: 800
       })
     });
 
@@ -248,34 +254,45 @@ Focus on 2-3 specific errors and provide clear corrections.`;
 
     const data = await response.json();
     const content = data.choices[0].message.content.trim();
+    console.log('Kimi API feedback response:', data);
     
-    // Try to parse the JSON response
-    try {
-      // Remove potential markdown code block markers
-      const jsonStr = content.replace(/```json\s*|\s*```/g, '');
-      return JSON.parse(jsonStr);
-    } catch (parseError) {
-      console.error("Error parsing feedback JSON:", parseError);
-      // Return default feedback structure
-      return {
-        encouragingRemarks: "Great job participating in the conversation! You're doing well practicing your English speaking skills.",
-        errorSummary: "Some opportunities for improvement in grammar and vocabulary usage.",
-        corrections: [],
-        suggestions: "Keep practicing speaking English regularly. Try to expand your sentences and use more descriptive language."
-      };
-    }
+    // Parse the response into sections
+    return parseFeedbackResponse(content);
   } catch (error) {
     console.error("Error calling Kimi API for feedback:", error);
     // Fallback to default feedback
     return {
-      encouragingRemarks: "Great job! You did very well in describing the image and answering all questions. Your English skills are improving!",
-      errorSummary: "Minor grammar issues with article usage (a/the) and some verb tenses. Keep practicing!",
-      corrections: [
-        { error: "I seen", correction: "I saw" },
-        { error: "a beautiful trees", correction: "beautiful trees" },
-        { error: "they was", correction: "they were" }
-      ],
-      suggestions: "Try to use more descriptive adjectives and vary your sentence structures. Practice using past and present tenses correctly."
+      encouragingRemarks: "Great job! 👏 You did very well in describing the image and answering all questions. Your English skills are improving!",
+      errorSummary: "_I seen a beautiful sunset_ → I saw a beautiful sunset\n_they was very happy_ → they were very happy",
+      suggestions: "• Instead of 'I seen', try using 'I saw' or 'I noticed'\n• Instead of simple sentences, try combining ideas: 'The sunset was beautiful and made me feel peaceful'"
+    };
+  }
+};
+
+/**
+ * Parse the feedback response from Kimi API into structured format
+ * @param {string} content - The raw feedback content from Kimi API
+ * @returns {Object} - The parsed feedback object
+ */
+const parseFeedbackResponse = (content) => {
+  try {
+    // Extract sections using regex
+    const encouragingMatch = content.match(/1\.\s*\**Encouraging Remarks with Emoji\**([\s\S]*?)(?=\d\.\s*\**|$)/i);
+    const errorMatch = content.match(/2\.\s*\**Error Summary\**([\s\S]*?)(?=\d\.\s*\**|$)/i);
+    const suggestionMatch = content.match(/3\.\s*\**Improvement Suggestions\**([\s\S]*?)(?=\d\.\s*\**|$)/i);
+    
+    return {
+      encouragingRemarks: encouragingMatch ? encouragingMatch[1].trim() : "Great job! 👏 Keep practicing your English skills!",
+      errorSummary: errorMatch ? errorMatch[1].trim() : "No specific errors found. Your English is improving!",
+      suggestions: suggestionMatch ? suggestionMatch[1].trim() : "• Try to use more descriptive adjectives\n• Practice forming longer, more complex sentences"
+    };
+  } catch (error) {
+    console.error("Error parsing feedback response:", error);
+    // Return default structure
+    return {
+      encouragingRemarks: "Great job! 👏 You did very well in describing the image and answering all questions. Your English skills are improving!",
+      errorSummary: "_I seen a beautiful sunset_ → I saw a beautiful sunset\n_they was very happy_ → they were very happy",
+      suggestions: "• Instead of 'I seen', try using 'I saw' or 'I noticed'\n• Instead of simple sentences, try combining ideas: 'The sunset was beautiful and made me feel peaceful'"
     };
   }
 };

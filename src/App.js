@@ -1,12 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import HomeScreen from './components/HomeScreen';
 import DialogueMode from './components/DialogueMode';
 import ReviewPostcard from './components/ReviewPostcard';
+import { testKimiApi } from './testKimiApi';
 
 function App() {
   const [currentScreen, setCurrentScreen] = useState('home'); // home, dialogue, review
   const [selectedImage, setSelectedImage] = useState(null);
   const [conversation, setConversation] = useState([]);
+
+  // Run Kimi API test when app starts
+  useEffect(() => {
+    testKimiApi();
+  }, []);
 
   const startDialogue = (imageId) => {
     setSelectedImage(imageId);

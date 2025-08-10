@@ -23,14 +23,9 @@ const ReviewPostcard = ({ imageId, conversation, onPracticeAnother }) => {
         console.error('Error generating feedback:', error);
         // Fallback to sample feedback
         setFeedback({
-          encouragingRemarks: "Great job! You did very well in describing the image and answering all questions. Your English skills are improving!",
-          errorSummary: "Minor grammar issues with article usage (a/the) and some verb tenses. Keep practicing!",
-          corrections: [
-            { error: "I seen", correction: "I saw" },
-            { error: "a beautiful trees", correction: "beautiful trees" },
-            { error: "they was", correction: "they were" }
-          ],
-          suggestions: "Try to use more descriptive adjectives and vary your sentence structures. Practice using past and present tenses correctly."
+          encouragingRemarks: "Great job! 👏 You did very well in describing the image and answering all questions. Your English skills are improving!",
+          errorSummary: "_I seen a beautiful sunset_ → I saw a beautiful sunset\n_they was very happy_ → they were very happy",
+          suggestions: "• Instead of 'I seen', try using 'I saw' or 'I noticed'\n• Instead of simple sentences, try combining ideas: 'The sunset was beautiful and made me feel peaceful'"
         });
       }
     };
@@ -110,33 +105,20 @@ const ReviewPostcard = ({ imageId, conversation, onPracticeAnother }) => {
             <div className="flex-grow space-y-6">
               {/* Encouraging Remarks */}
               <div>
-                <h2 className="text-xl font-semibold text-green-600 mb-2">Great Job!</h2>
-                <p className="text-gray-700">{feedback.encouragingRemarks}</p>
+                <h2 className="text-xl font-semibold text-green-600 mb-2">1. Encouraging Remarks with Emoji</h2>
+                <div className="text-gray-700 whitespace-pre-line">{feedback.encouragingRemarks}</div>
               </div>
               
               {/* Error Summary */}
               <div>
-                <h2 className="text-xl font-semibold text-yellow-600 mb-2">Areas for Improvement</h2>
-                <p className="text-gray-700">{feedback.errorSummary}</p>
+                <h2 className="text-xl font-semibold text-yellow-600 mb-2">2. Error Summary</h2>
+                <div className="text-gray-700 whitespace-pre-line">{feedback.errorSummary}</div>
               </div>
               
-              {/* Corrections */}
+              {/* Improvement Suggestions */}
               <div>
-                <h2 className="text-xl font-semibold text-blue-600 mb-2">Corrections</h2>
-                <div className="space-y-2">
-                  {feedback.corrections.map((item, index) => (
-                    <div key={index} className="flex items-start">
-                      <span className="text-red-500 line-through mr-2">"{item.error}"</span>
-                      <span className="text-green-500">→ "{item.correction}"</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              
-              {/* Suggestions */}
-              <div>
-                <h2 className="text-xl font-semibold text-purple-600 mb-2">Suggestions</h2>
-                <p className="text-gray-700">{feedback.suggestions}</p>
+                <h2 className="text-xl font-semibold text-blue-600 mb-2">3. Improvement Suggestions</h2>
+                <div className="text-gray-700 whitespace-pre-line">{feedback.suggestions}</div>
               </div>
             </div>
             
