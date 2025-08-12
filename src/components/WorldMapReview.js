@@ -7,7 +7,7 @@ const WorldMapReview = ({ onBack, onReviewPostcard }) => {
 
   useEffect(() => {
     // Load saved postcards from localStorage
-    const postcards = JSON.parse(localStorage.getItem('chatpicPostcards') || '[]');
+    const postcards = JSON.parse(localStorage.getItem('savedPostcards') || '[]');
     setSavedPostcards(postcards);
   }, []);
 
@@ -71,47 +71,25 @@ const WorldMapReview = ({ onBack, onReviewPostcard }) => {
             </p>
             
             <div className="relative bg-blue-50 rounded-xl overflow-hidden" style={{ height: '70vh' }}>
-              {/* World Map SVG */}
-              <svg viewBox="0 0 100 50" className="w-full h-full">
-                {/* Simplified world map representation */}
-                <path d="M15,25 L20,20 L25,22 L30,18 L35,20 L40,15 L45,18 L50,16 L55,14 L60,15 L65,12 L70,14 L75,10 L80,12 L85,8" 
-                      stroke="#4B5563" strokeWidth="0.5" fill="none" />
-                <path d="M10,30 L15,32 L20,30 L25,33 L30,31 L35,34 L40,32 L45,35 L50,33 L55,36 L60,34 L65,37 L70,35 L75,38 L80,36 L85,39" 
-                      stroke="#4B5563" strokeWidth="0.5" fill="none" />
-                <path d="M20,40 L25,42 L30,40 L35,43 L40,41 L45,44 L50,42 L55,45 L60,43 L65,46 L70,44 L75,47" 
-                      stroke="#4B5563" strokeWidth="0.5" fill="none" />
-                
-                {/* Continents */}
-                <ellipse cx="20" cy="25" rx="8" ry="5" fill="#10B981" opacity="0.3" />
-                <ellipse cx="50" cy="25" rx="12" ry="8" fill="#10B981" opacity="0.3" />
-                <ellipse cx="75" cy="30" rx="10" ry="6" fill="#10B981" opacity="0.3" />
-                <ellipse cx="65" cy="40" rx="6" ry="4" fill="#10B981" opacity="0.3" />
-                <ellipse cx="30" cy="35" rx="8" ry="5" fill="#10B981" opacity="0.3" />
-                
-                {/* Location markers */}
-                {postcardLocations.map((location) => (
-                  <g key={location.id} onClick={() => handleLocationClick(location)} className="cursor-pointer">
-                    <circle 
-                      cx={location.x} 
-                      cy={location.y} 
-                      r="1.5" 
-                      fill="#EF4444" 
-                      stroke="#FFFFFF" 
-                      strokeWidth="0.5"
-                      className="hover:r-2 transition-all duration-200"
-                    />
-                    <circle 
-                      cx={location.x} 
-                      cy={location.y} 
-                      r="3" 
-                      fill="none" 
-                      stroke="#EF4444" 
-                      strokeWidth="0.5"
-                      className="opacity-0 hover:opacity-50 transition-opacity duration-200"
-                    />
-                  </g>
-                ))}
-              </svg>
+              {/* World Map SVG Background */}
+              <img 
+                src="/map.svg" 
+                alt="World Map" 
+                className="absolute inset-0 w-full h-full object-contain"
+              />
+              
+              {/* Location markers */}
+              {postcardLocations.map((location) => (
+                <div
+                  key={location.id}
+                  onClick={() => handleLocationClick(location)}
+                  className="absolute cursor-pointer transform -translate-x-1/2 -translate-y-1/2"
+                  style={{ left: `${location.x}%`, top: `${location.y}%` }}
+                >
+                  <div className="w-4 h-4 bg-red-500 rounded-full border-2 border-white shadow-lg hover:scale-125 transition-transform duration-200"></div>
+                  <div className="absolute inset-0 w-4 h-4 bg-red-500 rounded-full animate-ping opacity-20"></div>
+                </div>
+              ))}
               
               {/* Legend */}
               <div className="absolute bottom-4 left-4 bg-white bg-opacity-80 rounded-lg p-3 shadow-md">

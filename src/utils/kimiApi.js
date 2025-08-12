@@ -18,9 +18,10 @@ loadEnv().then(env => {
 /**
  * Call Kimi API to start a dialogue with the given image description
  * @param {string} imageDescription - The description of the image
+ * @param {string} language - The language for the AI to use (default: 'en')
  * @returns {Promise<string>} - The AI's first question
  */
-export const startKimiDialogue = async (imageDescription) => {
+export const startKimiDialogue = async (imageDescription, language = 'en') => {
   // Wait a bit for env to load if it hasn't already
   if (!KIMI_API_KEY) {
     await new Promise(resolve => setTimeout(resolve, 100));
@@ -28,13 +29,36 @@ export const startKimiDialogue = async (imageDescription) => {
   
   if (!KIMI_API_KEY) {
     console.error('KIMI_API_KEY is not set');
-    return "What do you see in this image?";
+    return language === 'zh' 
+      ? "你在这张图片中看到了什么？🤔" 
+      : "What do you see in this image? 🤔";
   }
   
   console.log('Calling Kimi API with image description:', imageDescription);
   
   try {
-    const prompt = `You are a friendly and encouraging English tutor. 
+    let prompt;
+    let systemMessage;
+    
+    if (language === 'zh') {
+      prompt = `你是一位友好且有鼓励性的英语导师。
+你的目标是帮助学习者根据给定的图片描述练习英语口语。
+
+图片描述：
+"${imageDescription}"
+
+指导说明：
+1. 总共向学习者提出4个问题。
+2. 从简单的观察开始，然后进入细节、感受和创意。
+3. 保持问题简短和友好。
+4. 一次只输出一个问题，并根据对话流程进行。
+5. 适当使用emoji来让对话更生动有趣。
+
+从第一个问题开始。请用中文提问。`;
+      
+      systemMessage = "你是一位友好且有鼓励性的英语导师，帮助学习者练习英语口语。请用中文提问。适当使用emoji来让对话更生动有趣。";
+    } else {
+      prompt = `You are a friendly and encouraging English tutor. 
 Your goal is to help the learner practice descriptive speaking in English based on the given image description.
 
 Image description:
@@ -45,8 +69,12 @@ Instructions:
 2. Start with simple observation, then go into details, feelings, and creativity.
 3. Keep questions short and friendly.
 4. Output one question at a time, based on conversation flow.
+5. Use emojis appropriately to make the conversation more engaging.
 
 Start with the first question.`;
+      
+      systemMessage = "You are a friendly and encouraging English tutor helping learners practice descriptive speaking. Use emojis appropriately to make the conversation more engaging.";
+    }
 
     const response = await fetch(KIMI_API_URL, {
       method: 'POST',
@@ -59,7 +87,7 @@ Start with the first question.`;
         messages: [
           {
             role: "system",
-            content: "You are a friendly and encouraging English tutor helping learners practice descriptive speaking."
+            content: systemMessage
           },
           {
             role: "user",
@@ -81,7 +109,9 @@ Start with the first question.`;
   } catch (error) {
     console.error("Error calling Kimi API:", error);
     // Fallback to simulated response
-    return "What do you see in this image?";
+    return language === 'zh' 
+      ? "你在这张图片中看到了什么？🤔" 
+      : "What do you see in this image? 🤔";
   }
 };
 
@@ -89,9 +119,10 @@ Start with the first question.`;
  * Send user message to Kimi API and get AI response
  * @param {string} message - The user's message
  * @param {Array} conversationHistory - The conversation history
+ * @param {string} language - The language for the AI to use (default: 'en')
  * @returns {Promise<string>} - The AI's response
  */
-export const sendToKimi = async (message, conversationHistory) => {
+export const sendToKimi = async (message, conversationHistory, language = 'en') => {
   // Wait a bit for env to load if it hasn't already
   if (!KIMI_API_KEY) {
     await new Promise(resolve => setTimeout(resolve, 100));
@@ -100,25 +131,42 @@ export const sendToKimi = async (message, conversationHistory) => {
   if (!KIMI_API_KEY) {
     console.error('KIMI_API_KEY is not set');
     // Fallback responses
-    const aiResponses = [
-      "That's interesting! Can you tell me more about it?",
-      "Great observation! How does this make you feel?",
-      "I see! What else do you notice in the image?",
-      "Wonderful! Let's wrap up with a creative question - if you could step into this image, what would you do?"
-    ];
+    let aiResponses;
+    if (language === 'zh') {
+      aiResponses = [
+        "很有趣！能告诉我更多吗？😊",
+        "观察得很好！这让你有什么感受？🌟",
+        "我明白了！你还注意到图片中的什么？🔍",
+        "很棒！让我们用一个有创意的问题来结束 - 如果你能进入这张图片，你会做什么？✨"
+      ];
+    } else {
+      aiResponses = [
+        "That's interesting! Can you tell me more about it? 😊",
+        "Great observation! How does this make you feel? 🌟",
+        "I see! What else do you notice in the image? 🔍",
+        "Wonderful! Let's wrap up with a creative question - if you could step into this image, what would you do? ✨"
+      ];
+    }
     
     const aiMessageCount = conversationHistory.filter(m => m.sender === 'ai').length;
-    return aiResponses[aiMessageCount] || "Thanks for practicing with me!";
+    return aiResponses[aiMessageCount] || (language === 'zh' ? "谢谢你和我练习！🎉" : "Thanks for practicing with me! 🎉");
   }
   
   console.log('Sending message to Kimi API:', message);
   
   try {
     // Build the conversation history for the API
+    let systemMessage;
+    if (language === 'zh') {
+      systemMessage = "你是一位友好且有鼓励性的英语导师，帮助学习者练习英语口语。总共问4个问题，一次一个。请用中文提问。适当使用emoji来让对话更生动有趣。";
+    } else {
+      systemMessage = "You are a friendly and encouraging English tutor helping learners practice descriptive speaking. Ask exactly 4 questions in total, one at a time. Use emojis appropriately to make the conversation more engaging.";
+    }
+
     const messages = [
       {
         role: "system",
-        content: "You are a friendly and encouraging English tutor helping learners practice descriptive speaking. Ask exactly 4 questions in total, one at a time."
+        content: systemMessage
       }
     ];
 
@@ -160,15 +208,25 @@ export const sendToKimi = async (message, conversationHistory) => {
   } catch (error) {
     console.error("Error calling Kimi API:", error);
     // Fallback responses
-    const aiResponses = [
-      "That's interesting! Can you tell me more about it?",
-      "Great observation! How does this make you feel?",
-      "I see! What else do you notice in the image?",
-      "Wonderful! Let's wrap up with a creative question - if you could step into this image, what would you do?"
-    ];
+    let aiResponses;
+    if (language === 'zh') {
+      aiResponses = [
+        "很有趣！能告诉我更多吗？😊",
+        "观察得很好！这让你有什么感受？🌟",
+        "我明白了！你还注意到图片中的什么？🔍",
+        "很棒！让我们用一个有创意的问题来结束 - 如果你能进入这张图片，你会做什么？✨"
+      ];
+    } else {
+      aiResponses = [
+        "That's interesting! Can you tell me more about it? 😊",
+        "Great observation! How does this make you feel? 🌟",
+        "I see! What else do you notice in the image? 🔍",
+        "Wonderful! Let's wrap up with a creative question - if you could step into this image, what would you do? ✨"
+      ];
+    }
     
     const aiMessageCount = conversationHistory.filter(m => m.sender === 'ai').length;
-    return aiResponses[aiMessageCount] || "Thanks for practicing with me!";
+    return aiResponses[aiMessageCount] || (language === 'zh' ? "谢谢你和我练习！🎉" : "Thanks for practicing with me! 🎉");
   }
 };
 
@@ -176,9 +234,10 @@ export const sendToKimi = async (message, conversationHistory) => {
  * Generate feedback using Kimi API based on the conversation with the new prompt format
  * @param {Array} conversation - The conversation history
  * @param {string} imageDescription - The description of the image
+ * @param {string} language - The language for the feedback (default: 'en')
  * @returns {Promise<Object>} - The feedback object
  */
-export const generateKimiFeedback = async (conversation, imageDescription) => {
+export const generateKimiFeedback = async (conversation, imageDescription, language = 'en') => {
   // Wait a bit for env to load if it hasn't already
   if (!KIMI_API_KEY) {
     await new Promise(resolve => setTimeout(resolve, 100));
@@ -186,12 +245,22 @@ export const generateKimiFeedback = async (conversation, imageDescription) => {
   
   if (!KIMI_API_KEY) {
     console.error('KIMI_API_KEY is not set');
-    // Fallback to default feedback
-    return {
-      encouragingRemarks: "Great job! 👏 You did very well in describing the image and answering all questions. Your English skills are improving!",
-      errorSummary: "_I seen a beautiful sunset_ → I saw a beautiful sunset\n_they was very happy_ → they were very happy",
-      suggestions: "• Instead of 'I seen', try using 'I saw' or 'I noticed'\n• Instead of simple sentences, try combining ideas: 'The sunset was beautiful and made me feel peaceful'"
-    };
+    // Fallback to default feedback based on language
+    if (language === 'zh') {
+      return {
+        encouragingRemarks: "做得很好！👏 你在描述图片和回答问题方面表现出色。你的英语技能正在提高！",
+        errorSummary: "_I seen a beautiful sunset_ → I saw a beautiful sunset\n_they was very happy_ → they were very happy",
+        suggestions: "• 不要使用 'I seen'，尝试使用 'I saw' 或 'I noticed'\n• 不要只用简单句，尝试合并想法: 'The sunset was beautiful and made me feel peaceful'",
+        timestamp: new Date().toISOString()
+      };
+    } else {
+      return {
+        encouragingRemarks: "Great job! 👏 You did very well in describing the image and answering all questions. Your English skills are improving!",
+        errorSummary: "_I seen a beautiful sunset_ → I saw a beautiful sunset\n_they was very happy_ → they were very happy",
+        suggestions: "• Instead of 'I seen', try using 'I saw' or 'I noticed'\n• Instead of simple sentences, try combining ideas: 'The sunset was beautiful and made me feel peaceful'",
+        timestamp: new Date().toISOString()
+      };
+    }
   }
   
   console.log('Generating feedback with Kimi API');
@@ -204,7 +273,34 @@ export const generateKimiFeedback = async (conversation, imageDescription) => {
       conversationText += `${sender}: ${msg.text}\n`;
     });
 
-    const prompt = `You are an encouraging English tutor. 🧑‍🏫 
+    let prompt;
+    if (language === 'zh') {
+      prompt = `你是一位鼓励性的英语导师。🧑‍🏫
+你的任务：根据之前的对话，给出三个部分的针对性反馈：
+
+1. **带表情符号的鼓励评价**
+   - 给出温暖、激励性的反馈。
+   - 至少包含一个积极的表情符号。
+
+2. **错误总结**
+   - 对于每个错误，用下划线标出错误部分：\`_错误的文本_\`
+   - 然后，紧接着显示正确版本。
+   - 格式为：
+     \`_错误的句子_ → 正确的句子\`
+
+3. **改进建议**
+   - 给出至少2个自然流畅的替代表达。
+   - 使用清晰的项目符号。
+
+格式规则：
+- 保留章节编号（1, 2, 3）在输出中。
+- 仅用中文回复。
+- 保持简洁但友好。
+
+对话:
+${conversationText}`;
+    } else {
+      prompt = `You are an encouraging English tutor. 🧑‍🏫 
 Your task: Based on the previous conversation with the user, give targeted feedback in **three sections**:
 
 1. **Encouraging Remarks with Emoji**  
@@ -228,6 +324,7 @@ Formatting rules:
 
 Conversation:
 ${conversationText}`;
+    }
 
     const response = await fetch(KIMI_API_URL, {
       method: 'POST',
@@ -257,42 +354,73 @@ ${conversationText}`;
     console.log('Kimi API feedback response:', data);
     
     // Parse the response into sections
-    return parseFeedbackResponse(content);
+    return parseFeedbackResponse(content, language);
   } catch (error) {
     console.error("Error calling Kimi API for feedback:", error);
-    // Fallback to default feedback
-    return {
-      encouragingRemarks: "Great job! 👏 You did very well in describing the image and answering all questions. Your English skills are improving!",
-      errorSummary: "_I seen a beautiful sunset_ → I saw a beautiful sunset\n_they was very happy_ → they were very happy",
-      suggestions: "• Instead of 'I seen', try using 'I saw' or 'I noticed'\n• Instead of simple sentences, try combining ideas: 'The sunset was beautiful and made me feel peaceful'"
-    };
+    // Fallback to default feedback based on language
+    if (language === 'zh') {
+      return {
+        encouragingRemarks: "做得很好！👏 你在描述图片和回答问题方面表现出色。你的英语技能正在提高！",
+        errorSummary: "_I seen a beautiful sunset_ → I saw a beautiful sunset\n_they was very happy_ → they were very happy",
+        suggestions: "• 不要使用 'I seen'，尝试使用 'I saw' 或 'I noticed'\n• 不要只用简单句，尝试合并想法: 'The sunset was beautiful and made me feel peaceful'",
+        timestamp: new Date().toISOString()
+      };
+    } else {
+      return {
+        encouragingRemarks: "Great job! 👏 You did very well in describing the image and answering all questions. Your English skills are improving!",
+        errorSummary: "_I seen a beautiful sunset_ → I saw a beautiful sunset\n_they was very happy_ → they were very happy",
+        suggestions: "• Instead of 'I seen', try using 'I saw' or 'I noticed'\n• Instead of simple sentences, try combining ideas: 'The sunset was beautiful and made me feel peaceful'",
+        timestamp: new Date().toISOString()
+      };
+    }
   }
 };
 
 /**
  * Parse the feedback response from Kimi API into structured format
  * @param {string} content - The raw feedback content from Kimi API
+ * @param {string} language - The language of the feedback
  * @returns {Object} - The parsed feedback object
  */
-const parseFeedbackResponse = (content) => {
+const parseFeedbackResponse = (content, language) => {
   try {
     // Extract sections using regex
-    const encouragingMatch = content.match(/1\.\s*\**Encouraging Remarks with Emoji\**([\s\S]*?)(?=\d\.\s*\**|$)/i);
-    const errorMatch = content.match(/2\.\s*\**Error Summary\**([\s\S]*?)(?=\d\.\s*\**|$)/i);
-    const suggestionMatch = content.match(/3\.\s*\**Improvement Suggestions\**([\s\S]*?)(?=\d\.\s*\**|$)/i);
+    const encouragingMatch = content.match(/1\.\s*\**.*\**([\s\S]*?)(?=\d\.\s*\**|$)/i);
+    const errorMatch = content.match(/2\.\s*\**.*\**([\s\S]*?)(?=\d\.\s*\**|$)/i);
+    const suggestionMatch = content.match(/3\.\s*\**.*\**([\s\S]*?)(?=\d\.\s*\**|$)/i);
     
-    return {
-      encouragingRemarks: encouragingMatch ? encouragingMatch[1].trim() : "Great job! 👏 Keep practicing your English skills!",
-      errorSummary: errorMatch ? errorMatch[1].trim() : "No specific errors found. Your English is improving!",
-      suggestions: suggestionMatch ? suggestionMatch[1].trim() : "• Try to use more descriptive adjectives\n• Practice forming longer, more complex sentences"
-    };
+    if (language === 'zh') {
+      return {
+        encouragingRemarks: encouragingMatch ? encouragingMatch[1].trim() : "做得很好！👏 继续练习你的英语技能！",
+        errorSummary: errorMatch ? errorMatch[1].trim() : "未发现特定错误。你的英语正在进步！",
+        suggestions: suggestionMatch ? suggestionMatch[1].trim() : "• 尝试使用更多描述性形容词\n• 练习形成长而复杂的句子",
+        timestamp: new Date().toISOString()
+      };
+    } else {
+      return {
+        encouragingRemarks: encouragingMatch ? encouragingMatch[1].trim() : "Great job! 👏 Keep practicing your English skills!",
+        errorSummary: errorMatch ? errorMatch[1].trim() : "No specific errors found. Your English is improving!",
+        suggestions: suggestionMatch ? suggestionMatch[1].trim() : "• Try to use more descriptive adjectives\n• Practice forming longer, more complex sentences",
+        timestamp: new Date().toISOString()
+      };
+    }
   } catch (error) {
     console.error("Error parsing feedback response:", error);
-    // Return default structure
-    return {
-      encouragingRemarks: "Great job! 👏 You did very well in describing the image and answering all questions. Your English skills are improving!",
-      errorSummary: "_I seen a beautiful sunset_ → I saw a beautiful sunset\n_they was very happy_ → they were very happy",
-      suggestions: "• Instead of 'I seen', try using 'I saw' or 'I noticed'\n• Instead of simple sentences, try combining ideas: 'The sunset was beautiful and made me feel peaceful'"
-    };
+    // Return default structure based on language
+    if (language === 'zh') {
+      return {
+        encouragingRemarks: "做得很好！👏 你在描述图片和回答问题方面表现出色。你的英语技能正在提高！",
+        errorSummary: "_I seen a beautiful sunset_ → I saw a beautiful sunset\n_they was very happy_ → they were very happy",
+        suggestions: "• 不要使用 'I seen'，尝试使用 'I saw' 或 'I noticed'\n• 不要只用简单句，尝试合并想法: 'The sunset was beautiful and made me feel peaceful'",
+        timestamp: new Date().toISOString()
+      };
+    } else {
+      return {
+        encouragingRemarks: "Great job! 👏 You did very well in describing the image and answering all questions. Your English skills are improving!",
+        errorSummary: "_I seen a beautiful sunset_ → I saw a beautiful sunset\n_they was very happy_ → they were very happy",
+        suggestions: "• Instead of 'I seen', try using 'I saw' or 'I noticed'\n• Instead of simple sentences, try combining ideas: 'The sunset was beautiful and made me feel peaceful'",
+        timestamp: new Date().toISOString()
+      };
+    }
   }
 };
