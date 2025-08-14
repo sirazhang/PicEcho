@@ -3,6 +3,8 @@ const db = require('../config/db');
 class Postcard {
   // Create a new postcard
   static create(senderId, imageUrl, feedbackText, postalCode, callback) {
+    console.log('Postcard.create called with:', { senderId, imageUrl, feedbackText, postalCode });
+    
     // Check if database connection is available
     if (!db.connection || db.connection.state === 'disconnected') {
       console.warn('Database connection not available. Postcard will not be saved.');
@@ -33,6 +35,7 @@ class Postcard {
     
     db.query(sql, values, (err, result) => {
       if (err) {
+        console.error('Database query error in Postcard.create:', err);
         callback(err, null);
         return;
       }
@@ -46,12 +49,15 @@ class Postcard {
         status: 'pending'
       };
       
+      console.log('Postcard created with ID:', result.insertId);
       callback(null, postcard);
     });
   }
   
   // Get a random postcard that is pending (excluding those sent by the current user)
   static getRandomPending(currentUserId, callback) {
+    console.log('Postcard.getRandomPending called with currentUserId:', currentUserId);
+    
     // Check if database connection is available
     if (!db.connection || db.connection.state === 'disconnected') {
       console.warn('Database connection not available. Returning mock postcard.');
@@ -80,21 +86,26 @@ class Postcard {
     
     db.query(sql, [currentUserId], (err, results) => {
       if (err) {
+        console.error('Database query error in Postcard.getRandomPending:', err);
         callback(err, null);
         return;
       }
       
       if (results.length === 0) {
+        console.log('No pending postcards found for users other than:', currentUserId);
         callback(null, null);
         return;
       }
       
+      console.log('Found pending postcard:', results[0]);
       callback(null, results[0]);
     });
   }
   
   // Update postcard status to 'sent'
   static markAsSent(id, callback) {
+    console.log('Postcard.markAsSent called with ID:', id);
+    
     // Check if database connection is available
     if (!db.connection || db.connection.state === 'disconnected') {
       console.warn('Database connection not available. Skipping postcard status update.');
@@ -110,9 +121,12 @@ class Postcard {
     
     db.query(sql, [id], (err, result) => {
       if (err) {
+        console.error('Database query error in Postcard.markAsSent:', err);
         callback(err, null);
         return;
       }
+      
+      console.log('Postcard marked as sent. Rows affected:', result.affectedRows);
       callback(null, result);
     });
   }

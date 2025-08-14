@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 const HomeScreen = ({ onStartDialogue, onOpenMapReview }) => {
   const [selectedLanguage, setSelectedLanguage] = useState('en');
+  const [availableImages, setAvailableImages] = useState([]);
 
   // Load saved language preference from localStorage on component mount
   useEffect(() => {
@@ -11,11 +12,36 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview }) => {
     }
   }, []);
 
+  // Load available images from descriptions.json
+  useEffect(() => {
+    const loadAvailableImages = async () => {
+      try {
+        const response = await fetch('/descriptions.json');
+        const descriptions = await response.json();
+        const imageIds = Object.keys(descriptions);
+        setAvailableImages(imageIds);
+      } catch (error) {
+        console.error('Error loading image descriptions:', error);
+        // Fallback to hardcoded list if fetch fails (now includes all 26 images)
+        const images = Array.from({length: 26}, (_, i) => `img_${String(i+1).padStart(2, '0')}`);
+        setAvailableImages(images);
+      }
+    };
+
+    loadAvailableImages();
+  }, []);
+
   // Get a random image from the available images
   const getRandomImage = () => {
-    const images = Array.from({length: 10}, (_, i) => `img_${String(i+1).padStart(2, '0')}`);
-    const randomIndex = Math.floor(Math.random() * images.length);
-    return images[randomIndex];
+    if (availableImages.length === 0) {
+      // Fallback if images haven't loaded yet (now includes all 26 images)
+      const images = Array.from({length: 26}, (_, i) => `img_${String(i+1).padStart(2, '0')}`);
+      const randomIndex = Math.floor(Math.random() * images.length);
+      return images[randomIndex];
+    }
+    
+    const randomIndex = Math.floor(Math.random() * availableImages.length);
+    return availableImages[randomIndex];
   };
 
   const handleStart = () => {

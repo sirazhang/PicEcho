@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { sendPostcard } from '../utils/api';
 
 const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack, isLoading, error, selectedLanguage }) => {
   const [isSaved, setIsSaved] = useState(false);
@@ -7,6 +8,9 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
   const [imageDescription, setImageDescription] = useState('');
   const [postalCode, setPostalCode] = useState('');
   const [postmark, setPostmark] = useState('');
+  const [showSendModal, setShowSendModal] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const [sendStatus, setSendStatus] = useState(''); // '' | 'success' | 'error'
   const printRef = useRef();
 
   // Generate random postal code
@@ -103,6 +107,41 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
     window.print();
   };
 
+  const handleSendPostcard = () => {
+    setShowSendModal(true);
+  };
+
+  const confirmSendPostcard = async () => {
+    setIsSending(true);
+    setSendStatus('');
+    
+    try {
+      const postcardData = {
+        senderId: 'user-' + Date.now(), // In a real app, this would come from authentication
+        imageUrl: `/img/${imageId}.png`,
+        feedbackText: JSON.stringify(feedback),
+        postalCode
+      };
+
+      const response = await sendPostcard(postcardData);
+
+      if (response) {
+        setSendStatus('success');
+        setTimeout(() => {
+          setShowSendModal(false);
+          setSendStatus('');
+        }, 2000);
+      } else {
+        setSendStatus('error');
+      }
+    } catch (error) {
+      console.error('Error sending postcard:', error);
+      setSendStatus('error');
+    } finally {
+      setIsSending(false);
+    }
+  };
+
   // Define text content for different languages
   const getTextContent = () => {
     if (selectedLanguage === 'zh') {
@@ -110,6 +149,13 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
         back: '返回',
         save: isSaved ? '已保存' : '保存明信片',
         print: '打印',
+        send: '发送明信片',
+        sendConfirm: '您想发送这张明信片与另一位学习者交换吗？',
+        sendYes: '是',
+        sendNo: '否',
+        sending: '发送中...',
+        sendSuccess: '明信片已发送！',
+        sendError: '发送失败，请重试',
         feedback: '反馈',
         encouragingRemarks: '鼓励评价',
         errorSummary: '错误总结',
@@ -124,6 +170,13 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
         back: 'Back',
         save: isSaved ? 'Saved' : 'Save Postcard',
         print: 'Print',
+        send: 'Send Postcard',
+        sendConfirm: 'Do you want to send this postcard and exchange with another learner?',
+        sendYes: 'Yes',
+        sendNo: 'No',
+        sending: 'Sending...',
+        sendSuccess: 'Postcard sent!',
+        sendError: 'Failed to send, please try again',
         feedback: 'Feedback',
         encouragingRemarks: 'Encouraging Remarks',
         errorSummary: 'Error Summary',
@@ -244,6 +297,12 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
               {isSaved ? '✓ ' : ''}{textContent.save}
             </button>
             <button
+              onClick={handleSendPostcard}
+              className="bg-indigo-500 hover:bg-indigo-600 text-white font-medium py-2 px-6 rounded-lg flex items-center"
+            >
+              📬 {textContent.send}
+            </button>
+            <button
               onClick={handlePrint}
               className="bg-purple-500 hover:bg-purple-600 text-white font-medium py-2 px-6 rounded-lg flex items-center"
             >
@@ -256,6 +315,54 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
         {saveMessage && (
           <div className="fixed top-4 right-4 bg-green-500 text-white py-2 px-4 rounded-lg shadow-lg z-50 print:hidden">
             {saveMessage}
+          </div>
+        )}
+
+        {/* Send status messages */}
+        {sendStatus === 'success' && (
+          <div className="fixed top-4 right-4 bg-green-500 text-white py-2 px-4 rounded-lg shadow-lg z-50 print:hidden">
+            {textContent.sendSuccess}
+          </div>
+        )}
+        {sendStatus === 'error' && (
+          <div className="fixed top-4 right-4 bg-red-500 text-white py-2 px-4 rounded-lg shadow-lg z-50 print:hidden">
+            {textContent.sendError}
+          </div>
+        )}
+
+        {/* Send Confirmation Modal */}
+        {showSendModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 print:hidden">
+            <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+              <h3 className="text-xl font-semibold text-gray-800 mb-4">{textContent.send}</h3>
+              <p className="text-gray-600 mb-6">{textContent.sendConfirm}</p>
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => setShowSendModal(false)}
+                  disabled={isSending}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+                >
+                  {textContent.sendNo}
+                </button>
+                <button
+                  onClick={confirmSendPostcard}
+                  disabled={isSending}
+                  className="px-4 py-2 bg-indigo-500 rounded-lg text-white hover:bg-indigo-600 disabled:opacity-50 flex items-center"
+                >
+                  {isSending ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      {textContent.sending}
+                    </>
+                  ) : (
+                    textContent.sendYes
+                  )}
+                </button>
+              </div>
+            </div>
           </div>
         )}
 

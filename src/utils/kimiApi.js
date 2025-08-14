@@ -40,8 +40,49 @@ export const startKimiDialogue = async (imageDescription, language = 'en') => {
     let prompt;
     let systemMessage;
     
+    // Check if the image description contains keywords for special handling
+    const isFourPanel = imageDescription.includes('四张图') || imageDescription.includes('four panels') || imageDescription.includes('four images');
+    const isSpotTheDifference = imageDescription.includes('找不同') || imageDescription.includes('spot the difference') || imageDescription.includes('两张图') || imageDescription.includes('two images');
+    
     if (language === 'zh') {
-      prompt = `你是一位友好且有鼓励性的英语导师。
+      if (isFourPanel) {
+        prompt = `你是一位友好且有鼓励性的英语导师。
+你的目标是帮助学习者根据给定的四格图片描述练习英语口语。
+
+图片描述：
+"${imageDescription}"
+
+指导说明：
+1. 总共向学习者提出6个问题，覆盖以下类别：
+   - 场景设定 (Setting the scene)
+   - 人物互动 (Character interactions)
+   - 环境细节 (Details of the environment)
+   - 事件顺序 (Sequence of events)
+   - 情绪反应 (Emotional responses)
+   - 预测性提问 (Predictive questions)
+2. 保持问题简短和友好。
+3. 一次只输出一个问题，并根据对话流程进行。
+4. 问题要具体涉及面板顺序（使用"第一张图"、"第二张图"等）。
+5. 适当使用emoji来让对话更生动有趣。
+
+从第一个问题开始。请用中文提问。`;
+      } else if (isSpotTheDifference) {
+        prompt = `你是一位友好且有鼓励性的英语导师。
+你的目标是帮助学习者根据给定的找不同图片描述练习英语口语。
+
+图片描述：
+"${imageDescription}"
+
+指导说明：
+1. 总共向学习者提出4个问题。
+2. 首先提出概览性问题（引导问题），然后提出具体定位差异的问题。
+3. 保持问题简短和友好。
+4. 一次只输出一个问题，并根据对话流程进行。
+5. 适当使用emoji来让对话更生动有趣。
+
+从第一个引导性问题开始。请用中文提问。`;
+      } else {
+        prompt = `你是一位友好且有鼓励性的英语导师。
 你的目标是帮助学习者根据给定的图片描述练习英语口语。
 
 图片描述：
@@ -55,10 +96,48 @@ export const startKimiDialogue = async (imageDescription, language = 'en') => {
 5. 适当使用emoji来让对话更生动有趣。
 
 从第一个问题开始。请用中文提问。`;
+      }
       
       systemMessage = "你是一位友好且有鼓励性的英语导师，帮助学习者练习英语口语。请用中文提问。适当使用emoji来让对话更生动有趣。";
     } else {
-      prompt = `You are a friendly and encouraging English tutor. 
+      if (isFourPanel) {
+        prompt = `You are a friendly and encouraging English tutor. 
+Your goal is to help the learner practice descriptive speaking in English based on the given four-panel image description.
+
+Image description:
+"${imageDescription}"
+
+Instructions:
+1. Ask the learner exactly 6 questions in total, covering these categories:
+   - Setting the scene
+   - Character interactions
+   - Details of the environment
+   - Sequence of events
+   - Emotional responses
+   - Predictive questions
+2. Keep questions short and friendly.
+3. Output one question at a time, based on conversation flow.
+4. Make questions specific to panel order (use "first panel", "second panel" etc.).
+5. Use emojis appropriately to make the conversation more engaging.
+
+Start with the first question.`;
+      } else if (isSpotTheDifference) {
+        prompt = `You are a friendly and encouraging English tutor. 
+Your goal is to help the learner practice descriptive speaking in English based on the given spot-the-difference image description.
+
+Image description:
+"${imageDescription}"
+
+Instructions:
+1. Ask the learner exactly 4 questions in total.
+2. Start with overview questions (guiding questions), then move to specific questions that locate differences.
+3. Keep questions short and friendly.
+4. Output one question at a time, based on conversation flow.
+5. Use emojis appropriately to make the conversation more engaging.
+
+Start with the first guiding question.`;
+      } else {
+        prompt = `You are a friendly and encouraging English tutor. 
 Your goal is to help the learner practice descriptive speaking in English based on the given image description.
 
 Image description:
@@ -72,6 +151,7 @@ Instructions:
 5. Use emojis appropriately to make the conversation more engaging.
 
 Start with the first question.`;
+      }
       
       systemMessage = "You are a friendly and encouraging English tutor helping learners practice descriptive speaking. Use emojis appropriately to make the conversation more engaging.";
     }

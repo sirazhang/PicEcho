@@ -23,6 +23,9 @@ app.use(express.static('../build'));
 
 // POST /postcards/send - Send a postcard
 app.post('/postcards/send', (req, res) => {
+  console.log('POST /postcards/send endpoint hit');
+  console.log('Request body:', req.body);
+  
   const { senderId, imageUrl, feedbackText, postalCode } = req.body;
 
   try {
@@ -32,6 +35,7 @@ app.post('/postcards/send', (req, res) => {
         return res.status(500).json({ error: 'Failed to send postcard' });
       }
       
+      console.log('Postcard saved successfully:', postcard);
       res.status(200).json({ 
         message: 'Postcard sent successfully!',
         postcard: postcard
@@ -45,6 +49,9 @@ app.post('/postcards/send', (req, res) => {
 
 // GET /postcards/receive - Receive a random postcard
 app.get('/postcards/receive', (req, res) => {
+  console.log('GET /postcards/receive endpoint hit');
+  console.log('Query parameters:', req.query);
+  
   const currentUserId = req.query.userId;
 
   try {
@@ -56,8 +63,11 @@ app.get('/postcards/receive', (req, res) => {
       
       // If no postcard found, return appropriate message
       if (!postcard) {
+        console.log('No postcards available for user:', currentUserId);
         return res.status(404).json({ message: 'No postcards available at the moment' });
       }
+      
+      console.log('Postcard fetched successfully:', postcard);
       
       // For mock data, we need to handle the structure differently
       if (postcard.feedbackText && typeof postcard.feedbackText !== 'string') {
