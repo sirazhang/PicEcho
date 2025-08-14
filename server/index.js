@@ -78,8 +78,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static('../build'));
 
 // Routes
-// POST /postcards/send - Send a postcard
-app.post('/postcards/send', (req, res) => {
+// POST /api/postcards/send - Send a postcard
+app.post('/api/postcards/send', (req, res) => {
   console.log('POST /postcards/send endpoint hit');
   console.log('Request body:', req.body);
   
@@ -100,14 +100,15 @@ app.post('/postcards/send', (req, res) => {
     
     console.log('Postcard saved successfully:', postcard);
     res.status(200).json({ 
+      success: true,
       message: 'Postcard sent successfully!',
       postcard: postcard
     });
   });
 });
 
-// GET /postcards/receive - Receive a random postcard
-app.get('/postcards/receive', (req, res) => {
+// GET /api/postcards/receive - Receive a random postcard
+app.get('/api/postcards/receive', (req, res) => {
   console.log('GET /postcards/receive endpoint hit');
   console.log('Query parameters:', req.query);
   

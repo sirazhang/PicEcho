@@ -15,6 +15,9 @@ const pool = mysql.createPool({
 // Get a promise-based connection from the pool
 const db = pool.promise();
 
+// Variable to track database availability
+let isDatabaseAvailable = false;
+
 // Test the connection
 db.getConnection()
   .then(connection => {

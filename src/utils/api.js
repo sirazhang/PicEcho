@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Create an axios instance with default configuration
 const apiClient = axios.create({
-  baseURL: 'http://localhost:3001', // Default backend URL
+  baseURL: '/api', // Use relative path with proxy
   timeout: 10000, // 10 second timeout
   headers: {
     'Content-Type': 'application/json',
