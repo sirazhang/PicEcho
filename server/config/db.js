@@ -1,41 +1,37 @@
 const mysql = require('mysql2');
+require('dotenv').config();
 
-// Create a connection to the database
-const db = mysql.createConnection({
+// Create a connection pool to the database
+const pool = mysql.createPool({
   host: process.env.DB_HOST || 'localhost',
   user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
+  password: process.env.DB_PASSWORD || '123456',
   database: process.env.DB_NAME || 'chatpic',
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0
 });
 
-// Connect to the database
-db.connect((err) => {
-  if (err) {
+// Get a promise-based connection from the pool
+const db = pool.promise();
+
+// Test the connection
+db.getConnection()
+  .then(connection => {
+    console.log('Successfully connected to the database.');
+    connection.release(); // Release the connection back to the pool
+    isDatabaseAvailable = true;
+  })
+  .catch(err => {
     console.error('Error connecting to the database:', err);
     console.error('Please make sure MySQL is running and the database configuration is correct.');
-    // We don't return here so the server can still start even without database connection
-    return;
-  }
-  console.log('Successfully connected to the database.');
-});
+    console.warn('The application will use mock data for development.');
+    isDatabaseAvailable = false;
+  });
 
-// Handle connection errors
-db.on('error', (err) => {
-  console.error('Database error:', err);
-  if (err.code === 'PROTOCOL_CONNECTION_LOST') {
-    console.log('Reconnecting to database...');
-    // Attempt to reconnect
-    db.connect((err) => {
-      if (err) {
-        console.error('Error reconnecting to the database:', err);
-      } else {
-        console.log('Reconnected to the database.');
-      }
-    });
+module.exports = { 
+  db, 
+  get isDatabaseAvailable() {
+    return isDatabaseAvailable;
   }
-});
-
-module.exports = db;
+};

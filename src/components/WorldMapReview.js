@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { receivePostcard } from '../utils/api';
 
-const WorldMapReview = ({ onBack, onReviewPostcard }) => {
+const WorldMapReview = ({ onBack, onViewPostcard }) => {
   const [savedPostcards, setSavedPostcards] = useState([]);
   const [selectedPostcard, setSelectedPostcard] = useState(null);
   const [showModal, setShowModal] = useState(false);
@@ -51,7 +51,7 @@ const WorldMapReview = ({ onBack, onReviewPostcard }) => {
 
   const handleReviewClick = () => {
     if (selectedPostcard) {
-      onReviewPostcard(selectedPostcard);
+      onViewPostcard(selectedPostcard);
     }
   };
 
@@ -78,10 +78,21 @@ const WorldMapReview = ({ onBack, onReviewPostcard }) => {
         setReceivedPostcard(postcardData);
         setShowReceivedPostcard(true);
       } else {
-        console.error('Failed to fetch postcard');
+        // No postcards available - show message to user
+        setReceivedPostcard({
+          message: 'No postcards available at the moment. Try sending one first!',
+          isEmpty: true
+        });
+        setShowReceivedPostcard(true);
       }
     } catch (error) {
       console.error('Error fetching postcard:', error);
+      // Show error message to user
+      setReceivedPostcard({
+        message: `Error: ${error.message}`,
+        isError: true
+      });
+      setShowReceivedPostcard(true);
     } finally {
       setIsFetching(false);
     }
@@ -90,6 +101,13 @@ const WorldMapReview = ({ onBack, onReviewPostcard }) => {
   const closeReceivedPostcard = () => {
     setShowReceivedPostcard(false);
     setReceivedPostcard(null);
+  };
+
+  // Get image path based on level
+  const getImagePath = (imageId, level) => {
+    // If level is not specified, default to level 1
+    const validLevel = level || 1;
+    return `/img_Level${validLevel}/${imageId}.png`;
   };
 
   return (
@@ -185,11 +203,18 @@ const WorldMapReview = ({ onBack, onReviewPostcard }) => {
               <div className="mb-6">
                 <div className="flex items-center mb-4">
                   <img 
-                    src={`/img/${selectedPostcard.imageId}.png`} 
+                    src={getImagePath(selectedPostcard.imageId, selectedPostcard.level)} 
                     alt="Conversation" 
                     className="w-24 h-24 object-cover rounded-lg mr-4"
                     onError={(e) => {
-                      e.target.src = 'https://placehold.co/100x100?text=Image+Not+Found';
+                      // Try fallback to default img folder if level-specific image not found
+                      if (!e.target.src.includes('/img/')) {
+                        e.target.src = `/img/${selectedPostcard.imageId}.png`;
+                      } else {
+                        // If default image also not found, show placeholder
+                        e.target.onerror = null; // Prevent infinite loop
+                        e.target.src = 'https://placehold.co/100x100?text=Image+Not+Found';
+                      }
                     }}
                   />
                   <div>
@@ -243,79 +268,109 @@ const WorldMapReview = ({ onBack, onReviewPostcard }) => {
                 </button>
               </div>
               
-              {/* Postcard */}
-              <div className="bg-[#F5F5F5] rounded-xl shadow-[0_4px_8px_rgba(0,0,0,0.1)] overflow-hidden mb-6">
-                {/* Postcard header with postal code and postmark */}
-                <div className="relative p-6">
-                  {/* Postal code in top-left corner */}
-                  <div className="absolute top-4 left-4 bg-white px-3 py-1 rounded border border-gray-300">
-                    <div className="text-xs font-bold text-gray-700">Postal Code</div>
-                    <div className="text-sm font-mono">{receivedPostcard.postalCode || 'N/A'}</div>
+              {/* Display message if no postcards available or error occurred */}
+              {receivedPostcard.isEmpty || receivedPostcard.isError ? (
+                <div className="bg-gray-50 rounded-xl shadow-[0_4px_8px_rgba(0,0,0,0.1)] p-8 text-center">
+                  <div className="text-5xl mb-4">
+                    {receivedPostcard.isEmpty ? '📭' : '⚠️'}
                   </div>
-                  
-                  {/* Postmark in top-right corner */}
-                  <div className="absolute top-4 right-4 w-20 h-12 border-2 border-red-500 rotate-12">
-                    <div className="bg-red-500 text-white text-[8px] font-bold p-1">
-                      Postmark
+                  <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                    {receivedPostcard.isEmpty ? 'No Postcards Available' : 'Error'}
+                  </h3>
+                  <p className="text-gray-600 mb-6">
+                    {receivedPostcard.message}
+                  </p>
+                  <button
+                    onClick={closeReceivedPostcard}
+                    className="px-6 py-2 bg-blue-500 rounded-lg text-white hover:bg-blue-600 transition duration-200"
+                  >
+                    Close
+                  </button>
+                </div>
+              ) : (
+                // Postcard
+                <div className="bg-[#F5F5F5] rounded-xl shadow-[0_4px_8px_rgba(0,0,0,0.1)] overflow-hidden mb-6">
+                  {/* Postcard header with postal code and postmark */}
+                  <div className="relative p-6">
+                    {/* Postal code in top-left corner */}
+                    <div className="absolute top-4 left-4 bg-white px-3 py-1 rounded border border-gray-300">
+                      <div className="text-xs font-bold text-gray-700">Postal Code</div>
+                      <div className="text-sm font-mono">{receivedPostcard.postalCode || 'N/A'}</div>
                     </div>
-                    <div className="text-[8px] font-mono p-1 truncate">{receivedPostcard.postmark || 'N/A'}</div>
+                    
+                    {/* Postmark in top-right corner */}
+                    <div className="absolute top-4 right-4 w-20 h-12 border-2 border-red-500 rotate-12">
+                      <div className="bg-red-500 text-white text-[8px] font-bold p-1">
+                        Postmark
+                      </div>
+                      <div className="text-[8px] font-mono p-1 truncate">{receivedPostcard.postmark || 'N/A'}</div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-6">
+                    {/* Left Column - Image Section */}
+                    <div className="flex items-center justify-center">
+                      <img
+                        src={receivedPostcard.imageUrl || getImagePath(receivedPostcard.imageId, receivedPostcard.level)}
+                        alt="Conversation image"
+                        className="max-h-[70vh] object-contain rounded-lg"
+                        onError={(e) => {
+                          // Try fallback to default img folder if level-specific image not found
+                          if (!e.target.src.includes('/img/')) {
+                            e.target.src = `/img/${receivedPostcard.imageId}.png`;
+                          } else {
+                            // If default image also not found, show placeholder
+                            e.target.onerror = null; // Prevent infinite loop
+                            e.target.src = 'https://placehold.co/600x400?text=Image+Not+Found';
+                          }
+                        }}
+                      />
+                    </div>
+
+                    {/* Right Column - Feedback */}
+                    <div className="space-y-6">
+                      <h2 className="text-xl font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-300">
+                        Feedback
+                      </h2>
+
+                      {/* Encouraging Remarks */}
+                      <div className="bg-green-50 p-5 rounded-lg border border-green-200">
+                        <h3 className="text-lg font-semibold text-green-800 mb-3 flex items-center">
+                          💬 Encouraging Remarks
+                        </h3>
+                        <p className="text-green-700 whitespace-pre-line">{receivedPostcard.feedback?.encouragingRemarks}</p>
+                      </div>
+
+                      {/* Error Summary */}
+                      <div className="bg-amber-50 p-5 rounded-lg border border-amber-200">
+                        <h3 className="text-lg font-semibold text-amber-800 mb-3 flex items-center">
+                          ❗ Error Summary
+                        </h3>
+                        <pre className="text-amber-700 whitespace-pre-line font-sans">{receivedPostcard.feedback?.errorSummary}</pre>
+                      </div>
+
+                      {/* Suggestions */}
+                      <div className="bg-blue-50 p-5 rounded-lg border border-blue-200">
+                        <h3 className="text-lg font-semibold text-blue-800 mb-3 flex items-center">
+                          💡 Suggestions
+                        </h3>
+                        <pre className="text-blue-700 whitespace-pre-line font-sans">{receivedPostcard.feedback?.suggestions}</pre>
+                      </div>
+                    </div>
                   </div>
                 </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-6">
-                  {/* Left Column - Image Section */}
-                  <div className="flex items-center justify-center">
-                    <img
-                      src={`/img/${receivedPostcard.imageId}.png`}
-                      alt="Conversation image"
-                      className="max-h-[70vh] object-contain rounded-lg"
-                      onError={(e) => {
-                        e.target.src = 'https://placehold.co/600x400?text=Image+Not+Found';
-                      }}
-                    />
-                  </div>
-
-                  {/* Right Column - Feedback */}
-                  <div className="space-y-6">
-                    <h2 className="text-xl font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-300">
-                      Feedback
-                    </h2>
-
-                    {/* Encouraging Remarks */}
-                    <div className="bg-green-50 p-5 rounded-lg border border-green-200">
-                      <h3 className="text-lg font-semibold text-green-800 mb-3 flex items-center">
-                        💬 Encouraging Remarks
-                      </h3>
-                      <p className="text-green-700 whitespace-pre-line">{receivedPostcard.feedback?.encouragingRemarks}</p>
-                    </div>
-
-                    {/* Error Summary */}
-                    <div className="bg-amber-50 p-5 rounded-lg border border-amber-200">
-                      <h3 className="text-lg font-semibold text-amber-800 mb-3 flex items-center">
-                        ❗ Error Summary
-                      </h3>
-                      <pre className="text-amber-700 whitespace-pre-line font-sans">{receivedPostcard.feedback?.errorSummary}</pre>
-                    </div>
-
-                    {/* Suggestions */}
-                    <div className="bg-blue-50 p-5 rounded-lg border border-blue-200">
-                      <h3 className="text-lg font-semibold text-blue-800 mb-3 flex items-center">
-                        💡 Suggestions
-                      </h3>
-                      <pre className="text-blue-700 whitespace-pre-line font-sans">{receivedPostcard.feedback?.suggestions}</pre>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              )}
               
-              <div className="flex justify-end">
-                <button
-                  onClick={closeReceivedPostcard}
-                  className="px-6 py-2 bg-blue-500 rounded-lg text-white hover:bg-blue-600 transition duration-200"
-                >
-                  Close
-                </button>
-              </div>
+              {!receivedPostcard.isEmpty && !receivedPostcard.isError && (
+                <div className="flex justify-end">
+                  <button
+                    onClick={closeReceivedPostcard}
+                    className="px-6 py-2 bg-blue-500 rounded-lg text-white hover:bg-blue-600 transition duration-200"
+                  >
+                    Close
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>

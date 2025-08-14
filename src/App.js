@@ -16,6 +16,7 @@ const App = () => {
   const [map, setMap] = useState(false);
   const [selectedPostcard, setSelectedPostcard] = useState(null);
   const [selectedLanguage, setSelectedLanguage] = useState('en'); // Add language state
+  const [selectedLevel, setSelectedLevel] = useState(1); // Add level state
 
   // Load selected language from localStorage on app start
   useEffect(() => {
@@ -25,9 +26,22 @@ const App = () => {
     }
   }, []);
 
-  const handleStartDialogue = (imageId, language) => {
+  // Load selected level from localStorage on app start
+  useEffect(() => {
+    const savedLevel = localStorage.getItem('selectedLevel');
+    if (savedLevel) {
+      setSelectedLevel(parseInt(savedLevel, 10));
+    }
+  }, []);
+
+  const handleStartDialogue = (imageId, language, level) => {
     setSelectedImage(imageId);
     setSelectedLanguage(language || 'en'); // Set language when starting dialogue
+    setSelectedLevel(level || 1); // Set level when starting dialogue
+    
+    // Save level to localStorage
+    localStorage.setItem('selectedLevel', level || 1);
+    
     setCurrentScreen('dialogue');
   };
 
@@ -83,19 +97,25 @@ const App = () => {
   };
 
   const handleSavePostcard = (postcardData) => {
+    // Add level information to postcard data
+    const postcardDataWithLevel = {
+      ...postcardData,
+      level: selectedLevel
+    };
+
     const savedPostcards = JSON.parse(localStorage.getItem('savedPostcards') || '[]');
     
     // Check if this postcard already exists
     const existingIndex = savedPostcards.findIndex(
-      card => card.imageId === postcardData.imageId && card.timestamp === postcardData.timestamp
+      card => card.imageId === postcardDataWithLevel.imageId && card.timestamp === postcardDataWithLevel.timestamp
     );
     
     if (existingIndex >= 0) {
       // Update existing postcard
-      savedPostcards[existingIndex] = postcardData;
+      savedPostcards[existingIndex] = postcardDataWithLevel;
     } else {
       // Add new postcard
-      savedPostcards.push(postcardData);
+      savedPostcards.push(postcardDataWithLevel);
     }
     
     localStorage.setItem('savedPostcards', JSON.stringify(savedPostcards));
@@ -135,6 +155,8 @@ const App = () => {
       {currentScreen === 'dialogue' && (
         <DialogueMode 
           imageId={selectedImage}
+          language={selectedLanguage}
+          level={selectedLevel}
           onFinish={handleFinishDialogue}
           onCancel={handleCancelDialogue}
         />
@@ -165,7 +187,8 @@ const App = () => {
           onBack={selectedPostcard ? handleBackToMap : handleBackToHome}
           isLoading={isLoading}
           error={error}
-          selectedLanguage={selectedLanguage} // Pass language to feedback component
+          selectedLanguage={selectedLanguage}
+          selectedLevel={selectedLevel} // Pass level to ReviewPostcard
         />
       )}
 

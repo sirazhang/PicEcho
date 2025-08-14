@@ -11,6 +11,7 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
   const [showSendModal, setShowSendModal] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [sendStatus, setSendStatus] = useState(''); // '' | 'success' | 'error'
+  const [level, setLevel] = useState(1); // Add level state
   const printRef = useRef();
 
   // Generate random postal code
@@ -49,17 +50,55 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
     setPostmark(generatePostmark());
   }, []);
 
+  // Get level from localStorage or default to 1
+  useEffect(() => {
+    const savedLevel = localStorage.getItem('selectedLevel');
+    if (savedLevel) {
+      setLevel(parseInt(savedLevel, 10));
+    } else {
+      setLevel(1);
+    }
+  }, []);
+
   // Load image description
   useEffect(() => {
     const loadImageDescription = async () => {
       try {
         const response = await fetch('/descriptions.json');
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         const descriptions = await response.json();
-        const description = descriptions[imageId] || 'A beautiful image';
+        const description = descriptions[imageId] || '';
+        
+        // 如果没有找到描述，使用默认值
+        if (!description) {
+          throw new Error(`No description found for image ID: ${imageId}`);
+        }
+        
         setImageDescription(description);
       } catch (error) {
         console.error('Error loading image description:', error);
-        setImageDescription('A beautiful image');
+        
+        // 根据错误类型提供不同的回退信息
+        let fallbackDescription;
+        if (error.message.includes('HTTP')) {
+          fallbackDescription = selectedLanguage === 'zh' 
+            ? '无法加载图片描述（网络错误）' 
+            : 'Unable to load image description (Network error)';
+        } else if (error.message.includes('No description found')) {
+          fallbackDescription = selectedLanguage === 'zh' 
+            ? '暂无可用图片描述' 
+            : 'No description available for this image';
+        } else {
+          fallbackDescription = selectedLanguage === 'zh' 
+            ? '图片描述加载失败' 
+            : 'Failed to load image description';
+        }
+        
+        setImageDescription(fallbackDescription);
       }
     };
 
@@ -92,14 +131,46 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
     };
 
     try {
+      // 尝试保存到localStorage
+      try {
+        const savedPostcards = JSON.parse(localStorage.getItem('savedPostcards') || '[]');
+        const updatedPostcards = [...savedPostcards, postcardData];
+        localStorage.setItem('savedPostcards', JSON.stringify(updatedPostcards));
+      } catch (storageError) {
+        console.warn('LocalStorage error:', storageError);
+        // 非致命错误，继续执行内存保存
+      }
+      
+      // 触发onSave回调
       onSave(postcardData);
       setIsSaved(true);
-      setSaveMessage(selectedLanguage === 'zh' ? '明信片已保存!' : 'Postcard saved!');
+      
+      // 显示成功消息
+      const successMessage = selectedLanguage === 'zh' ? '明信片已保存!' : 'Postcard saved!';
+      setSaveMessage(successMessage);
       setTimeout(() => setSaveMessage(''), 3000);
+      
     } catch (error) {
       console.error('Error saving postcard:', error);
-      setSaveMessage(selectedLanguage === 'zh' ? '保存失败，请重试' : 'Failed to save, please try again');
-      setTimeout(() => setSaveMessage(''), 3000);
+      
+      // 显示更具体的错误消息
+      let errorMessage;
+      if (error instanceof TypeError) {
+        errorMessage = selectedLanguage === 'zh' 
+          ? '类型错误：保存数据无效' 
+          : 'Type error: Invalid data to save';
+      } else if (error.code === 22 || error.code === 12) {
+        errorMessage = selectedLanguage === 'zh' 
+          ? '存储已满：请清除浏览器缓存后重试' 
+          : 'Storage full: Please clear browser cache and try again';
+      } else {
+        errorMessage = selectedLanguage === 'zh' 
+          ? '保存失败，请检查网络后重试' 
+          : 'Failed to save, please check your network and try again';
+      }
+      
+      setSaveMessage(errorMessage);
+      setTimeout(() => setSaveMessage(''), 5000);
     }
   };
 
@@ -118,25 +189,37 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
     try {
       const postcardData = {
         senderId: 'user-' + Date.now(), // In a real app, this would come from authentication
-        imageUrl: `/img/${imageId}.png`,
+        imageUrl: `/img_Level${level}/${imageId}.png`,
         feedbackText: JSON.stringify(feedback),
         postalCode
       };
 
+      // Check if browser is offline
+      if (!navigator.onLine) {
+        throw new Error('network');
+      }
+
       const response = await sendPostcard(postcardData);
 
-      if (response) {
+      if (response?.success) {
         setSendStatus('success');
         setTimeout(() => {
           setShowSendModal(false);
           setSendStatus('');
         }, 2000);
       } else {
-        setSendStatus('error');
+        throw new Error(response?.message || 'send_failed');
       }
     } catch (error) {
       console.error('Error sending postcard:', error);
-      setSendStatus('error');
+      
+      if (error.message === 'network') {
+        setSendStatus(selectedLanguage === 'zh' ? '网络错误：请检查您的互联网连接' : 'Network error: Please check your internet connection');
+      } else if (error.message === 'send_failed') {
+        setSendStatus(selectedLanguage === 'zh' ? '明信片发送失败，请稍后重试' : 'Failed to send postcard. Please try again later');
+      } else {
+        setSendStatus(selectedLanguage === 'zh' ? '发生未知错误，请重试' : 'An unknown error occurred. Please try again');
+      }
     } finally {
       setIsSending(false);
     }
@@ -213,7 +296,37 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
         <div className="bg-white p-8 rounded-xl shadow-lg text-center max-w-2xl w-full">
           <div className="text-red-500 text-5xl mb-4">⚠️</div>
           <h2 className="text-2xl font-semibold text-gray-800 mb-4">{textContent.errorGeneratingFeedback}</h2>
-          <p className="text-gray-600 mb-6">{error}</p>
+          
+          <div className="mb-6 text-left inline-block text-gray-600 max-w-lg">
+            <p className="mb-4">
+              {selectedLanguage === 'zh' 
+                ? '我们遇到了一些问题来生成您的反馈。以下是一些可能的原因和解决办法：' 
+                : 'We encountered some issues generating your feedback. Here are some possible causes and solutions:'}
+            </p>
+            <ul className={`list-disc pl-5 space-y-2 ${selectedLanguage === 'zh' ? 'list-outside' : ''}`}>
+              {selectedLanguage === 'zh' ? (
+                <>
+                  <li>检查您的互联网连接并重试</li>
+                  <li>返回上一步并重新生成反馈</li>
+                  <li>稍后重试，服务器可能暂时不可用</li>
+                </>
+              ) : (
+                <>
+                  <li>Check your internet connection and try again</li>
+                  <li>Go back and regenerate the feedback</li>
+                  <li>Try again later, the server may be temporarily unavailable</li>
+                </>
+              )}
+            </ul>
+          </div>
+          
+          <div className="bg-red-50 p-4 rounded-lg text-left mb-6 max-w-lg mx-auto">
+            <p className="text-red-700 font-medium">
+              {selectedLanguage === 'zh' ? '错误详情:' : 'Error details:'}
+            </p>
+            <p className="text-red-600 mt-2 break-words">{error}</p>
+          </div>
+          
           <button
             onClick={onBack}
             className="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-6 rounded-lg"
@@ -389,11 +502,18 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
             {/* Left Column - Image Section */}
             <div className="flex items-center justify-center">
               <img
-                src={`/img/${imageId}.png`}
+                src={`/img_Level${level}/${imageId}.png`}
                 alt={selectedLanguage === 'zh' ? '对话图片' : 'Conversation image'}
                 className="max-h-[70vh] object-contain rounded-lg"
                 onError={(e) => {
-                  e.target.src = 'https://placehold.co/600x400?text=Image+Not+Found';
+                  // Try fallback to default img folder if level-specific image not found
+                  if (!e.target.src.includes('/img/')) {
+                    e.target.src = `/img/${imageId}.png`;
+                  } else {
+                    // If default image also not found, show placeholder
+                    e.target.onerror = null; // Prevent infinite loop
+                    e.target.src = 'https://placehold.co/600x400?text=Image+Not+Found';
+                  }
                 }}
               />
             </div>

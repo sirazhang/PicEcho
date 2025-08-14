@@ -1,7 +1,65 @@
+const db = require('./config/db'); // 使用服务器根目录下的db.js配置文件
+
+class Postcard {
+  static create(senderId, imageUrl, feedbackText, postalCode, callback) {
+    const query = 'INSERT INTO postcards (sender_id, image_url, feedback_text, postal_code, sent) VALUES (?, ?, ?, ?, ?)';
+    db.query(
+      query,
+      [senderId, imageUrl, feedbackText, postalCode, false],
+      (error, results) => {
+        if (error) {
+          return callback(error);
+        }
+        
+        const insertId = results.insertId;
+        this.findById(insertId, callback);
+      }
+    );
+  }
+
+  static findById(id, callback) {
+    const query = 'SELECT * FROM postcards WHERE id = ?';
+    db.query(query, [id], (error, results) => {
+      if (error) return callback(error);
+      callback(null, results[0]);
+    });
+  }
+
+  static getRandomPending(currentUserId, callback) {
+    const query = 'SELECT * FROM postcards WHERE sent = false AND sender_id != ? ORDER BY RAND() LIMIT 1';
+    db.query(query, [currentUserId], (error, results) => {
+      if (error) return callback(error);
+      callback(null, results[0]);
+    });
+  }
+
+  static markAsSent(id, callback) {
+    const query = 'UPDATE postcards SET sent = true WHERE id = ?';
+    db.query(query, [id], (error, results) => {
+      if (error) return callback(error);
+      callback(null);
+    });
+  }
+}
+
+module.exports = Postcard;
+const mysql = require('mysql2');
+require('dotenv').config();
+
+const pool = mysql.createPool({
+  host: process.env.DB_HOST || 'localhost',
+  user: process.env.DB_USER || 'root',
+  password: process.env.DB_PASSWORD || '',
+  database: process.env.DB_NAME || 'chatpic',
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
+});
+
+module.exports = pool.promise();
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const Postcard = require('./models/Postcard');
 
 // Load environment variables
 dotenv.config();
@@ -20,7 +78,6 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static('../build'));
 
 // Routes
-
 // POST /postcards/send - Send a postcard
 app.post('/postcards/send', (req, res) => {
   console.log('POST /postcards/send endpoint hit');
@@ -28,23 +85,25 @@ app.post('/postcards/send', (req, res) => {
   
   const { senderId, imageUrl, feedbackText, postalCode } = req.body;
 
-  try {
-    Postcard.create(senderId, imageUrl, feedbackText, postalCode, (err, postcard) => {
-      if (err) {
-        console.error('Error saving postcard:', err);
-        return res.status(500).json({ error: 'Failed to send postcard' });
-      }
-      
-      console.log('Postcard saved successfully:', postcard);
-      res.status(200).json({ 
-        message: 'Postcard sent successfully!',
-        postcard: postcard
-      });
-    });
-  } catch (error) {
-    console.error('Error sending postcard:', error);
-    res.status(500).json({ error: 'Failed to send postcard' });
+  // Validate required fields
+  if (!senderId || !imageUrl || !feedbackText) {
+    return res.status(400).json({ error: 'Missing required fields: senderId, imageUrl, and feedbackText are required' });
   }
+
+  const { Postcard } = require('./models/Postcard');
+  
+  Postcard.create(senderId, imageUrl, feedbackText, postalCode, (err, postcard) => {
+    if (err) {
+      console.error('Error saving postcard:', err);
+      return res.status(500).json({ error: 'Failed to send postcard' });
+    }
+    
+    console.log('Postcard saved successfully:', postcard);
+    res.status(200).json({ 
+      message: 'Postcard sent successfully!',
+      postcard: postcard
+    });
+  });
 });
 
 // GET /postcards/receive - Receive a random postcard
@@ -54,42 +113,37 @@ app.get('/postcards/receive', (req, res) => {
   
   const currentUserId = req.query.userId;
 
-  try {
-    Postcard.getRandomPending(currentUserId, (err, postcard) => {
-      if (err) {
-        console.error('Error fetching postcard:', err);
-        return res.status(500).json({ error: 'Failed to receive postcard' });
-      }
-      
-      // If no postcard found, return appropriate message
-      if (!postcard) {
-        console.log('No postcards available for user:', currentUserId);
-        return res.status(404).json({ message: 'No postcards available at the moment' });
-      }
-      
-      console.log('Postcard fetched successfully:', postcard);
-      
-      // For mock data, we need to handle the structure differently
-      if (postcard.feedbackText && typeof postcard.feedbackText !== 'string') {
-        // This is mock data, just return it
-        return res.status(200).json(postcard);
-      }
-      
-      // Mark the postcard as sent
-      Postcard.markAsSent(postcard.id, (err) => {
-        if (err) {
-          console.error('Error marking postcard as sent:', err);
-        }
-        // We don't return an error here because the postcard was already fetched successfully
-      });
-      
-      // Return the postcard
-      res.status(200).json(postcard);
-    });
-  } catch (error) {
-    console.error('Error receiving postcard:', error);
-    res.status(500).json({ error: 'Failed to receive postcard' });
+  if (!currentUserId) {
+    return res.status(400).json({ error: 'Missing required query parameter: userId' });
   }
+
+  const { Postcard } = require('./models/Postcard');
+  
+  Postcard.getRandomPending(currentUserId, (err, postcard) => {
+    if (err) {
+      console.error('Error fetching postcard:', err);
+      return res.status(500).json({ error: 'Failed to receive postcard' });
+    }
+    
+    // If no postcard found, return appropriate message
+    if (!postcard) {
+      console.log('No postcards available for user:', currentUserId);
+      return res.status(404).json({ message: 'No postcards available at the moment' });
+    }
+    
+    console.log('Postcard fetched successfully:', postcard);
+    
+    // Mark the postcard as sent
+    Postcard.markAsSent(postcard.id, (err) => {
+      if (err) {
+        console.error('Error marking postcard as sent:', err);
+        // We don't return an error here because the postcard was already fetched successfully
+      }
+    });
+    
+    // Return the postcard
+    res.status(200).json(postcard);
+  });
 });
 
 // Handle graceful shutdown
