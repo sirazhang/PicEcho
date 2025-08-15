@@ -7,12 +7,13 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
   const [localFeedback, setLocalFeedback] = useState(feedback);
   const [imageDescription, setImageDescription] = useState('');
   const [postalCode, setPostalCode] = useState('');
-  const [postmark, setPostmark] = useState('');
   const [showSendModal, setShowSendModal] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [sendStatus, setSendStatus] = useState(''); // '' | 'success' | 'error'
   const [level, setLevel] = useState(1); // Add level state
-  const printRef = useRef();
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [postcardImage, setPostcardImage] = useState('');
+  const postcardRef = useRef();
 
   // Generate random postal code
   useEffect(() => {
@@ -31,23 +32,6 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
     };
     
     setPostalCode(generatePostalCode());
-  }, []);
-
-  // Generate random postmark
-  useEffect(() => {
-    const generatePostmark = () => {
-      const cities = ['NEW YORK', 'LONDON', 'TOKYO', 'SYDNEY', 'PARIS', 'BERLIN', 'MOSCOW', 'TORONTO'];
-      const randomCity = cities[Math.floor(Math.random() * cities.length)];
-      const date = new Date().toLocaleDateString('en-US', { 
-        month: 'short', 
-        day: 'numeric', 
-        year: '2-digit' 
-      }).replace(',', '');
-      
-      return `${randomCity} ${date}`;
-    };
-    
-    setPostmark(generatePostmark());
   }, []);
 
   // Get level from localStorage or default to 1
@@ -174,12 +158,222 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
     }
   };
 
-  const handlePrint = () => {
-    window.print();
+  // 新的处理发送明信片函数
+  const handleSendPostcard = async () => {
+    try {
+      // 获取文本内容
+      const textContent = getTextContent();
+      
+      // 创建一个canvas元素来渲染明信片
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      // 设置canvas尺寸，匹配ReviewPostcard界面比例
+      canvas.width = 1200;
+      canvas.height = 800;
+      
+      // 绘制背景
+      const backgroundColor = '#F5F5F5';
+      ctx.fillStyle = backgroundColor;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // 绘制邮编
+      ctx.fillStyle = 'white';
+      ctx.fillRect(40, 40, 140, 60);
+      ctx.strokeStyle = '#ccc';
+      ctx.strokeRect(40, 40, 140, 60);
+      ctx.fillStyle = 'black';
+      ctx.font = 'bold 20px Arial';
+      ctx.fillText(textContent.postalCode, 50, 65);
+      ctx.font = '22px monospace';
+      ctx.fillText(postalCode, 50, 95);
+      
+      // 绘制邮票
+      const stampImg = new Image();
+      stampImg.crossOrigin = 'Anonymous';
+      stampImg.src = '/img_post/img_post_01.png';
+      
+      // 等待邮票加载完成
+      await new Promise((resolve) => {
+        stampImg.onload = resolve;
+        stampImg.onerror = resolve; // 即使加载失败也继续
+        // 添加超时处理，防止图片加载阻塞
+        setTimeout(resolve, 3000);
+      });
+      
+      // 绘制邮票（右上角，不压缩）
+      ctx.drawImage(stampImg, canvas.width - 180, 40, 140, 160);
+      
+      // 绘制分隔线（模拟grid布局）
+      ctx.beginPath();
+      ctx.moveTo(canvas.width / 2, 150);
+      ctx.lineTo(canvas.width / 2, canvas.height - 50);
+      ctx.strokeStyle = '#ddd';
+      ctx.stroke();
+      
+      // 绘制图片（左侧，放大）
+      const postcardImg = new Image();
+      postcardImg.crossOrigin = 'Anonymous';
+      postcardImg.src = `/img_Level${level}/${imageId}.png`;
+      
+      // 等待图片加载完成
+      await new Promise((resolve) => {
+        postcardImg.onload = () => {
+          // 绘制图片到canvas上（左侧区域）
+          const maxWidth = 500;
+          const maxHeight = 500;
+          let width = postcardImg.width;
+          let height = postcardImg.height;
+          
+          // 按比例缩放
+          if (width > maxWidth) {
+            height *= maxWidth / width;
+            width = maxWidth;
+          }
+          if (height > maxHeight) {
+            width *= maxHeight / height;
+            height = maxHeight;
+          }
+          
+          // 居中绘制在左侧区域
+          const leftAreaCenterX = canvas.width / 4;
+          const leftAreaCenterY = (canvas.height + 150) / 2;
+          ctx.drawImage(
+            postcardImg, 
+            leftAreaCenterX - width / 2, 
+            leftAreaCenterY - height / 2, 
+            width, 
+            height
+          );
+          resolve();
+        };
+        postcardImg.onerror = () => resolve(); // 即使加载失败也继续
+        // 添加超时处理，防止图片加载阻塞
+        setTimeout(resolve, 3000);
+      });
+      
+      // 绘制反馈标题
+      const feedbackStartX = canvas.width / 2 + 50;
+      let currentY = 180;
+      
+      ctx.fillStyle = 'black';
+      ctx.font = 'bold 28px Arial';
+      ctx.fillText(textContent.feedback, feedbackStartX, currentY);
+      currentY += 60;
+      
+      // 绘制鼓励评价
+      ctx.fillStyle = '#2d7d49';
+      ctx.font = 'bold 22px Arial';
+      ctx.fillText(textContent.encouragingRemarks, feedbackStartX, currentY);
+      currentY += 40;
+      
+      ctx.fillStyle = 'black';
+      ctx.font = '20px Arial';
+      const encouragingRemarksLines = wrapTextForCanvas(ctx, localFeedback.encouragingRemarks || '', feedbackStartX, currentY, 500, 30);
+      currentY += encouragingRemarksLines * 30 + 30;
+      
+      // 绘制错误总结
+      ctx.fillStyle = '#b45309';
+      ctx.font = 'bold 22px Arial';
+      ctx.fillText(textContent.errorSummary, feedbackStartX, currentY);
+      currentY += 40;
+      
+      ctx.fillStyle = 'black';
+      ctx.font = '20px Arial';
+      const errorSummaryLines = wrapTextForCanvas(ctx, localFeedback.errorSummary || '', feedbackStartX, currentY, 500, 30);
+      currentY += errorSummaryLines * 30 + 30;
+      
+      // 绘制改进建议
+      ctx.fillStyle = '#1d4ed8';
+      ctx.font = 'bold 22px Arial';
+      ctx.fillText(textContent.suggestions, feedbackStartX, currentY);
+      currentY += 40;
+      
+      ctx.fillStyle = 'black';
+      ctx.font = '20px Arial';
+      wrapTextForCanvas(ctx, localFeedback.suggestions || '', feedbackStartX, currentY, 500, 30);
+      
+      // 将canvas转换为图片数据URL
+      const imageData = canvas.toDataURL('image/png');
+      setPostcardImage(imageData);
+      setShowPreviewModal(true);
+    } catch (err) {
+      console.error('Error generating postcard image:', err);
+      // 如果生成失败，显示错误消息
+      setSendStatus(selectedLanguage === 'zh' ? '生成明信片预览失败' : 'Failed to generate postcard preview');
+      setTimeout(() => setSendStatus(''), 3000);
+    }
   };
 
-  const handleSendPostcard = () => {
-    setShowSendModal(true);
+  // 辅助函数：计算文本行数
+  const countTextLines = (ctx, text, maxWidth) => {
+    const words = text.split(' ');
+    let line = '';
+    let lines = 1;
+    
+    for (let n = 0; n < words.length; n++) {
+      const testLine = line + words[n] + ' ';
+      const metrics = ctx.measureText(testLine);
+      const testWidth = metrics.width;
+      
+      if (testWidth > maxWidth && n > 0) {
+        lines++;
+        line = words[n] + ' ';
+      } else {
+        line = testLine;
+      }
+    }
+    
+    return lines;
+  };
+
+  // 辅助函数：绘制自动换行文本并返回行数
+  const wrapTextForCanvas = (ctx, text, x, y, maxWidth, lineHeight) => {
+    const words = text.split(' ');
+    let line = '';
+    let currentY = y;
+    let lines = 0;
+    
+    for (let n = 0; n < words.length; n++) {
+      const testLine = line + words[n] + ' ';
+      const metrics = ctx.measureText(testLine);
+      const testWidth = metrics.width;
+      
+      if (testWidth > maxWidth && n > 0) {
+        ctx.fillText(line, x, currentY);
+        line = words[n] + ' ';
+        currentY += lineHeight;
+        lines++;
+      } else {
+        line = testLine;
+      }
+    }
+    
+    ctx.fillText(line, x, currentY);
+    return lines + 1;
+  };
+
+  // 辅助函数：绘制自动换行文本
+  const wrapText = (ctx, text, x, y, maxWidth, lineHeight) => {
+    const words = text.split(' ');
+    let line = '';
+    let currentY = y;
+    
+    for (let n = 0; n < words.length; n++) {
+      const testLine = line + words[n] + ' ';
+      const metrics = ctx.measureText(testLine);
+      const testWidth = metrics.width;
+      
+      if (testWidth > maxWidth && n > 0) {
+        ctx.fillText(line, x, currentY);
+        line = words[n] + ' ';
+        currentY += lineHeight;
+      } else {
+        line = testLine;
+      }
+    }
+    
+    ctx.fillText(line, x, currentY);
   };
 
   const confirmSendPostcard = async () => {
@@ -205,6 +399,7 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
         setSendStatus('success');
         setTimeout(() => {
           setShowSendModal(false);
+          setShowPreviewModal(false);
           setSendStatus('');
         }, 2000);
       } else {
@@ -225,15 +420,15 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
     }
   };
 
-  // Define text content for different languages
+  // 定义文本内容
   const getTextContent = () => {
     if (selectedLanguage === 'zh') {
       return {
         back: '返回',
         save: isSaved ? '已保存' : '保存明信片',
-        print: '打印',
         send: '发送明信片',
         sendConfirm: '您想发送这张明信片与另一位学习者交换吗？',
+        sendPreviewConfirm: '这是您要发送的明信片，确认发送吗？',
         sendYes: '是',
         sendNo: '否',
         sending: '发送中...',
@@ -246,15 +441,14 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
         generatingFeedback: '正在生成反馈...',
         errorGeneratingFeedback: '生成反馈时出错',
         postalCode: '邮编',
-        postmark: '邮戳'
       };
     } else {
       return {
         back: 'Back',
         save: isSaved ? 'Saved' : 'Save Postcard',
-        print: 'Print',
         send: 'Send Postcard',
         sendConfirm: 'Do you want to send this postcard and exchange with another learner?',
+        sendPreviewConfirm: 'This is the postcard you want to send. Confirm sending?',
         sendYes: 'Yes',
         sendNo: 'No',
         sending: 'Sending...',
@@ -267,7 +461,6 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
         generatingFeedback: 'Generating feedback...',
         errorGeneratingFeedback: 'Error generating feedback',
         postalCode: 'Postal Code',
-        postmark: 'Postmark'
       };
     }
   };
@@ -363,34 +556,10 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 print:bg-white print:p-0" ref={printRef}>
-      {/* Print-specific styles */}
-      <style>{`
-        @media print {
-          body {
-            background-color: white !important;
-            padding: 0 !important;
-            margin: 0 !important;
-          }
-          
-          .no-print {
-            display: none !important;
-          }
-          
-          .print-postcard {
-            box-shadow: none !important;
-            border-radius: 0 !important;
-          }
-          
-          .postcard-content {
-            break-inside: avoid;
-          }
-        }
-      `}</style>
-      
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-gray-50 p-4" ref={postcardRef}>
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="flex justify-between items-center mb-6 print:hidden">
+        <div className="flex justify-between items-center mb-6">
           <button
             onClick={onBack}
             className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-6 rounded-lg flex items-center"
@@ -415,37 +584,31 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
             >
               📬 {textContent.send}
             </button>
-            <button
-              onClick={handlePrint}
-              className="bg-purple-500 hover:bg-purple-600 text-white font-medium py-2 px-6 rounded-lg flex items-center"
-            >
-              🖨️ {textContent.print}
-            </button>
           </div>
         </div>
 
         {/* Save message */}
         {saveMessage && (
-          <div className="fixed top-4 right-4 bg-green-500 text-white py-2 px-4 rounded-lg shadow-lg z-50 print:hidden">
+          <div className="fixed top-4 right-4 bg-green-500 text-white py-2 px-4 rounded-lg shadow-lg z-50">
             {saveMessage}
           </div>
         )}
 
         {/* Send status messages */}
         {sendStatus === 'success' && (
-          <div className="fixed top-4 right-4 bg-green-500 text-white py-2 px-4 rounded-lg shadow-lg z-50 print:hidden">
+          <div className="fixed top-4 right-4 bg-green-500 text-white py-2 px-4 rounded-lg shadow-lg z-50">
             {textContent.sendSuccess}
           </div>
         )}
         {sendStatus === 'error' && (
-          <div className="fixed top-4 right-4 bg-red-500 text-white py-2 px-4 rounded-lg shadow-lg z-50 print:hidden">
+          <div className="fixed top-4 right-4 bg-red-500 text-white py-2 px-4 rounded-lg shadow-lg z-50">
             {textContent.sendError}
           </div>
         )}
 
-        {/* Send Confirmation Modal */}
+        {/* 发送确认模态框 */}
         {showSendModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 print:hidden">
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
               <h3 className="text-xl font-semibold text-gray-800 mb-4">{textContent.send}</h3>
               <p className="text-gray-600 mb-6">{textContent.sendConfirm}</p>
@@ -479,26 +642,79 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
           </div>
         )}
 
+        {/* 预览模态框 */}
+        {showPreviewModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full p-6">
+              <h3 className="text-xl font-semibold text-gray-800 mb-4">{textContent.send}</h3>
+              <p className="text-gray-600 mb-4">{textContent.sendPreviewConfirm}</p>
+              
+              <div className="flex justify-center mb-6">
+                {postcardImage ? (
+                  <img 
+                    src={postcardImage} 
+                    alt="Postcard preview" 
+                    className="max-w-full h-auto border border-gray-300 rounded-lg"
+                  />
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-12">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500 mb-4"></div>
+                    <p className="text-gray-600">生成预览中...</p>
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => setShowPreviewModal(false)}
+                  disabled={isSending}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+                >
+                  {textContent.sendNo}
+                </button>
+                <button
+                  onClick={confirmSendPostcard}
+                  disabled={isSending || !postcardImage}
+                  className="px-4 py-2 bg-indigo-500 rounded-lg text-white hover:bg-indigo-600 disabled:opacity-50 flex items-center"
+                >
+                  {isSending ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      {textContent.sending}
+                    </>
+                  ) : (
+                    textContent.sendYes
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Postcard */}
-        <div className="bg-[#F5F5F5] rounded-xl shadow-[0_4px_8px_rgba(0,0,0,0.1)] overflow-hidden print:shadow-none print:rounded-none print-postcard">
-          {/* Postcard header with postal code and postmark */}
-          <div className="relative p-6">
+        <div className="bg-[#F5F5F5] rounded-xl shadow-[0_4px_8px_rgba(0,0,0,0.1)] overflow-hidden">
+          {/* Postcard header with postal code and stamp */}
+          <div className="relative p-8">
             {/* Postal code in top-left corner */}
-            <div className="absolute top-4 left-4 bg-white px-3 py-1 rounded border border-gray-300 print:border-black">
+            <div className="absolute top-6 left-6 bg-white px-4 py-2 rounded border border-gray-300">
               <div className="text-xs font-bold text-gray-700">{textContent.postalCode}</div>
-              <div className="text-sm font-mono">{postalCode}</div>
+              <div className="text-base font-mono">{postalCode}</div>
             </div>
             
-            {/* Postmark in top-right corner */}
-            <div className="absolute top-4 right-4 w-20 h-12 border-2 border-red-500 rotate-12 print:border-black">
-              <div className="bg-red-500 text-white text-[8px] font-bold p-1 print:bg-white print:text-black">
-                {textContent.postmark}
-              </div>
-              <div className="text-[8px] font-mono p-1 truncate">{postmark}</div>
+            {/* Stamp in top-right corner */}
+            <div className="absolute top-6 right-6 w-32 h-36">
+              <img 
+                src="/img_post/img_post_01.png" 
+                alt="Stamp" 
+                className="w-full h-full object-contain"
+              />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 p-8">
             {/* Left Column - Image Section */}
             <div className="flex items-center justify-center">
               <img
@@ -519,33 +735,33 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
             </div>
 
             {/* Right Column - Feedback */}
-            <div className="space-y-6">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-300">
+            <div className="space-y-8">
+              <h2 className="text-2xl font-semibold text-gray-800 mb-6 pb-2 border-b border-gray-300">
                 {textContent.feedback}
               </h2>
 
               {/* Encouraging Remarks */}
-              <div className="bg-green-50 p-5 rounded-lg border border-green-200">
-                <h3 className="text-lg font-semibold text-green-800 mb-3 flex items-center">
+              <div className="bg-green-50 p-6 rounded-lg border border-green-200">
+                <h3 className="text-xl font-semibold text-green-800 mb-4 flex items-center">
                   💬 {textContent.encouragingRemarks}
                 </h3>
-                <p className="text-green-700 whitespace-pre-line">{localFeedback.encouragingRemarks}</p>
+                <p className="text-green-700 whitespace-pre-line text-lg">{localFeedback.encouragingRemarks}</p>
               </div>
 
               {/* Error Summary */}
-              <div className="bg-amber-50 p-5 rounded-lg border border-amber-200">
-                <h3 className="text-lg font-semibold text-amber-800 mb-3 flex items-center">
+              <div className="bg-amber-50 p-6 rounded-lg border border-amber-200">
+                <h3 className="text-xl font-semibold text-amber-800 mb-4 flex items-center">
                   ❗ {textContent.errorSummary}
                 </h3>
-                <pre className="text-amber-700 whitespace-pre-line font-sans">{localFeedback.errorSummary}</pre>
+                <pre className="text-amber-700 whitespace-pre-line font-sans text-lg">{localFeedback.errorSummary}</pre>
               </div>
 
               {/* Suggestions */}
-              <div className="bg-blue-50 p-5 rounded-lg border border-blue-200">
-                <h3 className="text-lg font-semibold text-blue-800 mb-3 flex items-center">
+              <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
+                <h3 className="text-xl font-semibold text-blue-800 mb-4 flex items-center">
                   💡 {textContent.suggestions}
                 </h3>
-                <pre className="text-blue-700 whitespace-pre-line font-sans">{localFeedback.suggestions}</pre>
+                <pre className="text-blue-700 whitespace-pre-line font-sans text-lg">{localFeedback.suggestions}</pre>
               </div>
             </div>
           </div>

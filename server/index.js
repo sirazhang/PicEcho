@@ -45,6 +45,7 @@ class Postcard {
 module.exports = Postcard;
 const mysql = require('mysql2');
 require('dotenv').config();
+const { v4: uuidv4 } = require('uuid');
 
 const pool = mysql.createPool({
   host: process.env.DB_HOST || 'localhost',
@@ -57,6 +58,7 @@ const pool = mysql.createPool({
 });
 
 module.exports = pool.promise();
+
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
@@ -80,7 +82,7 @@ app.use(express.static('../build'));
 // Routes
 // POST /api/postcards/send - Send a postcard
 app.post('/api/postcards/send', (req, res) => {
-  console.log('POST /postcards/send endpoint hit');
+  console.log('POST /api/postcards/send endpoint hit');
   console.log('Request body:', req.body);
   
   const { senderId, imageUrl, feedbackText, postalCode } = req.body;
@@ -109,18 +111,18 @@ app.post('/api/postcards/send', (req, res) => {
 
 // GET /api/postcards/receive - Receive a random postcard
 app.get('/api/postcards/receive', (req, res) => {
-  console.log('GET /postcards/receive endpoint hit');
+  console.log('GET /api/postcards/receive endpoint hit');
   console.log('Query parameters:', req.query);
   
-  const currentUserId = req.query.userId;
+  const { senderToken } = req.query;
 
-  if (!currentUserId) {
-    return res.status(400).json({ error: 'Missing required query parameter: userId' });
+  if (!senderToken) {
+    return res.status(400).json({ error: 'Missing required query parameter: senderToken' });
   }
 
   const { Postcard } = require('./models/Postcard');
   
-  Postcard.getRandomPending(currentUserId, (err, postcard) => {
+  Postcard.getRandomPending(senderToken, (err, postcard) => {
     if (err) {
       console.error('Error fetching postcard:', err);
       return res.status(500).json({ error: 'Failed to receive postcard' });
@@ -128,19 +130,21 @@ app.get('/api/postcards/receive', (req, res) => {
     
     // If no postcard found, return appropriate message
     if (!postcard) {
-      console.log('No postcards available for user:', currentUserId);
+      console.log('No postcards available for user with token:', senderToken);
       return res.status(404).json({ message: 'No postcards available at the moment' });
     }
     
     console.log('Postcard fetched successfully:', postcard);
     
-    // Mark the postcard as sent
-    Postcard.markAsSent(postcard.id, (err) => {
-      if (err) {
-        console.error('Error marking postcard as sent:', err);
-        // We don't return an error here because the postcard was already fetched successfully
-      }
-    });
+    // If the postcard is not already assigned, mark it as sent and assign to the requester
+    if (!postcard.receiver_token) {
+      Postcard.markAsSent(postcard.postcard_id, senderToken, (err) => {
+        if (err) {
+          console.error('Error marking postcard as sent:', err);
+          // We don't return an error here because the postcard was already fetched successfully
+        }
+      });
+    }
     
     // Return the postcard
     res.status(200).json(postcard);
