@@ -1,64 +1,3 @@
-const db = require('./config/db'); // 使用服务器根目录下的db.js配置文件
-
-class Postcard {
-  static create(senderId, imageUrl, feedbackText, postalCode, callback) {
-    const query = 'INSERT INTO postcards (sender_id, image_url, feedback_text, postal_code, sent) VALUES (?, ?, ?, ?, ?)';
-    db.query(
-      query,
-      [senderId, imageUrl, feedbackText, postalCode, false],
-      (error, results) => {
-        if (error) {
-          return callback(error);
-        }
-        
-        const insertId = results.insertId;
-        this.findById(insertId, callback);
-      }
-    );
-  }
-
-  static findById(id, callback) {
-    const query = 'SELECT * FROM postcards WHERE id = ?';
-    db.query(query, [id], (error, results) => {
-      if (error) return callback(error);
-      callback(null, results[0]);
-    });
-  }
-
-  static getRandomPending(currentUserId, callback) {
-    const query = 'SELECT * FROM postcards WHERE sent = false AND sender_id != ? ORDER BY RAND() LIMIT 1';
-    db.query(query, [currentUserId], (error, results) => {
-      if (error) return callback(error);
-      callback(null, results[0]);
-    });
-  }
-
-  static markAsSent(id, callback) {
-    const query = 'UPDATE postcards SET sent = true WHERE id = ?';
-    db.query(query, [id], (error, results) => {
-      if (error) return callback(error);
-      callback(null);
-    });
-  }
-}
-
-module.exports = Postcard;
-const mysql = require('mysql2');
-require('dotenv').config();
-const { v4: uuidv4 } = require('uuid');
-
-const pool = mysql.createPool({
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'chatpic',
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0
-});
-
-module.exports = pool.promise();
-
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
@@ -69,6 +8,7 @@ dotenv.config();
 // Create Express app
 const app = express();
 const PORT = process.env.PORT || 3001;
+const HOST = process.env.HOST || 'localhost';
 
 // Middleware
 app.use(cors());
@@ -78,6 +18,14 @@ app.use(express.urlencoded({ extended: true }));
 // Serve static files from the React app build directory
 // This assumes the React app is built into a 'build' directory
 app.use(express.static('../build'));
+
+// Import Postcard model correctly
+const { Postcard } = require('./models/Postcard');
+
+// Add a root route for testing
+app.get('/', (req, res) => {
+  res.json({ message: 'Chatpic server is running!' });
+});
 
 // Routes
 // POST /api/postcards/send - Send a postcard
@@ -91,8 +39,6 @@ app.post('/api/postcards/send', (req, res) => {
   if (!senderId || !imageUrl || !feedbackText) {
     return res.status(400).json({ error: 'Missing required fields: senderId, imageUrl, and feedbackText are required' });
   }
-
-  const { Postcard } = require('./models/Postcard');
   
   Postcard.create(senderId, imageUrl, feedbackText, postalCode, (err, postcard) => {
     if (err) {
@@ -119,8 +65,6 @@ app.get('/api/postcards/receive', (req, res) => {
   if (!senderToken) {
     return res.status(400).json({ error: 'Missing required query parameter: senderToken' });
   }
-
-  const { Postcard } = require('./models/Postcard');
   
   Postcard.getRandomPending(senderToken, (err, postcard) => {
     if (err) {
@@ -163,8 +107,8 @@ process.on('SIGTERM', () => {
 });
 
 // Start the server
-const server = app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+const server = app.listen(PORT, HOST, () => {
+  console.log(`Server is running on http://${HOST}:${PORT}`);
 });
 
 module.exports = server;

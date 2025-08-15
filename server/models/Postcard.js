@@ -1,5 +1,18 @@
-const { db, isDatabaseAvailable } = require('../config/db');
+const { db, isDatabaseAvailable, testConnection } = require('../config/db');
 const { v4: uuidv4 } = require('uuid');
+const fs = require('fs').promises;
+const path = require('path');
+const axios = require('axios');
+
+// 确保目录存在
+async function ensureDirectoryExists(directory) {
+  try {
+    await fs.access(directory);
+  } catch (error) {
+    // 如果目录不存在，则创建它
+    await fs.mkdir(directory, { recursive: true });
+  }
+}
 
 class Postcard {
   // Create a new postcard
@@ -9,25 +22,15 @@ class Postcard {
     // Generate a UUID for the sender
     const senderToken = uuidv4();
     
-    // Extract image ID from URL (assuming format: /img_Level{level}/{imageId}.png)
-    let imageId = null;
-    const urlParts = imageUrl.split('/');
-    if (urlParts.length > 0) {
-      const fileName = urlParts[urlParts.length - 1];
-      imageId = fileName.replace('.png', '');
-    }
-    
     // If database is not available, return mock data
     if (!isDatabaseAvailable) {
       console.warn('Database connection not available. Postcard will not be saved.');
       // Return a mock success for development without database
       return callback(null, { 
         postcard_id: Math.floor(Math.random() * 10000),
-        image_id: imageId,
         postcard_url: imageUrl,
         created_at: new Date(),
         status: 'pending',
-        upload_status: 'success',
         sender_token: senderToken,
         receiver_token: null,
         feedback_text: feedbackText,
@@ -36,75 +39,93 @@ class Postcard {
     }
     
     try {
-      const sql = `
+      // Step 1: Save image to local directory
+      const saveDirectory = '/Users/sirazhang/data/chatpic/postcard';
+      await ensureDirectoryExists(saveDirectory);
+      
+      // Generate a unique filename
+      const postcardId = Date.now(); // 临时ID用于文件名
+      const fileName = `postcard_${postcardId}_${Date.now()}.png`;
+      const filePath = path.join(saveDirectory, fileName);
+      
+      // Download image from imageUrl and save it to the filePath
+      const response = await axios({
+        method: 'GET',
+        url: imageUrl,
+        responseType: 'stream'
+      });
+      
+      const writer = fs.createWriteStream(filePath);
+      response.data.pipe(writer);
+      
+      // 等待文件写入完成
+      await new Promise((resolve, reject) => {
+        writer.on('finish', resolve);
+        writer.on('error', reject);
+      });
+      
+      console.log('Image saved to:', filePath);
+      
+      // Step 2: Insert a record with the file path
+      const insertSql = `
         INSERT INTO postcards 
-        (image_id, postcard_url, status, upload_status, sender_token, receiver_token, feedback_text, postal_code) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        (postcard_url, status, sender_token, receiver_token, feedback_text, postal_code) 
+        VALUES (?, ?, ?, ?, ?, ?)
       `;
       
-      const values = [
-        imageId,
-        imageUrl,
-        'pending',
-        'success',
+      const insertValues = [
+        filePath,
+        'sent',
         senderToken,
         null,
         feedbackText,
         postalCode
       ];
       
-      const [result] = await db.execute(sql, values);
+      const [result] = await db.execute(insertSql, insertValues);
+      const insertedPostcardId = result.insertId;
       
       const postcard = {
-        postcard_id: result.insertId,
-        image_id: imageId,
-        postcard_url: imageUrl,
+        postcard_id: insertedPostcardId,
+        postcard_url: filePath,
         created_at: new Date(),
-        status: 'pending',
-        upload_status: 'success',
+        status: 'sent',
         sender_token: senderToken,
         receiver_token: null,
         feedback_text: feedbackText,
         postal_code: postalCode
       };
       
-      console.log('Postcard created with ID:', result.insertId);
+      console.log('Postcard saved successfully with ID:', insertedPostcardId);
       callback(null, postcard);
     } catch (error) {
-      console.error('Database query error in Postcard.create:', error);
+      console.error('Error in Postcard.create:', error);
       callback(error, null);
     }
   }
   
-  // Get a random postcard that is pending (excluding those sent by the current user)
+  // Get a random pending postcard (for receiving)
   static async getRandomPending(currentSenderToken, callback) {
-    console.log('Postcard.getRandomPending called with currentSenderToken:', currentSenderToken);
+    console.log('Postcard.getRandomPending called with sender token:', currentSenderToken);
     
     // If database is not available, return mock data
     if (!isDatabaseAvailable) {
       console.warn('Database connection not available. Returning mock postcard.');
       // Return a mock postcard for development without database
-      // 50% chance of returning a postcard, 50% chance of returning null (no postcards)
-      if (Math.random() > 0.5) {
-        return callback(null, {
-          postcard_id: Math.floor(Math.random() * 10000),
-          image_id: 'img_01',
-          postcard_url: '/img/img_01.png',
-          created_at: new Date(),
-          status: 'pending',
-          upload_status: 'success',
-          sender_token: uuidv4(),
-          receiver_token: null,
-          feedback_text: JSON.stringify({
-            encouragingRemarks: "Great job! You're doing well with your English practice.",
-            errorSummary: "Minor grammar issues with article usage.",
-            suggestions: "Try to practice using articles (a, an, the) in your sentences."
-          }),
-          postal_code: 'A1B 2C3'
-        });
-      } else {
-        return callback(null, null);
-      }
+      return callback(null, {
+        postcard_id: Math.floor(Math.random() * 10000),
+        postcard_url: 'https://example.com/mock-postcard.jpg',
+        created_at: new Date().toISOString(),
+        status: 'sent',
+        sender_token: 'mock-sender-token',
+        receiver_token: currentSenderToken,
+        feedback_text: JSON.stringify({
+          encouragingRemarks: "Great job! You're doing well with your English practice.",
+          errorSummary: "Minor grammar issues with article usage.",
+          suggestions: "Try to practice using articles (a, an, the) in your sentences."
+        }),
+        postal_code: 'A1B 2C3'
+      });
     }
     
     try {
@@ -153,7 +174,7 @@ class Postcard {
     console.log('Postcard.markAsSent called with postcardId:', postcardId, 'and receiverToken:', receiverToken);
     
     // If database is not available, return mock success
-    if (!isDatabaseAvailable) {
+    if (!isDatabaseAvailable()) {
       console.warn('Database connection not available. Skipping postcard status update.');
       // Return a mock success for development without database
       return callback(null, { affectedRows: 1 });
@@ -178,6 +199,9 @@ class Postcard {
   
   // Assign a postcard to a receiver after 2 minutes
   static async assignPostcardAfterDelay() {
+    // Re-check database availability
+    await testConnection();
+    
     if (!isDatabaseAvailable) {
       console.warn('Database connection not available. Skipping postcard assignment.');
       return;
