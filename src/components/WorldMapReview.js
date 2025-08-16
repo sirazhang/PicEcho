@@ -114,12 +114,12 @@ const WorldMapReview = ({ onBack, onViewPostcard }) => {
       {/* Header with title and home button */}
       <div className="flex justify-between items-center p-6">
         <div></div> {/* Empty div for spacing */}
-        <h1 className="text-5xl font-gloria-hallelujah absolute left-1/2 transform -translate-x-1/2">
+        <h1 className="text-2xl font-gloria-hallelujah absolute left-1/2 transform -translate-x-1/2">
           Learning Journey Map
         </h1>
         <button
           onClick={onBack}
-          className="px-6 py-3 text-3xl font-inter font-bold focus:outline-none rounded-lg"
+          className="px-6 py-3 text-base font-inter font-bold focus:outline-none rounded-lg"
           style={{ 
             backgroundColor: '#003153',
             color: 'white',
@@ -133,14 +133,14 @@ const WorldMapReview = ({ onBack, onViewPostcard }) => {
 
       {/* Progress text */}
       <div className="text-center px-6 mb-8">
-        <p className="text-2xl font-inter">
+        <p className="text-base font-inter">
           Click on the markers to review your learning progress.{' '}
-          You've completed <span className="font-bold text-3xl">{savedPostcards.length}</span> activities so far.
+          You've completed <span className="font-bold text-base">{savedPostcards.length}</span> activities so far.
         </p>
       </div>
 
       {/* Main content area - Map and controls */}
-      <div className="flex flex-col" style={{ height: '90vh' }}>
+      <div className="flex flex-col" style={{ height: '85vh' }}>
         {/* Map Container - takes most of the space and fits the map image */}
         <div className="flex-grow relative mb-6 flex justify-center items-center">
           <div className="relative bg-blue-50 border-4 border-black flex justify-center items-center w-full h-full">
@@ -172,9 +172,9 @@ const WorldMapReview = ({ onBack, onViewPostcard }) => {
           <div className="bg-white rounded-lg p-6 shadow-xl">
             <div className="flex items-center mb-3">
               <div className="w-8 h-8 bg-red-500 rounded-full mr-3"></div>
-              <span className="text-2xl font-inter font-bold">Completed Activities</span>
+              <span className="text-sm font-inter font-bold">Completed Activities</span>
             </div>
-            <div className="text-xl text-gray-600 font-inter">
+            <div className="text-sm text-gray-600 font-inter">
               Click on markers to review
             </div>
           </div>
@@ -197,7 +197,7 @@ const WorldMapReview = ({ onBack, onViewPostcard }) => {
                 <img 
                   src="/design/box.png" 
                   alt="Mailbox" 
-                  className="h-24 w-24 object-contain"
+                  className="h-24 w-24 object-contain" // Changed from h-24 w-24 to maintain 8vh size
                 />
               )}
             </button>

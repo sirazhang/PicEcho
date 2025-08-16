@@ -323,7 +323,7 @@ const DialogueMode = ({ imageId, language, level, onFinish, onCancel }) => {
         <div className="flex justify-between items-center p-6">
           <button 
             onClick={onCancel}
-            className="px-4 py-2 text-20 font-inter font-bold focus:outline-none rounded-lg flex items-center"
+            className="px-4 py-2 text-base font-inter font-bold focus:outline-none rounded-lg flex items-center"
             style={{ 
               backgroundColor: '#003153',
               color: 'white',
@@ -335,7 +335,7 @@ const DialogueMode = ({ imageId, language, level, onFinish, onCancel }) => {
           </button>
           <button
             onClick={handleFinish}
-            className="px-4 py-2 text-20 font-inter font-bold focus:outline-none rounded-lg"
+            className="px-4 py-2 text-base font-inter font-bold focus:outline-none rounded-lg"
             style={{ 
               backgroundColor: '#66ab4b',
               color: 'white',
@@ -383,8 +383,8 @@ const DialogueMode = ({ imageId, language, level, onFinish, onCancel }) => {
                       key={message.id} 
                       className={`rounded-lg max-w-[90%] font-sans tracking-wide leading-relaxed ${
                         message.sender === 'user' 
-                          ? 'ml-auto text-5xl' 
-                          : 'mr-auto text-5xl'
+                          ? 'ml-auto text-base' 
+                          : 'mr-auto text-base'
                       }`}
                     >
                       <div className="flex items-start">
@@ -392,7 +392,7 @@ const DialogueMode = ({ imageId, language, level, onFinish, onCancel }) => {
                           <img 
                             src="/design/robot.png" 
                             alt="AI Tutor" 
-                            className="w-80 h-80 mr-4 object-contain align-start" // 35vh equivalent
+                            className="w-24 h-24 mr-4 object-contain align-start" // Reduced from 80 to 24 (8vh)
                           />
                         )}
                         <div className="flex flex-col">
@@ -410,12 +410,12 @@ const DialogueMode = ({ imageId, language, level, onFinish, onCancel }) => {
                   ))}
                   
                   {isLoading && (
-                    <div className="rounded-lg mr-auto max-w-[90%] text-5xl font-sans tracking-wide leading-relaxed">
+                    <div className="rounded-lg mr-auto max-w-[90%] text-base font-sans tracking-wide leading-relaxed">
                       <div className="flex items-start">
                         <img 
                           src="/design/robot.png" 
                           alt="AI Tutor" 
-                          className="w-80 h-80 mr-4 object-contain align-start" // 35vh equivalent
+                          className="w-24 h-24 mr-4 object-contain align-start" // Reduced from 80 to 24 (8vh)
                         />
                         <div className="flex flex-col">
                           <div className="bg-[#A6e2b1] p-6 rounded-lg">
@@ -453,7 +453,7 @@ const DialogueMode = ({ imageId, language, level, onFinish, onCancel }) => {
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyPress={handleKeyPress}
                     placeholder={textContent.placeholder}
-                    className="flex-grow border border-gray-300 p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 text-5xl font-sans"
+                    className="flex-grow border border-gray-300 p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 text-base font-sans"
                     rows="3"
                     disabled={isLoading}
                   />
@@ -466,7 +466,7 @@ const DialogueMode = ({ imageId, language, level, onFinish, onCancel }) => {
                       <img 
                         src="/design/send.png" 
                         alt="Send" 
-                        className="w-32 h-32 object-contain" // 12vh equivalent
+                        className="w-24 h-24 object-contain" // Reduced from 32 to 24 (8vh)
                       />
                     </button>
                     <button
@@ -483,13 +483,13 @@ const DialogueMode = ({ imageId, language, level, onFinish, onCancel }) => {
                         <img 
                           src="/design/voice.png" 
                           alt="Voice Input" 
-                          className="w-32 h-32 object-contain" // 12vh equivalent
+                          className="w-24 h-24 object-contain" // Reduced from 32 to 24 (8vh)
                         />
                       )}
                     </button>
                   </div>
                 </div>
-                <div className="mt-2 text-2xl text-gray-500">
+                <div className="mt-2 text-xs text-gray-500">
                   {textContent.pressEnter}
                 </div>
                 {isListening && (

@@ -236,7 +236,7 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview }) => {
       <div className="absolute top-6 right-6">
         <button
           onClick={onOpenMapReview}
-          className="px-4 py-2 text-5xl font-inter font-bold focus:outline-none rounded-lg"
+          className="px-4 py-2 text-base font-inter font-bold focus:outline-none rounded-lg"
           style={{ 
             backgroundColor: '#4bc1eb',
             color: 'white',
@@ -252,7 +252,7 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview }) => {
       <div className="flex flex-col items-center justify-start flex-grow pt-20">
         {/* Logo with Earth replacing 'o' */}
         <div className="relative mb-6 flex items-center justify-center">
-          <h1 className="text-520 font-gloria-hallelujah text-center inline-block">
+          <h1 className="text-4xl font-gloria-hallelujah text-center inline-block">
             PicEch
           </h1>
           <div className="inline-block relative" style={{ width: '480px', height: '480px', marginLeft: '-80px', marginRight: '-80px' }}>
@@ -265,7 +265,7 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview }) => {
         </div>
         
         {/* Subtitle - Moved up further */}
-        <p className="text-40 font-roboto text-center mb-12 whitespace-pre-line -mt-40">
+        <p className="text-base font-roboto text-center mb-12 whitespace-pre-line -mt-40">
           {textContent.subtitle1}<br/>
           {textContent.subtitle2}
         </p>
@@ -274,7 +274,7 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview }) => {
         <div className="flex gap-8 -mt-30">
           <button
             onClick={() => handleLevelChange(1)}
-            className={`px-6 py-4 text-60 font-inter font-bold focus:outline-none transform hover:scale-105 transition-transform rounded-lg ${
+            className={`px-6 py-4 text-xl font-inter font-bold focus:outline-none transform hover:scale-105 transition-transform rounded-lg ${
               selectedLevel === 1 ? 'ring-4 ring-blue-300' : ''
             }`}
             style={{ 
@@ -288,7 +288,7 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview }) => {
           </button>
           <button
             onClick={() => handleLevelChange(2)}
-            className={`px-6 py-4 text-60 font-inter font-bold focus:outline-none transform hover:scale-105 transition-transform rounded-lg ${
+            className={`px-6 py-4 text-xl font-inter font-bold focus:outline-none transform hover:scale-105 transition-transform rounded-lg ${
               selectedLevel === 2 ? 'ring-4 ring-blue-300' : ''
             }`}
             style={{ 
@@ -302,7 +302,7 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview }) => {
           </button>
           <button
             onClick={() => handleLevelChange(3)}
-            className={`px-6 py-4 text-60 font-inter font-bold focus:outline-none transform hover:scale-105 transition-transform rounded-lg ${
+            className={`px-6 py-4 text-xl font-inter font-bold focus:outline-none transform hover:scale-105 transition-transform rounded-lg ${
               selectedLevel === 3 ? 'ring-4 ring-blue-300' : ''
             }`}
             style={{ 
