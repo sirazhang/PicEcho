@@ -189,9 +189,10 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview }) => {
       <div className="absolute top-6 left-6 z-10">
         <button
           onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
-          className="px-4 py-2 text-5xl font-inter font-bold focus:outline-none rounded-full"
+          className="px-4 py-2 text-5xl font-inter font-bold focus:outline-none rounded-lg"
           style={{ 
-            backgroundColor: '#ffffff',
+            backgroundColor: '#003153',
+            color: 'white',
             minWidth: '200px',
             minHeight: '80px'
           }}
@@ -204,17 +205,27 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview }) => {
             <div className="py-1">
               <button
                 onClick={() => handleLanguageChange('en')}
-                className="flex items-center w-full px-4 py-2 text-5xl font-inter font-bold text-left hover:bg-gray-100"
+                className="flex items-center w-full px-4 py-2 text-5xl font-inter font-bold text-left hover:bg-gray-100 rounded-lg"
+                style={{ 
+                  backgroundColor: '#4bc1eb',
+                  color: 'white',
+                  minHeight: '80px'
+                }}
               >
                 <span className="mr-2">🇺🇸</span>
-                English
+                <span className="w-full text-center">English</span>
               </button>
               <button
                 onClick={() => handleLanguageChange('zh')}
-                className="flex items-center w-full px-4 py-2 text-5xl font-inter font-bold text-left hover:bg-gray-100"
+                className="flex items-center w-full px-4 py-2 text-5xl font-inter font-bold text-left hover:bg-gray-100 rounded-lg"
+                style={{ 
+                  backgroundColor: '#4bc1eb',
+                  color: 'white',
+                  minHeight: '80px'
+                }}
               >
                 <span className="mr-2">🇨🇳</span>
-                中文
+                <span className="w-full text-center">中文</span>
               </button>
             </div>
           </div>
@@ -225,9 +236,10 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview }) => {
       <div className="absolute top-6 right-6">
         <button
           onClick={onOpenMapReview}
-          className="px-4 py-2 text-5xl font-inter font-bold focus:outline-none rounded-full"
+          className="px-4 py-2 text-5xl font-inter font-bold focus:outline-none rounded-lg"
           style={{ 
-            backgroundColor: '#ffffff',
+            backgroundColor: '#4bc1eb',
+            color: 'white',
             minWidth: '200px',
             minHeight: '80px'
           }}
@@ -262,11 +274,12 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview }) => {
         <div className="flex gap-8 -mt-30">
           <button
             onClick={() => handleLevelChange(1)}
-            className={`px-6 py-4 text-60 font-inter font-bold focus:outline-none transform hover:scale-105 transition-transform rounded-full ${
+            className={`px-6 py-4 text-60 font-inter font-bold focus:outline-none transform hover:scale-105 transition-transform rounded-lg ${
               selectedLevel === 1 ? 'ring-4 ring-blue-300' : ''
             }`}
             style={{ 
-              backgroundColor: '#66ab4b',
+              backgroundColor: '#7ecc8f',
+              color: 'white',
               minWidth: '250px',
               minHeight: '120px'
             }}
@@ -275,11 +288,12 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview }) => {
           </button>
           <button
             onClick={() => handleLevelChange(2)}
-            className={`px-6 py-4 text-60 font-inter font-bold focus:outline-none transform hover:scale-105 transition-transform rounded-full ${
+            className={`px-6 py-4 text-60 font-inter font-bold focus:outline-none transform hover:scale-105 transition-transform rounded-lg ${
               selectedLevel === 2 ? 'ring-4 ring-blue-300' : ''
             }`}
             style={{ 
-              backgroundColor: '#66ab4b',
+              backgroundColor: '#558e23',
+              color: 'white',
               minWidth: '250px',
               minHeight: '120px'
             }}
@@ -288,11 +302,12 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview }) => {
           </button>
           <button
             onClick={() => handleLevelChange(3)}
-            className={`px-6 py-4 text-60 font-inter font-bold focus:outline-none transform hover:scale-105 transition-transform rounded-full ${
+            className={`px-6 py-4 text-60 font-inter font-bold focus:outline-none transform hover:scale-105 transition-transform rounded-lg ${
               selectedLevel === 3 ? 'ring-4 ring-blue-300' : ''
             }`}
             style={{ 
-              backgroundColor: '#66ab4b',
+              backgroundColor: '#337d2f',
+              color: 'white',
               minWidth: '250px',
               minHeight: '120px'
             }}

@@ -119,9 +119,10 @@ const WorldMapReview = ({ onBack, onViewPostcard }) => {
         </h1>
         <button
           onClick={onBack}
-          className="px-6 py-3 text-3xl font-inter font-bold focus:outline-none rounded-full"
+          className="px-6 py-3 text-3xl font-inter font-bold focus:outline-none rounded-lg"
           style={{ 
-            backgroundColor: '#ffffff',
+            backgroundColor: '#003153',
+            color: 'white',
             minWidth: '200px',
             minHeight: '80px'
           }}

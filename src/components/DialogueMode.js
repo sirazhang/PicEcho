@@ -323,9 +323,10 @@ const DialogueMode = ({ imageId, language, level, onFinish, onCancel }) => {
         <div className="flex justify-between items-center p-6">
           <button 
             onClick={onCancel}
-            className="px-4 py-2 text-20 font-inter font-bold focus:outline-none rounded-full flex items-center"
+            className="px-4 py-2 text-20 font-inter font-bold focus:outline-none rounded-lg flex items-center"
             style={{ 
-              backgroundColor: '#ffffff',
+              backgroundColor: '#003153',
+              color: 'white',
               minWidth: '150px',
               minHeight: '60px'
             }}
@@ -334,9 +335,10 @@ const DialogueMode = ({ imageId, language, level, onFinish, onCancel }) => {
           </button>
           <button
             onClick={handleFinish}
-            className="px-4 py-2 text-20 font-inter font-bold focus:outline-none rounded-full"
+            className="px-4 py-2 text-20 font-inter font-bold focus:outline-none rounded-lg"
             style={{ 
-              backgroundColor: '#ffffff',
+              backgroundColor: '#66ab4b',
+              color: 'white',
               minWidth: '200px',
               minHeight: '60px'
             }}
