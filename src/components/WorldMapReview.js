@@ -113,36 +113,36 @@ const WorldMapReview = ({ onBack, onViewPostcard }) => {
     <div className="min-h-screen bg-[#e5f5fb] p-0">
       {/* Header with title and home button */}
       <div className="flex justify-between items-center p-6">
-        <div></div> {/* Empty div for spacing */}
-        <h1 className="text-2xl font-gloria-hallelujah absolute left-1/2 transform -translate-x-1/2">
-          Learning Journey Map
-        </h1>
         <button
           onClick={onBack}
-          className="px-6 py-3 text-base font-inter font-bold focus:outline-none rounded-lg"
+          className="px-4 py-2 text-base font-inter font-bold focus:outline-none rounded-lg"
           style={{ 
             backgroundColor: '#003153',
             color: 'white',
-            minWidth: '200px',
-            minHeight: '80px'
+            minWidth: '120px',
+            minHeight: '40px'
           }}
         >
           Home
         </button>
+        <h1 className="text-2xl font-gloria-hallelujah absolute left-1/2 transform -translate-x-1/2">
+          Learning Journey Map
+        </h1>
+        <div></div> {/* Empty div for spacing */}
       </div>
 
       {/* Progress text */}
-      <div className="text-center px-6 mb-8">
-        <p className="text-base font-inter">
+      <div className="text-center px-6 mb-4 -mt-2">
+        <p className="text-base font-inter leading-tight">
           Click on the markers to review your learning progress.{' '}
-          You've completed <span className="font-bold text-base">{savedPostcards.length}</span> activities so far.
+          <span className="font-bold text-base">You've completed {savedPostcards.length} activities so far.</span>
         </p>
       </div>
 
       {/* Main content area - Map and controls */}
-      <div className="flex flex-col" style={{ height: '85vh' }}>
+      <div className="flex flex-col" style={{ height: '75vh' }}>
         {/* Map Container - takes most of the space and fits the map image */}
-        <div className="flex-grow relative mb-6 flex justify-center items-center">
+        <div className="flex-grow relative mb-4 flex justify-center items-center">
           <div className="relative bg-blue-50 border-4 border-black flex justify-center items-center w-full h-full">
             {/* World Map PNG Background */}
             <img 
@@ -167,14 +167,14 @@ const WorldMapReview = ({ onBack, onViewPostcard }) => {
         </div>
         
         {/* Bottom row with legend on left and mailbox on right */}
-        <div className="flex justify-between items-end pb-6 px-6">
+        <div className="flex justify-between items-end pb-4 px-6">
           {/* Left Legend Panel */}
-          <div className="bg-white rounded-lg p-6 shadow-xl">
-            <div className="flex items-center mb-3">
-              <div className="w-8 h-8 bg-red-500 rounded-full mr-3"></div>
+          <div className="bg-white rounded-lg p-4 shadow-xl">
+            <div className="flex items-center mb-2">
+              <div className="w-6 h-6 bg-red-500 rounded-full mr-2"></div>
               <span className="text-sm font-inter font-bold">Completed Activities</span>
             </div>
-            <div className="text-sm text-gray-600 font-inter">
+            <div className="text-xs text-gray-600 font-inter">
               Click on markers to review
             </div>
           </div>
@@ -184,11 +184,11 @@ const WorldMapReview = ({ onBack, onViewPostcard }) => {
             <button
               onClick={fetchRandomPostcard}
               disabled={isFetching}
-              className="bg-white rounded-full p-4 shadow-xl hover:shadow-2xl transition-all duration-200 disabled:opacity-50"
+              className="bg-white rounded-full p-3 shadow-xl hover:shadow-2xl transition-all duration-200 disabled:opacity-50"
             >
               {isFetching ? (
-                <div className="w-16 h-16 flex items-center justify-center">
-                  <svg className="animate-spin h-12 w-12 text-gray-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <div className="w-12 h-12 flex items-center justify-center">
+                  <svg className="animate-spin h-8 w-8 text-gray-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
@@ -197,7 +197,7 @@ const WorldMapReview = ({ onBack, onViewPostcard }) => {
                 <img 
                   src="/design/box.png" 
                   alt="Mailbox" 
-                  className="h-24 w-24 object-contain" // Changed from h-24 w-24 to maintain 8vh size
+                  className="h-16 w-16 object-contain" // Changed from h-24 w-24 to maintain 8vh size
                 />
               )}
             </button>

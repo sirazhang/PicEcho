@@ -189,12 +189,12 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview }) => {
       <div className="absolute top-6 left-6 z-10">
         <button
           onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
-          className="px-4 py-2 text-5xl font-inter font-bold focus:outline-none rounded-lg"
+          className="px-4 py-2 text-base font-inter font-bold focus:outline-none rounded-lg"
           style={{ 
             backgroundColor: '#003153',
             color: 'white',
-            minWidth: '200px',
-            minHeight: '80px'
+            minWidth: '120px',
+            minHeight: '40px'
           }}
         >
           Language
@@ -205,11 +205,11 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview }) => {
             <div className="py-1">
               <button
                 onClick={() => handleLanguageChange('en')}
-                className="flex items-center w-full px-4 py-2 text-5xl font-inter font-bold text-left hover:bg-gray-100 rounded-lg"
+                className="flex items-center w-full px-4 py-2 text-base font-inter font-bold text-left hover:bg-gray-100 rounded-lg"
                 style={{ 
-                  backgroundColor: '#4bc1eb',
-                  color: 'white',
-                  minHeight: '80px'
+                  backgroundColor: '#faf6e8',
+                  color: 'black',
+                  minHeight: '40px'
                 }}
               >
                 <span className="mr-2">🇺🇸</span>
@@ -217,11 +217,11 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview }) => {
               </button>
               <button
                 onClick={() => handleLanguageChange('zh')}
-                className="flex items-center w-full px-4 py-2 text-5xl font-inter font-bold text-left hover:bg-gray-100 rounded-lg"
+                className="flex items-center w-full px-4 py-2 text-base font-inter font-bold text-left hover:bg-gray-100 rounded-lg"
                 style={{ 
-                  backgroundColor: '#4bc1eb',
-                  color: 'white',
-                  minHeight: '80px'
+                  backgroundColor: '#faf6e8',
+                  color: 'black',
+                  minHeight: '40px'
                 }}
               >
                 <span className="mr-2">🇨🇳</span>
@@ -240,8 +240,8 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview }) => {
           style={{ 
             backgroundColor: '#4bc1eb',
             color: 'white',
-            minWidth: '200px',
-            minHeight: '80px'
+            minWidth: '120px',
+            minHeight: '40px'
           }}
         >
           {selectedLanguage === 'zh' ? '回顾' : 'Review'}
@@ -249,71 +249,73 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview }) => {
       </div>
       
       {/* Main Content */}
-      <div className="flex flex-col items-center justify-start flex-grow pt-20">
-        {/* Logo with Earth replacing 'o' */}
-        <div className="relative mb-6 flex items-center justify-center">
-          <h1 className="text-4xl font-gloria-hallelujah text-center inline-block">
-            PicEch
-          </h1>
-          <div className="inline-block relative" style={{ width: '480px', height: '480px', marginLeft: '-80px', marginRight: '-80px' }}>
-            <img 
-              src="/design/earth.png" 
-              alt="Earth" 
-              className="w-full h-full object-contain"
-            />
+      <div className="flex flex-col items-center justify-start flex-grow pt-12">
+        <div className="flex flex-col items-center justify-center">
+          {/* Logo with Earth replacing 'o' */}
+          <div className="relative mb-4 flex items-center justify-center">
+            <h1 className="text-10xl font-gloria-hallelujah text-center inline-block">
+              PicEch
+            </h1>
+            <div className="inline-block relative" style={{ width: '240px', height: '240px', marginLeft: '-45px', marginRight: '-45px' }}>
+              <img 
+                src="/design/earth.png" 
+                alt="Earth" 
+                className="w-full h-full object-contain"
+              />
+            </div>
           </div>
-        </div>
-        
-        {/* Subtitle - Moved up further */}
-        <p className="text-base font-roboto text-center mb-12 whitespace-pre-line -mt-40">
-          {textContent.subtitle1}<br/>
-          {textContent.subtitle2}
-        </p>
-        
-        {/* Level Buttons - Moved up further */}
-        <div className="flex gap-8 -mt-30">
-          <button
-            onClick={() => handleLevelChange(1)}
-            className={`px-6 py-4 text-xl font-inter font-bold focus:outline-none transform hover:scale-105 transition-transform rounded-lg ${
-              selectedLevel === 1 ? 'ring-4 ring-blue-300' : ''
-            }`}
-            style={{ 
-              backgroundColor: '#7ecc8f',
-              color: 'white',
-              minWidth: '250px',
-              minHeight: '120px'
-            }}
-          >
-            {textContent.level1}
-          </button>
-          <button
-            onClick={() => handleLevelChange(2)}
-            className={`px-6 py-4 text-xl font-inter font-bold focus:outline-none transform hover:scale-105 transition-transform rounded-lg ${
-              selectedLevel === 2 ? 'ring-4 ring-blue-300' : ''
-            }`}
-            style={{ 
-              backgroundColor: '#558e23',
-              color: 'white',
-              minWidth: '250px',
-              minHeight: '120px'
-            }}
-          >
-            {textContent.level2}
-          </button>
-          <button
-            onClick={() => handleLevelChange(3)}
-            className={`px-6 py-4 text-xl font-inter font-bold focus:outline-none transform hover:scale-105 transition-transform rounded-lg ${
-              selectedLevel === 3 ? 'ring-4 ring-blue-300' : ''
-            }`}
-            style={{ 
-              backgroundColor: '#337d2f',
-              color: 'white',
-              minWidth: '250px',
-              minHeight: '120px'
-            }}
-          >
-            {textContent.level3}
-          </button>
+          
+          {/* Subtitle - Centered */}
+          <div className="text-xl font-roboto text-center mb-6 leading-relaxed">
+            <div style={{ display: 'block' }}>{textContent.subtitle1}</div>
+            <div style={{ display: 'block' }}>{textContent.subtitle2}</div>
+          </div>
+          
+          {/* Level Buttons - Centered */}
+          <div className="flex gap-8 mt-4">
+            <button
+              onClick={() => handleLevelChange(1)}
+              className={`px-6 py-4 text-2xl font-inter font-bold focus:outline-none transform hover:scale-105 transition-transform rounded-lg ${
+                selectedLevel === 1 ? 'ring-4 ring-blue-300' : ''
+              }`}
+              style={{ 
+                backgroundColor: '#7ecc8f',
+                color: 'white',
+                minWidth: '180px',
+                minHeight: '70px'
+              }}
+            >
+              {textContent.level1}
+            </button>
+            <button
+              onClick={() => handleLevelChange(2)}
+              className={`px-6 py-4 text-2xl font-inter font-bold focus:outline-none transform hover:scale-105 transition-transform rounded-lg ${
+                selectedLevel === 2 ? 'ring-4 ring-blue-300' : ''
+              }`}
+              style={{ 
+                backgroundColor: '#558e23',
+                color: 'white',
+                minWidth: '180px',
+                minHeight: '70px'
+              }}
+            >
+              {textContent.level2}
+            </button>
+            <button
+              onClick={() => handleLevelChange(3)}
+              className={`px-6 py-4 text-2xl font-inter font-bold focus:outline-none transform hover:scale-105 transition-transform rounded-lg ${
+                selectedLevel === 3 ? 'ring-4 ring-blue-300' : ''
+              }`}
+              style={{ 
+                backgroundColor: '#337d2f',
+                color: 'white',
+                minWidth: '180px',
+                minHeight: '70px'
+              }}
+            >
+              {textContent.level3}
+            </button>
+          </div>
         </div>
       </div>
     </div>

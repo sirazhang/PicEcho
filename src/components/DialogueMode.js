@@ -323,24 +323,24 @@ const DialogueMode = ({ imageId, language, level, onFinish, onCancel }) => {
         <div className="flex justify-between items-center p-6">
           <button 
             onClick={onCancel}
-            className="px-4 py-2 text-base font-inter font-bold focus:outline-none rounded-lg flex items-center"
+            className="px-3 py-1 text-base font-inter font-bold focus:outline-none rounded-lg flex items-center justify-center"
             style={{ 
               backgroundColor: '#003153',
               color: 'white',
-              minWidth: '150px',
-              minHeight: '60px'
+              minWidth: '100px',
+              minHeight: '30px'
             }}
           >
             Home
           </button>
           <button
             onClick={handleFinish}
-            className="px-4 py-2 text-base font-inter font-bold focus:outline-none rounded-lg"
+            className="px-3 py-1 text-base font-inter font-bold focus:outline-none rounded-lg flex items-center justify-center"
             style={{ 
               backgroundColor: '#66ab4b',
               color: 'white',
-              minWidth: '200px',
-              minHeight: '60px'
+              minWidth: '100px',
+              minHeight: '30px'
             }}
           >
             Complete
@@ -350,20 +350,20 @@ const DialogueMode = ({ imageId, language, level, onFinish, onCancel }) => {
         <div className="flex flex-row gap-6 px-6 pb-6" style={{ height: '90vh' }}>
           {/* Image Section */}
           <div className="w-1/2">
-            <div className="h-full flex items-center justify-center border-2 border-black">
-              <div className="flex items-center justify-center h-full">
+            <div className="h-full flex items-center justify-center border-2 border-black p-0 m-0">
+              <div className="flex items-center justify-center h-full p-0 m-0">
                 {/* 根据难度级别加载对应的图片路径 */}
                 <img 
                   src={`/img_Level${level}/${imageId}.png`} 
                   alt={language === 'zh' ? '对话提示图片' : 'Conversation prompt'} 
-                  className="max-h-full max-w-full object-contain"
+                  className="max-h-full max-w-full object-contain block"
                   onError={(e) => {
                     // 如果特定级别的图片不存在，尝试加载默认级别图片
                     if (e.target.src.includes('/img_Level')) {
                       // Try level 1 as fallback
                       e.target.src = `/img_Level1/${imageId}.png`;
                     } else if (e.target.src.includes('/img_Level1')) {
-                      // If level 1 doesn't exist, show placeholder
+                      // If level 1 doesn't exist， show placeholder
                       e.target.onerror = null;
                       e.target.src = 'https://placehold.co/600x400?text=Image+Not+Found';
                     }
@@ -453,47 +453,48 @@ const DialogueMode = ({ imageId, language, level, onFinish, onCancel }) => {
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyPress={handleKeyPress}
                     placeholder={textContent.placeholder}
-                    className="flex-grow border border-gray-300 p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 text-base font-sans"
-                    rows="3"
+                    className="flex-grow border border-gray-300 p-1 focus:outline-none focus:ring-2 focus:ring-blue-500 text-base font-sans"
+                    rows="1"
                     disabled={isLoading}
+                    style={{ minHeight: '30px' }}
                   />
                   <div className="flex flex-col">
                     <button
                       onClick={handleSend}
                       disabled={isLoading || (inputValue.trim() === '' && transcript.trim() === '')}
-                      className="bg-white p-2 rounded-tr-lg font-medium flex items-center justify-center"
+                      className="bg-white p-0 rounded-tr-lg font-medium flex items-center justify-center"
                     >
                       <img 
                         src="/design/send.png" 
                         alt="Send" 
-                        className="w-24 h-24 object-contain" // Reduced from 32 to 24 (8vh)
+                        className="w-12 h-12 object-contain"
                       />
                     </button>
                     <button
                       onClick={isListening ? stopListening : startListening}
                       disabled={isLoading}
-                      className="bg-white p-2 rounded-br-lg h-full flex items-center justify-center"
+                      className="bg-white p-0 rounded-br-lg h-full flex items-center justify-center"
                     >
                       {isListening ? (
                         <div className="flex items-center">
-                          <div className="w-3 h-3 bg-red-500 rounded-full mr-1 animate-pulse"></div>
-                          <span>●</span>
+                          <div className="w-1 h-1 bg-red-500 rounded-full mr-1 animate-pulse"></div>
+                          <span className="text-xs">●</span>
                         </div>
                       ) : (
                         <img 
                           src="/design/voice.png" 
                           alt="Voice Input" 
-                          className="w-24 h-24 object-contain" // Reduced from 32 to 24 (8vh)
+                          className="w-12 h-12 object-contain"
                         />
                       )}
                     </button>
                   </div>
                 </div>
-                <div className="mt-2 text-xs text-gray-500">
+                <div className="mt-1 text-xs text-gray-500">
                   {textContent.pressEnter}
                 </div>
                 {isListening && (
-                  <div className="mt-2 text-sm text-green-600">
+                  <div className="mt-1 text-xs text-green-600">
                     {language === 'zh' ? '正在聆听...' : 'Listening...'}
                   </div>
                 )}
