@@ -360,18 +360,35 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
 
   // Handle next picture button click
   const handleNextPicture = () => {
-    // Get all images for current level
-    const levelImages = {
-      1: ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26', '27', '28'],
-      2: ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18'],
-      3: ['01', '02', '03', '04', '05', '06']
-    };
+    // Get all images for current level from localStorage or fallback to hardcoded list
+    let levelImages = [];
     
-    // Get images for current level
-    const images = levelImages[level] || levelImages[1];
+    try {
+      // Try to get image list from localStorage (set by HomeScreen)
+      const levelImageData = localStorage.getItem('levelImages');
+      if (levelImageData) {
+        const parsedData = JSON.parse(levelImageData);
+        if (parsedData[`level${level}`]) {
+          levelImages = parsedData[`level${level}`];
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to parse level images from localStorage', e);
+    }
+    
+    // Fallback to hardcoded lists if localStorage data is not available
+    if (levelImages.length === 0) {
+      const levelImageMap = {
+        1: ['img_01', 'img_02', 'img_03', 'img_04', 'img_05', 'img_06', 'img_07', 'img_08', 'img_09', 'img_10', 'img_11', 'img_12', 'img_13', 'img_14', 'img_16', 'img_17', 'img_20', 'img_23', 'img_29', 'img_30', 'img_31', 'img_33', 'img_34', 'img_40', 'img_41', 'img_47', 'img_48', 'img_51'],
+        2: ['img_15', 'img_18', 'img_19', 'img_21', 'img_22', 'img_32', 'img_35', 'img_36', 'img_37', 'img_38', 'img_39', 'img_42', 'img_43', 'img_44', 'img_45', 'img_46', 'img_49', 'img_50'],
+        3: ['img_24', 'img_25', 'img_26', 'img_27', 'img_28', 'img_52']
+      };
+      
+      levelImages = levelImageMap[level] || levelImageMap[1];
+    }
     
     // Filter out current image
-    const otherImages = images.filter(img => img !== imageId);
+    const otherImages = levelImages.filter(img => img !== imageId);
     
     // Select random image from remaining images
     if (otherImages.length > 0) {
@@ -516,8 +533,8 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
           {/* Home button */}
           <button
             onClick={onBack}
-            className="px-6 py-3 rounded-lg font-inter text-white font-bold text-base"
-            style={{ backgroundColor: '#003153', minWidth: '200px', minHeight: '80px' }}
+            className="px-4 py-2 rounded-lg font-inter text-white font-bold text-base flex items-center justify-center"
+            style={{ backgroundColor: '#003153', minWidth: '120px', minHeight: '40px' }}
           >
             {textContent.back}
           </button>
@@ -526,8 +543,8 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
           <button
             onClick={handleSavePostcard}
             disabled={isSaved}
-            className="px-6 py-3 rounded-lg font-inter text-white font-bold text-base"
-            style={{ backgroundColor: '#3fbdc7', minWidth: '200px', minHeight: '80px' }}
+            className="px-4 py-2 rounded-lg font-inter text-white font-bold text-base flex items-center justify-center"
+            style={{ backgroundColor: '#3fbdc7', minWidth: '120px', minHeight: '40px' }}
           >
             {textContent.save}
           </button>
@@ -535,8 +552,8 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
           {/* Send Postcard button */}
           <button
             onClick={handleSendPostcard}
-            className="px-6 py-3 rounded-lg font-inter text-white font-bold text-base"
-            style={{ backgroundColor: '#66ab4b', minWidth: '200px', minHeight: '80px' }}
+            className="px-4 py-2 rounded-lg font-inter text-white font-bold text-base flex items-center justify-center"
+            style={{ backgroundColor: '#66ab4b', minWidth: '120px', minHeight: '40px' }}
           >
             {textContent.send}
           </button>
@@ -544,8 +561,8 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
           {/* Next Picture button */}
           <button
             onClick={handleNextPicture}
-            className="px-6 py-3 rounded-lg font-inter text-white font-bold text-base"
-            style={{ backgroundColor: '#4bc1eb', minWidth: '200px', minHeight: '80px' }}
+            className="px-4 py-2 rounded-lg font-inter text-white font-bold text-base flex items-center justify-center"
+            style={{ backgroundColor: '#4bc1eb', minWidth: '120px', minHeight: '40px' }}
           >
             {textContent.nextPicture}
           </button>
@@ -590,7 +607,7 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
         {/* Preview modal */}
         {showPreviewModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full p-6">
+            <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full p-6" style={{ transform: 'scale(0.9)', transformOrigin: 'center' }}>
               <h3 className="text-xl font-semibold text-gray-800 mb-4">{textContent.send}</h3>
               <p className="text-gray-600 mb-4">{textContent.sendPreviewConfirm}</p>
               
@@ -640,10 +657,10 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
         )}
 
         {/* Postcard */}
-        <div className="bg-white rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.15)] overflow-hidden mx-auto my-4" style={{ height: '70vh', width: '80vw' }}>
+        <div className="bg-white rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.15)] overflow-hidden mx-auto my-4" style={{ height: '78vh', width: '80vw' }}>
           <div className="relative h-full">
             {/* Stamp in top-right corner - moved to inside the content area to avoid overlapping with feedback */}
-            <div className="absolute top-6 right-6 w-48 h-52 z-10">
+            <div className="absolute top-6 right-6 w-32 h-36 z-10">
               <img 
                 src={`/img_post/img_post_0${Math.floor(Math.random() * 6) + 1}.png`} 
                 alt="Stamp" 
@@ -651,12 +668,12 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
               />
             </div>
             
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 p-8 h-full">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-6 h-full">
               {/* Left Column - Image Section with Postal Code */}
               <div className="flex flex-col">
                 {/* Postal code above image */}
-                <div className="bg-white border-2 border-black self-start mb-4 px-3 py-1">
-                  <div className="text-lg font-bold text-black">Postcode: {postalCode}</div>
+                <div className="bg-white border-2 border-black self-start mb-3 px-2 py-1">
+                  <div className="text-base font-bold text-black">Postcode: {postalCode}</div>
                 </div>
                 
                 {/* Image */}
@@ -680,33 +697,33 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
               </div>
 
               {/* Right Column - Feedback - Added padding to avoid overlapping with stamp */}
-              <div className="space-y-8 pt-28"> {/* Increased top padding to avoid overlapping with stamp */}
-                <h2 className="text-lg font-gloria-hallelujah text-gray-800 mb-6 pb-2 border-b border-gray-300">
+              <div className="space-y-6 pt-20"> {/* Adjusted top padding and spacing */}
+                <h2 className="text-lg font-gloria-hallelujah text-gray-800 mb-4 pb-2 border-b border-gray-300">
                   {textContent.feedback}
                 </h2>
 
                 {/* Encouraging Remarks */}
-                <div className="bg-green-50 p-6 rounded-lg border border-green-200">
-                  <h3 className="text-lg font-semibold text-green-800 mb-4 flex items-center font-inter">
-                    💬 {textContent.encouragingRemarks}
+                <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                  <h3 className="text-base font-semibold text-green-800 mb-3 flex items-center font-inter">
+                    ✅ {textContent.encouragingRemarks}
                   </h3>
-                  <p className="text-base whitespace-pre-line font-inter">{localFeedback.encouragingRemarks}</p>
+                  <p className={`whitespace-pre-line font-inter ${localFeedback.encouragingRemarks?.length > 200 ? 'text-sm' : 'text-base'}`}>{localFeedback.encouragingRemarks}</p>
                 </div>
 
                 {/* Error Summary */}
-                <div className="bg-amber-50 p-6 rounded-lg border border-amber-200">
-                  <h3 className="text-lg font-semibold text-amber-800 mb-4 flex items-center font-inter">
-                    ❗ {textContent.errorSummary}
+                <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
+                  <h3 className="text-base font-semibold text-amber-800 mb-3 flex items-center font-inter">
+                    ⚠️ {textContent.errorSummary}
                   </h3>
-                  <pre className="text-base whitespace-pre-line font-sans font-inter">{localFeedback.errorSummary}</pre>
+                  <pre className={`whitespace-pre-line font-sans font-inter ${localFeedback.errorSummary?.length > 200 ? 'text-sm' : 'text-base'}`}>{localFeedback.errorSummary}</pre>
                 </div>
 
                 {/* Suggestions */}
-                <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
-                  <h3 className="text-lg font-semibold text-blue-800 mb-4 flex items-center font-inter">
+                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                  <h3 className="text-base font-semibold text-blue-800 mb-3 flex items-center font-inter">
                     💡 {textContent.suggestions}
                   </h3>
-                  <pre className="text-base whitespace-pre-line font-sans font-inter">{localFeedback.suggestions}</pre>
+                  <pre className={`whitespace-pre-line font-sans font-inter ${localFeedback.suggestions?.length > 200 ? 'text-sm' : 'text-base'}`}>{localFeedback.suggestions}</pre>
                 </div>
               </div>
             </div>
