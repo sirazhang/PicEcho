@@ -1,8 +1,10 @@
-const { db, isDatabaseAvailable, testConnection } = require('../config/db');
 const { v4: uuidv4 } = require('uuid');
 const fs = require('fs').promises;
 const path = require('path');
 const axios = require('axios');
+
+// Import database connection and availability checker
+const { db, isDatabaseAvailable, testConnection } = require('../config/db');
 
 // 确保目录存在
 async function ensureDirectoryExists(directory) {
@@ -39,42 +41,23 @@ class Postcard {
     }
     
     try {
-      // Step 1: Save image to local directory
-      const saveDirectory = '/Users/sirazhang/data/chatpic/postcard';
-      await ensureDirectoryExists(saveDirectory);
+      // Step 1: Download image data
+      console.log('Downloading image from URL:', imageUrl);
+      const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+      const imageData = response.data;
       
-      // Generate a unique filename
-      const postcardId = Date.now(); // 临时ID用于文件名
-      const fileName = `postcard_${postcardId}_${Date.now()}.png`;
-      const filePath = path.join(saveDirectory, fileName);
+      console.log('Image downloaded, size:', imageData.length, 'bytes');
       
-      // Download image from imageUrl and save it to the filePath
-      const response = await axios({
-        method: 'GET',
-        url: imageUrl,
-        responseType: 'stream'
-      });
-      
-      const writer = fs.createWriteStream(filePath);
-      response.data.pipe(writer);
-      
-      // 等待文件写入完成
-      await new Promise((resolve, reject) => {
-        writer.on('finish', resolve);
-        writer.on('error', reject);
-      });
-      
-      console.log('Image saved to:', filePath);
-      
-      // Step 2: Insert a record with the file path
+      // Step 2: Insert a record with both the file path and image data
       const insertSql = `
         INSERT INTO postcards 
-        (postcard_url, status, sender_token, receiver_token, feedback_text, postal_code) 
-        VALUES (?, ?, ?, ?, ?, ?)
+        (postcard_url, postcard_image, status, sender_token, receiver_token, feedback_text, postal_code) 
+        VALUES (?, ?, ?, ?, ?, ?, ?)
       `;
       
       const insertValues = [
-        filePath,
+        imageUrl,
+        imageData,
         'sent',
         senderToken,
         null,
@@ -82,12 +65,13 @@ class Postcard {
         postalCode
       ];
       
+      console.log('Inserting postcard into database...');
       const [result] = await db.execute(insertSql, insertValues);
       const insertedPostcardId = result.insertId;
       
       const postcard = {
         postcard_id: insertedPostcardId,
-        postcard_url: filePath,
+        postcard_url: imageUrl,
         created_at: new Date(),
         status: 'sent',
         sender_token: senderToken,
@@ -99,7 +83,8 @@ class Postcard {
       console.log('Postcard saved successfully with ID:', insertedPostcardId);
       callback(null, postcard);
     } catch (error) {
-      console.error('Error in Postcard.create:', error);
+      console.error('Error in Postcard.create:', error.message);
+      console.error('Full error details:', error);
       callback(error, null);
     }
   }
@@ -164,7 +149,8 @@ class Postcard {
       console.log('Found pending postcard:', results[0]);
       callback(null, results[0]);
     } catch (error) {
-      console.error('Database query error in Postcard.getRandomPending:', error);
+      console.error('Database query error in Postcard.getRandomPending:', error.message);
+      console.error('Full error details:', error);
       callback(error, null);
     }
   }
@@ -192,7 +178,8 @@ class Postcard {
       console.log('Postcard marked as sent. Rows affected:', result.affectedRows);
       callback(null, result);
     } catch (error) {
-      console.error('Database query error in Postcard.markAsSent:', error);
+      console.error('Database query error in Postcard.markAsSent:', error.message);
+      console.error('Full error details:', error);
       callback(error, null);
     }
   }
@@ -238,7 +225,8 @@ class Postcard {
         }
       }
     } catch (error) {
-      console.error('Error in assignPostcardAfterDelay:', error);
+      console.error('Error in assignPostcardAfterDelay:', error.message);
+      console.error('Full error details:', error);
     }
   }
 }

@@ -340,9 +340,15 @@ const DialogueMode = ({ imageId, language, level, onFinish, onCancel }) => {
                   alt={language === 'zh' ? '对话提示图片' : 'Conversation prompt'} 
                   className="h-auto max-w-full object-contain rounded-lg"
                   onError={(e) => {
-                    // 如果特定级别的图片不存在，显示占位图
-                    e.target.onerror = null; // 防止无限循环
-                    e.target.src = 'https://placehold.co/600x400?text=Image+Not+Found';
+                    // 如果特定级别的图片不存在，尝试加载默认级别图片
+                    if (e.target.src.includes('/img_Level')) {
+                      // Try level 1 as fallback
+                      e.target.src = `/img_Level1/${imageId}.png`;
+                    } else if (e.target.src.includes('/img_Level1')) {
+                      // If level 1 doesn't exist, show placeholder
+                      e.target.onerror = null;
+                      e.target.src = 'https://placehold.co/600x400?text=Image+Not+Found';
+                    }
                   }}
                 />
               </div>

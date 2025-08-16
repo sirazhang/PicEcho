@@ -30,18 +30,32 @@ async function testConnection() {
     connection.release();
     return true;
   } catch (err) {
-    console.error('Database connection failed:', err);
+    console.error('Database connection failed:', err.message);
+    // Also log the full error for debugging
+    console.error('Full error details:', err);
     isDatabaseAvailable = false;
     return false;
   }
 }
 
 // Test connection on startup
-testConnection();
+testConnection().then(connected => {
+  if (connected) {
+    console.log('Database connection established on startup');
+  } else {
+    console.log('Database connection failed on startup. Will retry periodically.');
+  }
+});
 
 // Periodically test connection to keep status updated
 setInterval(() => {
-  testConnection();
+  testConnection().then(connected => {
+    if (connected) {
+      console.log('Database connection re-established');
+    } else {
+      console.log('Database connection still not available. Will retry in 30 seconds.');
+    }
+  });
 }, 30000); // Test every 30 seconds
 
 // Export the pool and availability flag

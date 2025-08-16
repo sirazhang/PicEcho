@@ -11,6 +11,7 @@ DROP TABLE IF EXISTS postcards;
 CREATE TABLE postcards (
     postcard_id BIGINT AUTO_INCREMENT PRIMARY KEY,
     postcard_url VARCHAR(500),
+    postcard_image MEDIUMBLOB,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     status ENUM('pending', 'sent') DEFAULT 'pending',
     sender_token CHAR(36),
