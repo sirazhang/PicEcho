@@ -1,7 +1,29 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { sendPostcard } from '../utils/api';
 
-const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack, isLoading, error, selectedLanguage }) => {
+// 工具函数：生成图片路径
+const getImagePath = (level, imageId) => {
+  return `/img_Level${level}/${imageId}.png`;
+};
+
+// 模板化反馈内容
+const getTemplateFeedback = (language) => {
+  if (language === 'zh') {
+    return {
+      encouragingRemarks: "做得很好！🌟\\n你的表达清晰自信，这真的很了不起！继续保持！👍",
+      errorSummary: "• \"I no know this word.\" → \"I don't know this word.\"\\n• \"She is more higher than me.\" → \"She is higher than me.\"",
+      suggestions: "• 用 \"I'm not familiar with this word.\" 替代 \"I don't know this word.\"\\n• 用 \"I haven't heard of this word before.\" 替代 \"I don't know this word.\""
+    };
+  } else {
+    return {
+      encouragingRemarks: "Excellent Effort! 🌟\\nYour speaking was clear and confident, which is really impressive! Keep up the good work! 👍",
+      errorSummary: "• \"I no know this word.\" → \"I don't know this word.\"\\n• \"She is more higher than me.\" → \"She is higher than me.\"",
+      suggestions: "Instead of \"I don't know this word,\" you can say:\\n• \"I'm not familiar with this word.\"\\n• \"I haven't heard of this word before.\""
+    };
+  }
+};
+
+const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack, isLoading, error, selectedLanguage, level: levelProp }) => {
   const [isSaved, setIsSaved] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
   const [localFeedback, setLocalFeedback] = useState(feedback);
@@ -29,21 +51,28 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
     setPostalCode(generatePostalCode());
   }, []);
 
-  // Get level from localStorage or default to 1
+  // Get level from props or localStorage, default to 1
   useEffect(() => {
-    const savedLevel = localStorage.getItem('selectedLevel');
-    if (savedLevel) {
-      setLevel(parseInt(savedLevel, 10));
+    // 如果props中传入了level，则使用props中的level
+    if (levelProp) {
+      setLevel(levelProp);
     } else {
-      setLevel(1);
+      // 否则从localStorage读取
+      const savedLevel = localStorage.getItem('selectedLevel');
+      if (savedLevel) {
+        setLevel(parseInt(savedLevel, 10));
+      } else {
+        setLevel(1);
+      }
     }
-  }, []);
+  }, [levelProp]);
 
   // Load image description
   useEffect(() => {
     const loadImageDescription = async () => {
       try {
-        const response = await fetch('/descriptions.json');
+        // Load image descriptions from the appropriate level file
+        const response = await fetch(`/descriptions_level${level}.json`);
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -84,7 +113,7 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
     if (imageId) {
       loadImageDescription();
     }
-  }, [imageId]);
+  }, [imageId, level]);
 
   // Check if postcard is already saved
   useEffect(() => {
@@ -99,53 +128,47 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
       setIsSaved(true);
       setSaveMessage(selectedLanguage === 'zh' ? '明信片已保存' : 'Postcard saved');
     }
-  }, [feedback, imageId, selectedLanguage]);
+  }, [feedback, imageId]);
 
-  // Save postcard to localStorage
-  const handleSavePostcard = () => {
-    if (isSaved) return;
-    
-    try {
-      const savedPostcards = JSON.parse(localStorage.getItem('savedPostcards') || '[]');
-      
-      const postcardData = {
-        imageId,
-        imageDescription,
-        feedback: localFeedback,
-        level,
-        timestamp: feedback?.timestamp || new Date().toISOString(),
-        conversationHistory
-      };
-      
-      savedPostcards.push(postcardData);
-      localStorage.setItem('savedPostcards', JSON.stringify(savedPostcards));
-      
-      setIsSaved(true);
-      setSaveMessage(selectedLanguage === 'zh' ? '明信片已保存' : 'Postcard saved');
-      
-      // Call onSave callback if provided
-      if (onSave) {
-        onSave(postcardData);
-      }
-    } catch (error) {
-      console.error('Error saving postcard:', error);
-      setSaveMessage(selectedLanguage === 'zh' ? '保存失败' : 'Failed to save');
+  // Set template feedback if no feedback is provided
+  useEffect(() => {
+    if (!feedback) {
+      const templateFeedback = getTemplateFeedback(selectedLanguage);
+      setLocalFeedback(templateFeedback);
+    } else {
+      setLocalFeedback(feedback);
     }
+  }, [feedback, selectedLanguage]);
+
+  // Handle saving the postcard to localStorage
+  const handleSavePostcard = () => {
+    if (!localFeedback) return;
+    
+    const postcardData = {
+      imageId,
+      imageDescription,
+      feedback: localFeedback,
+      level,
+      imageData: postcardImage, // Include the generated postcard image
+      timestamp: new Date().toISOString()
+    };
+    
+    onSave(postcardData);
+    setIsSaved(true);
+    setSaveMessage(selectedLanguage === 'zh' ? '明信片已保存' : 'Postcard saved');
+    
+    // Auto-hide the message after 2 seconds
+    setTimeout(() => {
+      setSaveMessage('');
+    }, 2000);
   };
 
-  // Get image path based on level
-  const getImagePath = (imageId, level) => {
-    // If level is not specified, default to level 1
-    const validLevel = level || 1;
-    return `/img_Level${validLevel}/${imageId}.png`;
-  };
-
-  // Send postcard
+  // Handle sending the postcard
   const handleSendPostcard = async () => {
     setShowSendModal(true);
   };
 
-  // Confirm and send postcard
+  // Confirm and send the postcard
   const confirmSendPostcard = async () => {
     setIsSending(true);
     setSendStatus('');
@@ -156,12 +179,10 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
       
       // Send the postcard
       const response = await sendPostcard({
-        imageId,
-        imageDescription,
-        feedback: localFeedback,
-        level,
-        postcardImage, // This will be the generated image data
-        conversationHistory
+        senderId: 'user_' + Math.random().toString(36).substr(2, 9), // Generate a simple sender ID
+        imageUrl: postcardImage, // This will be the generated image data
+        feedbackText: localFeedback,
+        postalCode
       });
       
       if (response?.success) {
@@ -290,37 +311,57 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
       ctx.fillText(textContent.feedback, feedbackStartX, currentY);
       currentY += 90;
       
-      // Draw encouraging remarks
-      ctx.fillStyle = '#2d7d49';
-      ctx.font = 'bold 32px "Inter"';
-      ctx.fillText(textContent.encouragingRemarks, feedbackStartX, currentY);
-      currentY += 70;
+      // Encouraging remarks
+      ctx.font = 'bold 40px "Inter", sans-serif';
+      ctx.fillStyle = '#2e7d32'; // Green color
+      ctx.fillText('✅ Excellent Effort! 🌟', feedbackX, currentY);
       
-      ctx.fillStyle = 'black';
-      ctx.font = '28px "Inter"';
-      const encouragingRemarksLines = wrapTextForCanvas(ctx, localFeedback.encouragingRemarks || '', feedbackStartX, currentY, 650, 45);
-      currentY += encouragingRemarksLines * 45 + 50;
+      ctx.font = '30px "Inter", sans-serif';
+      ctx.fillStyle = '#000000';
+      currentY += lineHeight;
       
-      // Draw error summary
-      ctx.fillStyle = '#b45309';
-      ctx.font = 'bold 32px "Inter"';
-      ctx.fillText(textContent.errorSummary, feedbackStartX, currentY);
-      currentY += 70;
+      const encouragingRemarks = localFeedback?.encouragingRemarks || getTemplateFeedback(selectedLanguage).encouragingRemarks;
+      const encouragingLines = encouragingRemarks.split('\\n');
+      encouragingLines.forEach(line => {
+        ctx.fillText(line, feedbackX, currentY);
+        currentY += lineHeight;
+      });
       
-      ctx.fillStyle = 'black';
-      ctx.font = '28px "Inter"';
-      const errorSummaryLines = wrapTextForCanvas(ctx, localFeedback.errorSummary || '', feedbackStartX, currentY, 650, 45);
-      currentY += errorSummaryLines * 45 + 50;
+      currentY += lineHeight / 2;
       
-      // Draw suggestions
-      ctx.fillStyle = '#1d4ed8';
-      ctx.font = 'bold 32px "Inter"';
-      ctx.fillText(textContent.suggestions, feedbackStartX, currentY);
-      currentY += 70;
+      // Error summary
+      ctx.font = 'bold 40px "Inter", sans-serif';
+      ctx.fillStyle = '#ef6c00'; // Orange color
+      ctx.fillText('⚠️ Error Summary', feedbackX, currentY);
       
-      ctx.fillStyle = 'black';
-      ctx.font = '28px "Inter"';
-      wrapTextForCanvas(ctx, localFeedback.suggestions || '', feedbackStartX, currentY, 650, 45);
+      ctx.font = '30px "Inter", sans-serif';
+      ctx.fillStyle = '#000000';
+      currentY += lineHeight;
+      
+      const errorSummary = localFeedback?.errorSummary || getTemplateFeedback(selectedLanguage).errorSummary;
+      const errorLines = errorSummary.split('\\n');
+      errorLines.forEach(line => {
+        ctx.fillText(line, feedbackX, currentY);
+        currentY += lineHeight;
+      });
+      
+      currentY += lineHeight / 2;
+      
+      // Suggestions
+      ctx.font = 'bold 40px "Inter", sans-serif';
+      ctx.fillStyle = '#1565c0'; // Blue color
+      ctx.fillText('💡 Improvement Suggestions', feedbackX, currentY);
+      
+      ctx.font = '30px "Inter", sans-serif';
+      ctx.fillStyle = '#000000';
+      currentY += lineHeight;
+      
+      const suggestions = localFeedback?.suggestions || getTemplateFeedback(selectedLanguage).suggestions;
+      const suggestionLines = suggestions.split('\\n');
+      suggestionLines.forEach(line => {
+        ctx.fillText(line, feedbackX, currentY);
+        currentY += lineHeight;
+      });
       
       // Convert canvas to image data URL
       const imageData = canvas.toDataURL('image/png');
@@ -656,74 +697,85 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
           </div>
         )}
 
-        {/* Postcard */}
-        <div className="bg-white rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.15)] overflow-hidden mx-auto my-4" style={{ height: '78vh', width: '80vw' }}>
-          <div className="relative h-full">
-            {/* Stamp in top-right corner - moved to inside the content area to avoid overlapping with feedback */}
-            <div className="absolute top-6 right-6 w-32 h-36 z-10">
+        {/* Postcard display area */}
+        <div className="flex flex-col items-center mt-6">
+          <div 
+            ref={postcardRef}
+            className="bg-white rounded-lg shadow-lg p-8 border-2 border-gray-200"
+            style={{ 
+              width: '80vw', 
+              height: '78vh',
+              maxWidth: '1200px',
+              maxHeight: '900px'
+            }}
+          >
+            {/* Header section with postal code and stamp */}
+            <div className="flex justify-between items-start mb-6">
+              <div className="text-4xl font-gloria-hallelujah">
+                Postcode: {postalCode}
+              </div>
               <img 
                 src={`/img_post/img_post_0${Math.floor(Math.random() * 6) + 1}.png`} 
                 alt="Stamp" 
-                className="w-full h-full object-contain"
+                className="w-32 h-36 object-contain"
               />
             </div>
             
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-6 h-full">
-              {/* Left Column - Image Section with Postal Code */}
-              <div className="flex flex-col">
-                {/* Postal code above image */}
-                <div className="bg-white border-2 border-black self-start mb-3 px-2 py-1">
-                  <div className="text-base font-bold text-black">Postcode: {postalCode}</div>
-                </div>
-                
-                {/* Image */}
-                <div className="flex items-center justify-center flex-grow">
-                  <img
-                    src={`/img_Level${level}/${imageId}.png`}
-                    alt={selectedLanguage === 'zh' ? '对话图片' : 'Conversation image'}
-                    className="max-h-full max-w-full object-contain rounded-lg"
+            {/* Main content area with image and feedback */}
+            <div className="flex h-full">
+              {/* Image Section */}
+              <div className="w-full md:w-2/5 flex items-center justify-center mb-2 md:mb-0">
+                <div className="relative w-full h-64 md:h-80 flex items-center justify-center">
+                  <img 
+                    src={getImagePath(level, imageId)} 
+                    alt={selectedLanguage === 'zh' ? "图片" : "Image"} 
+                    className="max-h-full max-w-full object-contain rounded-lg border-2 border-gray-300"
                     onError={(e) => {
-                      // Try fallback to default img folder if level-specific image not found
-                      if (!e.target.src.includes('/img/')) {
-                        e.target.src = `/img/${imageId}.png`;
-                      } else {
-                        // If default image also not found, show placeholder
-                        e.target.onerror = null; // Prevent infinite loop
-                        e.target.src = 'https://placehold.co/600x400?text=Image+Not+Found';
-                      }
+                      console.log(`Failed to load image: ${getImagePath(level, imageId)}`);
+                      // Try to load level 1 image as fallback
+                      e.target.src = getImagePath(1, imageId);
+                      e.target.onerror = null; // Prevent infinite loop
                     }}
                   />
                 </div>
               </div>
-
-              {/* Right Column - Feedback - Added padding to avoid overlapping with stamp */}
-              <div className="space-y-6 pt-20"> {/* Adjusted top padding and spacing */}
-                <h2 className="text-lg font-gloria-hallelujah text-gray-800 mb-4 pb-2 border-b border-gray-300">
+              
+              {/* Feedback section (right 50%) */}
+              <div className="w-1/2 flex flex-col p-6">
+                <h2 className="text-5xl font-gloria-hallelujah mb-8 text-center">
                   {textContent.feedback}
                 </h2>
-
-                {/* Encouraging Remarks */}
-                <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                  <h3 className="text-base font-semibold text-green-800 mb-3 flex items-center font-inter">
-                    ✅ {textContent.encouragingRemarks}
-                  </h3>
-                  <p className={`whitespace-pre-line font-inter ${localFeedback.encouragingRemarks?.length > 200 ? 'text-sm' : 'text-base'}`}>{localFeedback.encouragingRemarks}</p>
-                </div>
-
-                {/* Error Summary */}
-                <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
-                  <h3 className="text-base font-semibold text-amber-800 mb-3 flex items-center font-inter">
-                    ⚠️ {textContent.errorSummary}
-                  </h3>
-                  <pre className={`whitespace-pre-line font-sans font-inter ${localFeedback.errorSummary?.length > 200 ? 'text-sm' : 'text-base'}`}>{localFeedback.errorSummary}</pre>
-                </div>
-
-                {/* Suggestions */}
-                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                  <h3 className="text-base font-semibold text-blue-800 mb-3 flex items-center font-inter">
-                    💡 {textContent.suggestions}
-                  </h3>
-                  <pre className={`whitespace-pre-line font-sans font-inter ${localFeedback.suggestions?.length > 200 ? 'text-sm' : 'text-base'}`}>{localFeedback.suggestions}</pre>
+                
+                <div className="flex-grow overflow-y-auto pr-2">
+                  {/* Encouraging Remarks */}
+                  <div className="mb-6">
+                    <h3 className="text-2xl font-inter font-bold text-green-700 mb-3 flex items-center">
+                      <span className="mr-2">✅</span> {textContent.encouragingRemarks}
+                    </h3>
+                    <p className={`font-inter ${localFeedback?.encouragingRemarks?.length > 200 ? 'text-sm' : 'text-base'} text-gray-800`}>
+                      {localFeedback?.encouragingRemarks || 'No encouraging remarks available.'}
+                    </p>
+                  </div>
+                  
+                  {/* Error Summary */}
+                  <div className="mb-6">
+                    <h3 className="text-2xl font-inter font-bold text-orange-700 mb-3 flex items-center">
+                      <span className="mr-2">⚠️</span> {textContent.errorSummary}
+                    </h3>
+                    <p className={`font-inter ${localFeedback?.errorSummary?.length > 200 ? 'text-sm' : 'text-base'} text-gray-800`}>
+                      {localFeedback?.errorSummary || 'No error summary available.'}
+                    </p>
+                  </div>
+                  
+                  {/* Suggestions */}
+                  <div className="mb-6">
+                    <h3 className="text-2xl font-inter font-bold text-blue-700 mb-3 flex items-center">
+                      <span className="mr-2">💡</span> {textContent.suggestions}
+                    </h3>
+                    <p className={`font-inter ${localFeedback?.suggestions?.length > 200 ? 'text-sm' : 'text-base'} text-gray-800`}>
+                      {localFeedback?.suggestions || 'No suggestions available.'}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -732,6 +784,6 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
       </div>
     </div>
   );
-};
+}
 
 export default ReviewPostcard;

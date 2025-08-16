@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const path = require('path');
 
 // Load environment variables
 dotenv.config();
@@ -18,6 +19,9 @@ app.use(express.urlencoded({ extended: true }));
 // Serve static files from the React app build directory
 // This assumes the React app is built into a 'build' directory
 app.use(express.static('../build'));
+
+// Serve static files from the 'static' directory
+app.use('/static', express.static(path.join(__dirname, 'static')));
 
 // Import Postcard model correctly
 const { Postcard } = require('./models/Postcard');

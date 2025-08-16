@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from 'react';
 
+// 工具函数：生成图片路径
+const getImagePath = (level, imageId) => {
+  return `/img_Level${level}/${imageId}.png`;
+};
+
 const HomeScreen = ({ onStartDialogue, onOpenMapReview }) => {
   const [selectedLanguage, setSelectedLanguage] = useState('en');
   const [selectedLevel, setSelectedLevel] = useState(1);
@@ -14,33 +19,20 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview }) => {
     }
   }, []);
 
-  // Helper function to check if image exists in a level folder (simulated)
+  // Check if an image exists in a specific level
   const checkImageExistsInLevel = (imageId, level) => {
-    // In a real implementation, this would check actual file existence
-    // For now, we'll use predefined lists based on the folder contents we saw
-    const level1Images = [
-      'img_01', 'img_02', 'img_03', 'img_04', 'img_05', 'img_06', 'img_07', 'img_08', 
-      'img_09', 'img_10', 'img_11', 'img_12', 'img_13', 'img_14', 'img_16', 'img_17', 
-      'img_20', 'img_23', 'img_29', 'img_30', 'img_31', 'img_33', 'img_34', 'img_40', 
-      'img_41', 'img_47', 'img_48', 'img_51'
-    ];
-    
-    const level2Images = [
-      'img_15', 'img_18', 'img_19', 'img_21', 'img_22', 'img_32', 'img_35', 'img_36', 
-      'img_37', 'img_38', 'img_39', 'img_42', 'img_43', 'img_44', 'img_45', 'img_46', 
-      'img_49', 'img_50'
-    ];
-    
-    const level3Images = [
-      'img_24', 'img_25', 'img_26', 'img_27', 'img_28', 'img_52'
-    ];
-    
-    switch (level) {
-      case 1: return level1Images.includes(imageId);
-      case 2: return level2Images.includes(imageId);
-      case 3: return level3Images.includes(imageId);
-      default: return true;
-    }
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        console.log(`Image exists: ${getImagePath(level, imageId)}`);
+        resolve(true);
+      };
+      img.onerror = () => {
+        console.log(`Image does not exist: ${getImagePath(level, imageId)}`);
+        resolve(false);
+      };
+      img.src = getImagePath(level, imageId);
+    });
   };
 
   // Helper function to get images for a specific level (fallback)
@@ -72,43 +64,49 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview }) => {
 
   // Load available images based on selected level
   useEffect(() => {
+    console.log('useEffect triggered. Selected level:', selectedLevel);
+    
     const loadAvailableImages = async () => {
       try {
-        // Load image descriptions
-        const response = await fetch('/descriptions.json');
+        // Load image descriptions from the appropriate level file
+        const response = await fetch(`/descriptions_level${selectedLevel}.json`);
         const descriptions = await response.json();
         const allImageIds = Object.keys(descriptions);
+        
+        console.log('Loaded descriptions for level', selectedLevel, ':', allImageIds);
         
         // Filter images based on selected level
         let levelImages = [];
         switch (selectedLevel) {
           case 1:
             // Filter images that exist in img_Level1 folder
-            levelImages = allImageIds.filter(id => 
-              checkImageExistsInLevel(id, 1)
-            );
+            const level1Checks = allImageIds.map(id => checkImageExistsInLevel(id, 1));
+            const level1Results = await Promise.all(level1Checks);
+            levelImages = allImageIds.filter((id, index) => level1Results[index]);
             break;
           case 2:
             // Filter images that exist in img_Level2 folder
-            levelImages = allImageIds.filter(id => 
-              checkImageExistsInLevel(id, 2)
-            );
+            const level2Checks = allImageIds.map(id => checkImageExistsInLevel(id, 2));
+            const level2Results = await Promise.all(level2Checks);
+            levelImages = allImageIds.filter((id, index) => level2Results[index]);
             break;
           case 3:
             // Filter images that exist in img_Level3 folder
-            levelImages = allImageIds.filter(id => 
-              checkImageExistsInLevel(id, 3)
-            );
+            const level3Checks = allImageIds.map(id => checkImageExistsInLevel(id, 3));
+            const level3Results = await Promise.all(level3Checks);
+            levelImages = allImageIds.filter((id, index) => level3Results[index]);
             break;
           default:
             levelImages = allImageIds;
         }
         
+        console.log('Level', selectedLevel, 'images:', levelImages); // 添加日志以便调试
         setAvailableImages(levelImages);
       } catch (error) {
         console.error('Error loading image descriptions:', error);
         // Fallback to hardcoded list if fetch fails
         const images = getLevelImages(selectedLevel);
+        console.log('Using fallback images for level', selectedLevel, ':', images); // 添加日志以便调试
         setAvailableImages(images);
       }
     };
@@ -118,14 +116,24 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview }) => {
 
   // Get a random image from the available images based on selected level
   const getRandomImage = () => {
+    console.log('getRandomImage called. Available images:', availableImages, 'Selected level:', selectedLevel);
+    
     if (availableImages.length === 0) {
       // Fallback to level-specific images if none loaded
       const images = getLevelImages(selectedLevel);
-      const randomIndex = Math.floor(Math.random() * images.length);
-      return images[randomIndex];
+      if (images.length > 0) {
+        const randomIndex = Math.floor(Math.random() * images.length);
+        console.log('Using fallback images for level', selectedLevel, 'selected image:', images[randomIndex]);
+        return images[randomIndex];
+      } else {
+        // 最后的后备选项
+        console.log('No images found for level', selectedLevel, 'using default img_01');
+        return 'img_01';
+      }
     }
     
     const randomIndex = Math.floor(Math.random() * availableImages.length);
+    console.log('Using available images for level', selectedLevel, 'selected image:', availableImages[randomIndex]);
     return availableImages[randomIndex];
   };
 
@@ -143,9 +151,12 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview }) => {
 
   const handleLevelChange = (level) => {
     setSelectedLevel(level);
+    // Save level to localStorage
+    localStorage.setItem('selectedLevel', level);
     // Start dialogue immediately when level is selected
     setTimeout(() => {
       const randomImage = getRandomImage();
+      console.log('Starting dialogue with level:', level, 'image:', randomImage); // 添加日志以便调试
       onStartDialogue(randomImage, selectedLanguage, level);
     }, 300);
   };
@@ -155,20 +166,30 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview }) => {
     if (selectedLanguage === 'zh') {
       return {
         title: 'PicEcho',
-        subtitle1: 'Chat with the world, one picture at a time',
-        subtitle2: '看图聊天，寄出世界',
+        subtitle: '看图聊天，寄出世界',
+        start: '开始',
         level1: 'Level 1',
         level2: 'Level 2',
-        level3: 'Level 3'
+        level3: 'Level 3',
+        language: 'Language',
+        english: 'English',
+        chinese: '中文',
+        viewMap: '查看地图',
+        placeholder: '选择语言'
       };
     } else {
       return {
         title: 'PicEcho',
-        subtitle1: 'Chat with the world, one picture at a time',
-        subtitle2: '看图聊天，寄出世界',
+        subtitle: 'Chat with the world, one picture at a time',
+        start: 'Start',
         level1: 'Level 1',
         level2: 'Level 2',
-        level3: 'Level 3'
+        level3: 'Level 3',
+        language: 'Language',
+        english: 'English',
+        chinese: 'Chinese',
+        viewMap: 'View Map',
+        placeholder: 'Select Language'
       };
     }
   };

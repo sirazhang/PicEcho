@@ -1,4 +1,3 @@
-// src/App.js
 import React, { useState, useEffect } from 'react';
 import HomeScreen from './components/HomeScreen';
 import DialogueMode from './components/DialogueMode';
@@ -46,6 +45,8 @@ const App = () => {
         const language = parts[1] || 'en';
         const level = parts[2] ? parseInt(parts[2], 10) : 1;
         
+        console.log('Parsed from hash - imageId:', imageId, 'language:', language, 'level:', level); // 添加日志以便调试
+        
         setSelectedImage(imageId);
         setSelectedLanguage(language);
         setSelectedLevel(level);
@@ -82,6 +83,9 @@ const App = () => {
     // Save level to localStorage
     localStorage.setItem('selectedLevel', level || 1);
     
+    // Update URL hash with imageId, language, and level
+    window.location.hash = `#/dialogue/${imageId}/${language || 'en'}/${level || 1}`;
+    
     setCurrentScreen('dialogue');
   };
 
@@ -92,21 +96,23 @@ const App = () => {
     setError('');
 
     try {
-      // Get image description
-      const response = await fetch('/descriptions.json');
+      // Get image description from the appropriate level file
+      const response = await fetch(`/descriptions_level${selectedLevel}.json`);
       const descriptions = await response.json();
       const imageDescription = descriptions[selectedImage] || 'A beautiful image';
 
       // Generate feedback using Kimi API with selected language
       const feedbackData = await generateKimiFeedback(conversation, imageDescription, selectedLanguage);
+      
       setFeedback(feedbackData);
-      setCurrentScreen('feedback');
+      setIsLoading(false);
+      setCurrentScreen('review');
     } catch (err) {
       console.error('Error generating feedback:', err);
-      // Generate simulated feedback when API call fails
-      const simulatedFeedback = generateSimulatedFeedback(selectedLanguage);
-      setFeedback(simulatedFeedback);
-      setCurrentScreen('feedback');
+      setError('Failed to load description or generate feedback');
+      setIsLoading(false);
+      // 即使出错也跳转到review页面
+      setCurrentScreen('review');
     } finally {
       setIsLoading(false);
     }
@@ -116,17 +122,15 @@ const App = () => {
   const generateSimulatedFeedback = (language) => {
     if (language === 'zh') {
       return {
-        encouragingRemarks: "做得很好！👏 你在描述图片和回答问题方面表现出色。你的英语技能正在提高！",
-        errorSummary: "_I seen a beautiful sunset_ → I saw a beautiful sunset\n_they was very happy_ → they were very happy",
-        suggestions: "• 不要使用 'I seen'，尝试使用 'I saw' 或 'I noticed'\n• 不要只用简单句，尝试合并想法: 'The sunset was beautiful and made me feel peaceful'",
-        timestamp: new Date().toISOString()
+        encouragingRemarks: "做得很好！你的英语表达能力在不断提高。继续保持！",
+        errorSummary: "有一些小的语法错误，特别是在时态使用方面。",
+        suggestions: "建议多练习动词时态，可以尝试用过去时描述图片中的动作。"
       };
     } else {
       return {
-        encouragingRemarks: "Great job! 👏 You did very well in describing the image and answering all questions. Your English skills are improving!",
-        errorSummary: "_I seen a beautiful sunset_ → I saw a beautiful sunset\n_they was very happy_ → they were very happy",
-        suggestions: "• Instead of 'I seen', try using 'I saw' or 'I noticed'\n• Instead of simple sentences, try combining ideas: 'The sunset was beautiful and made me feel peaceful'",
-        timestamp: new Date().toISOString()
+        encouragingRemarks: "Great job! Your English expression skills are improving. Keep it up!",
+        errorSummary: "There are some minor grammar errors, especially with tense usage.",
+        suggestions: "Try to practice verb tenses more. You could describe the actions in the image using past tense."
       };
     }
   };
@@ -137,41 +141,27 @@ const App = () => {
   };
 
   const handleSavePostcard = (postcardData) => {
-    const postcardDataWithLevel = {
-      ...postcardData,
-      level: selectedLevel
-    };
-
+    // In a real app, you would send this to a backend
+    console.log('Saving postcard:', postcardData);
+    
+    // Save to localStorage for demo purposes
     const savedPostcards = JSON.parse(localStorage.getItem('savedPostcards') || '[]');
-    
-    // Check if this postcard already exists
-    const existingIndex = savedPostcards.findIndex(
-      card => card.imageId === postcardDataWithLevel.imageId && card.timestamp === postcardDataWithLevel.timestamp
-    );
-    
-    if (existingIndex >= 0) {
-      // Update existing postcard
-      savedPostcards[existingIndex] = postcardDataWithLevel;
-    } else {
-      // Add new postcard
-      savedPostcards.push(postcardDataWithLevel);
-    }
-    
+    savedPostcards.push(postcardData);
     localStorage.setItem('savedPostcards', JSON.stringify(savedPostcards));
   };
 
-  const handleOpenMapReview = () => {
+  const handleViewMap = () => {
     setMap(true);
     setCurrentScreen('map');
   };
 
   const handleViewPostcard = (postcard) => {
     setSelectedPostcard(postcard);
-    setCurrentScreen('feedback');
+    setCurrentScreen('review');
   };
 
   const handleBackToMap = () => {
-    setSelectedPostcard(null);
+    setMap(true);
     setCurrentScreen('map');
   };
 
@@ -180,17 +170,16 @@ const App = () => {
     setFeedback(null);
     setConversationHistory([]);
     setSelectedPostcard(null);
-    
-    // Clear hash for home screen
-    window.location.hash = '';
   };
 
   return (
     <div className="App">
       {currentScreen === 'home' && (
         <HomeScreen 
-          onStartDialogue={handleStartDialogue} 
-          onOpenMapReview={handleOpenMapReview}
+          onStartDialogue={handleStartDialogue}
+          onOpenMapReview={handleViewMap}
+          selectedLanguage={selectedLanguage}
+          setSelectedLanguage={setSelectedLanguage}
         />
       )}
 
@@ -199,7 +188,7 @@ const App = () => {
           imageId={selectedImage}
           language={selectedLanguage}
           level={selectedLevel}
-          onFinish={handleFinishDialogue}
+          onConversationComplete={handleFinishDialogue}
           onCancel={handleCancelDialogue}
         />
       )}
@@ -220,17 +209,17 @@ const App = () => {
         </div>
       )}
 
-      {currentScreen === 'feedback' && (
-        <ReviewPostcard 
+      {currentScreen === 'review' && (
+        <ReviewPostcard
           imageId={selectedImage}
           conversationHistory={conversationHistory}
-          feedback={feedback || selectedPostcard}
+          feedback={feedback}
           onSave={handleSavePostcard}
-          onBack={selectedPostcard ? handleBackToMap : handleBackToHome}
+          onBack={handleBackToHome}
           isLoading={isLoading}
           error={error}
           selectedLanguage={selectedLanguage}
-          selectedLevel={selectedLevel} // Pass level to ReviewPostcard
+          level={selectedLevel}
         />
       )}
 

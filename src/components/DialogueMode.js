@@ -1,7 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { startKimiDialogue, sendToKimi } from '../utils/kimiApi';
 
-const DialogueMode = ({ imageId, language, level, onFinish, onCancel }) => {
+// 工具函数：生成图片路径
+const getImagePath = (level, imageId) => {
+  return `/img_Level${level}/${imageId}.png`;
+};
+
+const DialogueMode = ({ imageId, language, level, onConversationComplete, onCancel }) => {
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -14,12 +19,29 @@ const DialogueMode = ({ imageId, language, level, onFinish, onCancel }) => {
   const recognitionRef = useRef(null);
   const textareaRef = useRef(null);
 
+  // 添加useEffect来监听level和imageId的变化
+  useEffect(() => {
+    // 开发环境显示详细调试信息
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[DialogueMode Debug] - level changed to:', level, 'imageId:', imageId);
+    }
+    
+    // 生产环境也记录基本事件，但不暴露敏感信息
+    console.info('[DialogueMode] Level or ImageID changed');
+  }, [level, imageId]);
+
   // Load image description and initialize AI conversation
   const initializeConversation = async () => {
+    console.log('initializeConversation called with level:', level, 'imageId:', imageId);
+    
     try {
-      const response = await fetch('/descriptions.json');
+      // Load image descriptions from the appropriate level file
+      const response = await fetch(`/descriptions_level${level}.json`);
       const descriptions = await response.json();
       const description = descriptions[imageId] || 'A beautiful image';
+      
+      console.log('Loaded description for image:', imageId, 'in level:', level, 'description:', description);
+      
       setImageDescription(description);
       
       // Show image analysis message
@@ -60,6 +82,7 @@ const DialogueMode = ({ imageId, language, level, onFinish, onCancel }) => {
   };
 
   useEffect(() => {
+    console.log('useEffect for initializeConversation triggered. imageId:', imageId, 'language:', language, 'level:', level);
     if (imageId) {
       initializeConversation();
     }
@@ -196,7 +219,7 @@ const DialogueMode = ({ imageId, language, level, onFinish, onCancel }) => {
         switch (level) {
           case 1: return 4;
           case 2: return 6;
-          case 3: return 5;
+          case 3: return 8;
           default: return 4;
         }
       };
@@ -206,7 +229,7 @@ const DialogueMode = ({ imageId, language, level, onFinish, onCancel }) => {
       
       if (userMessageCount >= questionCount) {
         setTimeout(() => {
-          onFinish([...messages, userMessage, aiMessage]);
+          onConversationComplete([...messages, userMessage, aiMessage]);
         }, 1500);
       }
     } catch (error) {
@@ -252,13 +275,13 @@ const DialogueMode = ({ imageId, language, level, onFinish, onCancel }) => {
       } else if (level === 2) {
         questionCount = 6;
       } else if (level === 3) {
-        questionCount = 5;
+        questionCount = 8;
       }
       
       const userMessageCountWithSimulated = messages.filter(m => m.sender === 'user').length + 1; // +1 for the new user message
       if (userMessageCountWithSimulated >= questionCount) {
         setTimeout(() => {
-          onFinish([...messages, userMessage, aiMessage]);
+          onConversationComplete([...messages, userMessage, aiMessage]);
         }, 1500);
       }
     }
@@ -272,7 +295,7 @@ const DialogueMode = ({ imageId, language, level, onFinish, onCancel }) => {
   };
 
   const handleFinish = () => {
-    onFinish(messages);
+    onConversationComplete(messages);
   };
 
   // Define text content for different languages
@@ -316,6 +339,76 @@ const DialogueMode = ({ imageId, language, level, onFinish, onCancel }) => {
 
   const textContent = getTextContent();
 
+  // 预加载图片并验证是否存在
+  const [imageLoading, setImageLoading] = useState(true);
+  const [imageError, setImageError] = useState(false);
+  const [currentImageSrc, setCurrentImageSrc] = useState('');
+
+  useEffect(() => {
+    if (!imageId || !level) return;
+    
+    const loadImage = async () => {
+      setImageLoading(true);
+      setImageError(false);
+      const imageSrc = getImagePath(level, imageId);
+      setCurrentImageSrc(imageSrc); // 确保设置currentImageSrc
+      
+      try {
+        // 创建图片加载的辅助函数
+        const loadImageWithFallback = (src) => {
+          return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.src = src;
+            
+            // 设置超时防止永久挂起
+            const timeoutId = setTimeout(() => {
+              reject(new Error('Image load timeout'));
+            }, 5000);
+            
+            img.onload = () => {
+              clearTimeout(timeoutId);
+              resolve(src);
+            };
+            
+            img.onerror = () => {
+              clearTimeout(timeoutId);
+              reject(new Error('Image load error'));
+            };
+          });
+        };
+        
+        // 尝试加载当前级别的图片
+        try {
+          await loadImageWithFallback(imageSrc);
+          console.log(`Successfully loaded image: ${imageSrc}`);
+          setImageLoading(false);
+          setImageError(false);
+        } catch (error) {
+          console.log(`Failed to load image: ${imageSrc}`, error);
+          // 如果当前级别的图片加载失败，尝试加载级别1的图片作为后备
+          const fallbackSrc = getImagePath(1, imageId);
+          try {
+            await loadImageWithFallback(fallbackSrc);
+            console.log(`Successfully loaded fallback image: ${fallbackSrc}`);
+            setCurrentImageSrc(fallbackSrc);
+            setImageLoading(false);
+            setImageError(false);
+          } catch (fallbackError) {
+            console.log(`Failed to load fallback image: ${fallbackSrc}`, fallbackError);
+            setImageLoading(false);
+            setImageError(true);
+          }
+        }
+      } catch (error) {
+        console.error('Error in image loading process:', error);
+        setImageLoading(false);
+        setImageError(true);
+      }
+    };
+
+    loadImage();
+  }, [imageId, level]);
+
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#e5f5fb' }}>
       <div className="max-w-8xl mx-auto w-full">
@@ -323,24 +416,24 @@ const DialogueMode = ({ imageId, language, level, onFinish, onCancel }) => {
         <div className="flex justify-between items-center p-6">
           <button 
             onClick={onCancel}
-            className="px-3 py-1 text-base font-inter font-bold focus:outline-none rounded-lg flex items-center justify-center"
+            className="px-4 py-2 text-base font-inter font-bold focus:outline-none rounded-lg flex items-center justify-center"
             style={{ 
               backgroundColor: '#003153',
               color: 'white',
-              minWidth: '100px',
-              minHeight: '30px'
+              minWidth: '120px',
+              minHeight: '40px'
             }}
           >
             Home
           </button>
           <button
             onClick={handleFinish}
-            className="px-3 py-1 text-base font-inter font-bold focus:outline-none rounded-lg flex items-center justify-center"
+            className="px-4 py-2 text-base font-inter font-bold focus:outline-none rounded-lg flex items-center justify-center"
             style={{ 
               backgroundColor: '#66ab4b',
               color: 'white',
-              minWidth: '100px',
-              minHeight: '30px'
+              minWidth: '120px',
+              minHeight: '40px'
             }}
           >
             Complete
@@ -353,22 +446,30 @@ const DialogueMode = ({ imageId, language, level, onFinish, onCancel }) => {
             <div className="h-full flex items-center justify-center border-2 border-black p-0 m-0">
               <div className="flex items-center justify-center h-full p-0 m-0">
                 {/* 根据难度级别加载对应的图片路径 */}
-                <img 
-                  src={`/img_Level${level}/${imageId}.png`} 
-                  alt={language === 'zh' ? '对话提示图片' : 'Conversation prompt'} 
-                  className="max-h-full max-w-full object-contain block"
-                  onError={(e) => {
-                    // 如果特定级别的图片不存在，尝试加载默认级别图片
-                    if (e.target.src.includes('/img_Level')) {
-                      // Try level 1 as fallback
-                      e.target.src = `/img_Level1/${imageId}.png`;
-                    } else if (e.target.src.includes('/img_Level1')) {
-                      // If level 1 doesn't exist， show placeholder
-                      e.target.onerror = null;
-                      e.target.src = 'https://placehold.co/600x400?text=Image+Not+Found';
-                    }
-                  }}
-                />
+                {imageLoading ? (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mr-2"></div>
+                    <span className="text-gray-700">Loading image...</span>
+                  </div>
+                ) : imageError ? (
+                  <div className="flex items-center justify-center h-full bg-gray-100">
+                    <div className="text-center">
+                      <p className="text-red-500 mb-2">Image not found</p>
+                      <button
+                        onClick={() => window.location.reload()}
+                        className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+                      >
+                        Retry
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <img 
+                    src={currentImageSrc} 
+                    alt={language === 'zh' ? '对话提示图片' : 'Conversation prompt'} 
+                    className="max-h-full max-w-full object-contain block"
+                  />
+                )}
               </div>
             </div>
           </div>
@@ -490,6 +591,7 @@ const DialogueMode = ({ imageId, language, level, onFinish, onCancel }) => {
                     </button>
                   </div>
                 </div>
+                
                 <div className="mt-1 text-xs text-gray-500">
                   {textContent.pressEnter}
                 </div>

@@ -8,11 +8,20 @@ const WorldMapReview = ({ onBack, onViewPostcard }) => {
   const [showReceivedPostcard, setShowReceivedPostcard] = useState(false);
   const [receivedPostcard, setReceivedPostcard] = useState(null);
   const [isFetching, setIsFetching] = useState(false);
+  const [senderToken, setSenderToken] = useState(''); // Add sender token state
 
   useEffect(() => {
     // Load saved postcards from localStorage
     const postcards = JSON.parse(localStorage.getItem('savedPostcards') || '[]');
     setSavedPostcards(postcards);
+    
+    // Generate or load sender token
+    let token = localStorage.getItem('senderToken');
+    if (!token) {
+      token = 'user_' + Math.random().toString(36).substr(2, 9);
+      localStorage.setItem('senderToken', token);
+    }
+    setSenderToken(token);
   }, []);
 
   // Sample locations for demonstration
@@ -49,65 +58,44 @@ const WorldMapReview = ({ onBack, onViewPostcard }) => {
     setSelectedPostcard(null);
   };
 
-  const handleReviewClick = () => {
-    if (selectedPostcard) {
-      onViewPostcard(selectedPostcard);
-    }
-  };
-
-  const fetchRandomPostcard = async () => {
+  // Handle receiving a postcard
+  const handleReceivePostcard = async () => {
     setIsFetching(true);
     try {
-      // In a real app, this would come from authentication
-      const userId = 'user-' + Date.now();
-      const postcardData = await receivePostcard(userId);
+      // Use the sender token to receive a postcard
+      const postcardData = await receivePostcard(senderToken);
       
       if (postcardData) {
-        // Parse feedback text back to JSON if it's a string
-        if (typeof postcardData.feedbackText === 'string') {
-          try {
-            postcardData.feedback = JSON.parse(postcardData.feedbackText);
-          } catch (parseError) {
-            console.error('Error parsing feedback text:', parseError);
-            postcardData.feedback = {};
-          }
-        } else {
-          postcardData.feedback = postcardData.feedbackText;
-        }
-        
         setReceivedPostcard(postcardData);
         setShowReceivedPostcard(true);
       } else {
-        // No postcards available - show message to user
-        setReceivedPostcard({
-          message: 'No postcards available at the moment. Try sending one first!',
-          isEmpty: true
-        });
-        setShowReceivedPostcard(true);
+        // Handle case where no postcard is available
+        alert('No postcards available at the moment. Please try again later.');
       }
     } catch (error) {
-      console.error('Error fetching postcard:', error);
-      // Show error message to user
-      setReceivedPostcard({
-        message: `Error: ${error.message}`,
-        isError: true
-      });
+      console.error('Error receiving postcard:', error);
+      alert('Failed to receive postcard. Please try again.');
     } finally {
       setIsFetching(false);
     }
   };
 
-  const closeReceivedPostcard = () => {
-    setShowReceivedPostcard(false);
-    setReceivedPostcard(null);
+  // Define text content
+  const getTextContent = () => {
+    return {
+      title: 'Learning Journey Map',
+      subtitle: 'Click on the markers to review your learning progress. ',
+      completedText: 'You\'ve completed',
+      activitiesText: 'activities so far.',
+      homeButton: 'Home',
+      receiveButton: 'Receive Postcard', // Add receive button text
+      close: 'Close',
+      noPostcards: 'No postcards available at the moment.',
+      view: 'View'
+    };
   };
 
-  // Get image path based on level
-  const getImagePath = (imageId, level) => {
-    // If level is not specified, default to level 1
-    const validLevel = level || 1;
-    return `/img_Level${validLevel}/${imageId}.png`;
-  };
+  const textContent = getTextContent();
 
   return (
     <div className="min-h-screen bg-[#e5f5fb] p-0">
@@ -123,95 +111,88 @@ const WorldMapReview = ({ onBack, onViewPostcard }) => {
             minHeight: '40px'
           }}
         >
-          Home
+          {textContent.homeButton}
         </button>
         <h1 className="text-2xl font-gloria-hallelujah absolute left-1/2 transform -translate-x-1/2">
-          Learning Journey Map
+          {textContent.title}
         </h1>
-        <div></div> {/* Empty div for spacing */}
+        {/* Receive Postcard button */}
+        <button
+          onClick={handleReceivePostcard}
+          disabled={isFetching}
+          className="px-4 py-2 text-base font-inter font-bold focus:outline-none rounded-lg flex items-center"
+          style={{ 
+            backgroundColor: '#66ab4b',
+            color: 'white',
+            minWidth: '120px',
+            minHeight: '40px'
+          }}
+        >
+          {isFetching ? (
+            <>
+              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Receiving...
+            </>
+          ) : (
+            <>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+              </svg>
+              {textContent.receiveButton}
+            </>
+          )}
+        </button>
       </div>
 
       {/* Progress text */}
       <div className="text-center px-6 mb-4 -mt-2">
         <p className="text-base font-inter leading-tight">
-          Click on the markers to review your learning progress.{' '}
-          <span className="font-bold text-base">You've completed {savedPostcards.length} activities so far.</span>
+          {textContent.subtitle}{' '}
+          <span className="font-bold text-base">
+            {textContent.completedText} {savedPostcards.length} {textContent.activitiesText}
+          </span>
         </p>
       </div>
 
-      {/* Main content area - Map and controls */}
-      <div className="flex flex-col" style={{ height: '75vh' }}>
-        {/* Map Container - takes most of the space and fits the map image */}
-        <div className="flex-grow relative mb-4 flex justify-center items-center">
-          <div className="relative bg-blue-50 border-4 border-black flex justify-center items-center w-full h-full">
-            {/* World Map PNG Background */}
-            <img 
-              src="/map.png" 
-              alt="World Map" 
-              className="h-full w-full object-contain"
-            />
-            
-            {/* Location markers */}
-            {postcardLocations.map((location) => (
-              <div
-                key={location.id}
-                onClick={() => handleLocationClick(location)}
-                className="absolute cursor-pointer transform -translate-x-1/2 -translate-y-1/2"
-                style={{ left: `${location.x}%`, top: `${location.y}%` }}
-              >
-                <div className="w-8 h-8 bg-red-500 rounded-full border-4 border-white shadow-lg hover:scale-125 transition-transform duration-200"></div>
-                <div className="absolute inset-0 w-8 h-8 bg-red-500 rounded-full animate-ping opacity-20"></div>
-              </div>
-            ))}
-          </div>
-        </div>
+      {/* World map container */}
+      <div className="relative mx-auto" style={{ width: '95%', height: '75vh' }}>
+        <img 
+          src="/map.png" 
+          alt="World Map" 
+          className="w-full h-full object-contain"
+        />
         
-        {/* Bottom row with legend on left and mailbox on right */}
-        <div className="flex justify-between items-end pb-4 px-6">
-          {/* Left Legend Panel */}
-          <div className="bg-white rounded-lg p-4 shadow-xl">
-            <div className="flex items-center mb-2">
-              <div className="w-6 h-6 bg-red-500 rounded-full mr-2"></div>
-              <span className="text-sm font-inter font-bold">Completed Activities</span>
-            </div>
-            <div className="text-xs text-gray-600 font-inter">
-              Click on markers to review
+        {/* Saved postcard markers */}
+        {postcardLocations.map((location) => (
+          <div
+            key={location.id}
+            className="absolute transform -translate-x-1/2 -translate-y-1/2 cursor-pointer group"
+            style={{ left: `${location.x}%`, top: `${location.y}%` }}
+            onClick={() => handleLocationClick(location)}
+          >
+            {/* Marker dot */}
+            <div className="w-4 h-4 bg-red-500 rounded-full border-2 border-white shadow-lg"></div>
+            
+            {/* Tooltip */}
+            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black bg-opacity-75 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+              {location.name}, {location.country}
+              <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-black border-opacity-75"></div>
             </div>
           </div>
-          
-          {/* Right Panel with Mailbox */}
-          <div>
-            <button
-              onClick={fetchRandomPostcard}
-              disabled={isFetching}
-              className="bg-white rounded-full p-3 shadow-xl hover:shadow-2xl transition-all duration-200 disabled:opacity-50"
-            >
-              {isFetching ? (
-                <div className="w-12 h-12 flex items-center justify-center">
-                  <svg className="animate-spin h-8 w-8 text-gray-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                </div>
-              ) : (
-                <img 
-                  src="/design/box.png" 
-                  alt="Mailbox" 
-                  className="h-16 w-16 object-contain" // Changed from h-24 w-24 to maintain 8vh size
-                />
-              )}
-            </button>
-          </div>
-        </div>
+        ))}
       </div>
 
-      {/* Modal for postcard details */}
+      {/* Saved Postcard Modal */}
       {showModal && selectedPostcard && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-2xl font-bold text-gray-800">Activity Review</h2>
+                <h3 className="text-xl font-semibold text-gray-800">Saved Postcard</h3>
                 <button 
                   onClick={closeModal}
                   className="text-gray-500 hover:text-gray-700"
@@ -222,66 +203,28 @@ const WorldMapReview = ({ onBack, onViewPostcard }) => {
                 </button>
               </div>
               
-              <div className="mb-6">
-                <div className="flex items-center mb-4">
-                  <img 
-                    src={getImagePath(selectedPostcard.imageId, selectedPostcard.level)} 
-                    alt="Conversation" 
-                    className="w-24 h-24 object-cover rounded-lg mr-4"
-                    onError={(e) => {
-                      // Try fallback to default img folder if level-specific image not found
-                      if (!e.target.src.includes('/img/')) {
-                        e.target.src = `/img/${selectedPostcard.imageId}.png`;
-                      } else {
-                        // If default image also not found, show placeholder
-                        e.target.onerror = null; // Prevent infinite loop
-                        e.target.src = 'https://placehold.co/100x100?text=Image+Not+Found';
-                      }
-                    }}
-                  />
-                  <div>
-                    <h3 className="text-xl font-semibold text-gray-800">Image Practice Session</h3>
-                    <p className="text-gray-600">{new Date(selectedPostcard.timestamp).toLocaleDateString()}</p>
-                    <p className="text-gray-600">{selectedPostcard.imageDescription}</p>
-                  </div>
-                </div>
-                
-                <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                  <h4 className="font-semibold text-gray-700 mb-2">Summary:</h4>
-                  <p className="text-gray-600 line-clamp-3">
-                    {selectedPostcard.feedback?.encouragingRemarks?.substring(0, 100) || 'Great job!'}...
-                  </p>
-                </div>
-              </div>
-              
-              <div className="flex justify-end space-x-4">
-                <button
-                  onClick={closeModal}
-                  className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition duration-200"
-                >
-                  Close
-                </button>
-                <button
-                  onClick={handleReviewClick}
-                  className="px-6 py-2 bg-blue-500 rounded-lg text-white hover:bg-blue-600 transition duration-200"
-                >
-                  View Full Feedback
-                </button>
+              <div className="flex flex-col items-center">
+                <img 
+                  src={selectedPostcard.imageData} 
+                  alt="Saved postcard" 
+                  className="max-w-full h-auto border border-gray-300 rounded-lg mb-4"
+                />
+                <p className="text-gray-600 text-center">{new Date(selectedPostcard.timestamp).toLocaleString()}</p>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Modal for received postcard */}
+      {/* Received Postcard Modal */}
       {showReceivedPostcard && receivedPostcard && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-2xl font-bold text-gray-800">Received Postcard</h2>
+                <h3 className="text-xl font-semibold text-gray-800">Received Postcard</h3>
                 <button 
-                  onClick={closeReceivedPostcard}
+                  onClick={() => setShowReceivedPostcard(false)}
                   className="text-gray-500 hover:text-gray-700"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -290,109 +233,29 @@ const WorldMapReview = ({ onBack, onViewPostcard }) => {
                 </button>
               </div>
               
-              {/* Display message if no postcards available or error occurred */}
-              {receivedPostcard.isEmpty || receivedPostcard.isError ? (
-                <div className="bg-gray-50 rounded-xl shadow-[0_4px_8px_rgba(0,0,0,0.1)] p-8 text-center">
-                  <div className="text-5xl mb-4">
-                    {receivedPostcard.isEmpty ? '📭' : '⚠️'}
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                    {receivedPostcard.isEmpty ? 'No Postcards Available' : 'Error'}
-                  </h3>
-                  <p className="text-gray-600 mb-6">
-                    {receivedPostcard.message}
-                  </p>
-                  <button
-                    onClick={closeReceivedPostcard}
-                    className="px-6 py-2 bg-blue-500 rounded-lg text-white hover:bg-blue-600 transition duration-200"
-                  >
-                    Close
-                  </button>
-                </div>
-              ) : (
-                // Postcard
-                <div className="bg-[#F5F5F5] rounded-xl shadow-[0_4px_8px_rgba(0,0,0,0.1)] overflow-hidden mb-6">
-                  {/* Postcard header with postal code and postmark */}
-                  <div className="relative p-6">
-                    {/* Postal code in top-left corner */}
-                    <div className="absolute top-4 left-4 bg-white px-3 py-1 rounded border border-gray-300">
-                      <div className="text-xs font-bold text-gray-700">Postal Code</div>
-                      <div className="text-sm font-mono">{receivedPostcard.postalCode || 'N/A'}</div>
-                    </div>
-                    
-                    {/* Postmark in top-right corner */}
-                    <div className="absolute top-4 right-4 w-20 h-12 border-2 border-red-500 rotate-12">
-                      <div className="bg-red-500 text-white text-[8px] font-bold p-1">
-                        Postmark
-                      </div>
-                      <div className="text-[8px] font-mono p-1 truncate">{receivedPostcard.postmark || 'N/A'}</div>
+              <div className="flex flex-col items-center">
+                {/* Display received postcard image from local path */}
+                <img 
+                  src={`/static/${receivedPostcard.image_path}`} 
+                  alt="Received postcard" 
+                  className="max-w-full h-auto border border-gray-300 rounded-lg mb-4"
+                />
+                <p className="text-gray-600 text-center mb-4">
+                  Received at: {new Date(receivedPostcard.created_at).toLocaleString()}
+                </p>
+                {receivedPostcard.feedback_text && (
+                  <div className="w-full">
+                    <h4 className="font-semibold mb-2">Feedback:</h4>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      {typeof receivedPostcard.feedback_text === 'string' ? (
+                        <pre className="whitespace-pre-wrap">{receivedPostcard.feedback_text}</pre>
+                      ) : (
+                        <pre className="whitespace-pre-wrap">{JSON.stringify(receivedPostcard.feedback_text, null, 2)}</pre>
+                      )}
                     </div>
                   </div>
-
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-6">
-                    {/* Left Column - Image Section */}
-                    <div className="flex items-center justify-center">
-                      <img
-                        src={receivedPostcard.imageUrl || getImagePath(receivedPostcard.imageId, receivedPostcard.level)}
-                        alt="Conversation image"
-                        className="max-h-[70vh] object-contain rounded-lg"
-                        onError={(e) => {
-                          // Try fallback to default img folder if level-specific image not found
-                          if (!e.target.src.includes('/img/')) {
-                            e.target.src = `/img/${receivedPostcard.imageId}.png`;
-                          } else {
-                            // If default image also not found, show placeholder
-                            e.target.onerror = null; // Prevent infinite loop
-                            e.target.src = 'https://placehold.co/600x400?text=Image+Not+Found';
-                          }
-                        }}
-                      />
-                    </div>
-
-                    {/* Right Column - Feedback */}
-                    <div className="space-y-6">
-                      <h2 className="text-xl font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-300">
-                        Feedback
-                      </h2>
-
-                      {/* Encouraging Remarks */}
-                      <div className="bg-green-50 p-5 rounded-lg border border-green-200">
-                        <h3 className="text-lg font-semibold text-green-800 mb-3 flex items-center">
-                          💬 Encouraging Remarks
-                        </h3>
-                        <p className="text-green-700 whitespace-pre-line">{receivedPostcard.feedback?.encouragingRemarks}</p>
-                      </div>
-
-                      {/* Error Summary */}
-                      <div className="bg-amber-50 p-5 rounded-lg border border-amber-200">
-                        <h3 className="text-lg font-semibold text-amber-800 mb-3 flex items-center">
-                          ❗ Error Summary
-                        </h3>
-                        <pre className="text-amber-700 whitespace-pre-line font-sans">{receivedPostcard.feedback?.errorSummary}</pre>
-                      </div>
-
-                      {/* Suggestions */}
-                      <div className="bg-blue-50 p-5 rounded-lg border border-blue-200">
-                        <h3 className="text-lg font-semibold text-blue-800 mb-3 flex items-center">
-                          💡 Suggestions
-                        </h3>
-                        <pre className="text-blue-700 whitespace-pre-line font-sans">{receivedPostcard.feedback?.suggestions}</pre>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {!receivedPostcard.isEmpty && !receivedPostcard.isError && (
-                <div className="flex justify-end">
-                  <button
-                    onClick={closeReceivedPostcard}
-                    className="px-6 py-2 bg-blue-500 rounded-lg text-white hover:bg-blue-600 transition duration-200"
-                  >
-                    Close
-                  </button>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
         </div>

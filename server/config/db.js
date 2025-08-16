@@ -1,41 +1,57 @@
-const mysql = require('mysql2/promise');
+const sqlite3 = require('sqlite3').verbose();
+const path = require('path');
 require('dotenv').config();
 
-// Create a connection pool
-const pool = mysql.createPool({
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '123456',
-  database: process.env.DB_NAME || 'chatpic',
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0
+// Create SQLite database connection
+const db = new sqlite3.Database(path.join(__dirname, '../database/chatpic.db'), (err) => {
+  if (err) {
+    console.error('Error opening database:', err.message);
+  } else {
+    console.log('Connected to SQLite database.');
+    
+    // Create postcards table if it doesn't exist
+    const createTableSQL = `
+      CREATE TABLE IF NOT EXISTS postcards (
+        postcard_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        image_path TEXT NOT NULL,
+        postcard_url TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        status TEXT DEFAULT 'pending',
+        upload_status TEXT DEFAULT 'success',
+        sender_token TEXT NOT NULL,
+        receiver_token TEXT,
+        feedback_text TEXT,
+        postal_code TEXT
+      )
+    `;
+    
+    db.run(createTableSQL, (err) => {
+      if (err) {
+        console.error('Error creating postcards table:', err.message);
+      } else {
+        console.log('Postcards table ready.');
+      }
+    });
+  }
 });
 
 // Test the connection
-let isDatabaseAvailable = false;
+let isDatabaseAvailable = true;
 
 async function testConnection() {
-  try {
-    // Get a connection from the pool
-    const connection = await pool.getConnection();
-    console.log('New database connection established');
-    
-    // Execute a simple query to test
-    const [results] = await connection.execute('SELECT 1');
-    console.log('Successfully connected to the database.');
-    isDatabaseAvailable = true;
-    
-    // Release the connection back to the pool
-    connection.release();
-    return true;
-  } catch (err) {
-    console.error('Database connection failed:', err.message);
-    // Also log the full error for debugging
-    console.error('Full error details:', err);
-    isDatabaseAvailable = false;
-    return false;
-  }
+  return new Promise((resolve) => {
+    db.get('SELECT 1', (err) => {
+      if (err) {
+        console.error('Database connection failed:', err.message);
+        isDatabaseAvailable = false;
+        resolve(false);
+      } else {
+        console.log('Successfully connected to the database.');
+        isDatabaseAvailable = true;
+        resolve(true);
+      }
+    });
+  });
 }
 
 // Test connection on startup
@@ -43,26 +59,8 @@ testConnection().then(connected => {
   if (connected) {
     console.log('Database connection established on startup');
   } else {
-    console.log('Database connection failed on startup. Will retry periodically.');
+    console.log('Database connection failed on startup.');
   }
 });
 
-// Periodically test connection to keep status updated
-setInterval(() => {
-  testConnection().then(connected => {
-    if (connected) {
-      console.log('Database connection re-established');
-    } else {
-      console.log('Database connection still not available. Will retry in 30 seconds.');
-    }
-  });
-}, 30000); // Test every 30 seconds
-
-// Export the pool and availability flag
-module.exports = {
-  db: pool,
-  get isDatabaseAvailable() {
-    return isDatabaseAvailable;
-  },
-  testConnection: testConnection
-};
+module.exports = { db, isDatabaseAvailable, testConnection };
