@@ -196,9 +196,9 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       
-      // Set canvas dimensions to match the postcard area
-      canvas.width = 1200;
-      canvas.height = 900; // 75vh equivalent at 1200px width (4:3 ratio)
+      // Set canvas dimensions to a larger size for better preview
+      canvas.width = 1600;
+      canvas.height = 1200; // Larger size for better quality
       
       // Draw white background
       ctx.fillStyle = '#ffffff';
@@ -206,20 +206,14 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
       
       // Draw decorative border
       ctx.strokeStyle = '#ddd';
-      ctx.lineWidth = 4;
-      ctx.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
+      ctx.lineWidth = 6;
+      ctx.strokeRect(30, 30, canvas.width - 60, canvas.height - 60);
       
       // Draw postal code (top-left)
       ctx.fillStyle = '#333';
-      ctx.font = 'bold 24px "Gloria Hallelujah"';
-      ctx.fillText('Postcode: ' + postalCode, 50, 60);
+      ctx.font = 'bold 32px "Gloria Hallelujah"';
+      ctx.fillText('Postcode: ' + postalCode, 60, 80);
       
-      // Draw "ChatPic" title (top-center)
-      ctx.fillStyle = '#333';
-      ctx.font = 'bold 36px "Gloria Hallelujah"';
-      ctx.textAlign = 'center';
-      ctx.fillText('ChatPic', canvas.width / 2, 50);
-      ctx.textAlign = 'left';
       
       // Load and draw stamp (top-right)
       const stampImg = new Image();
@@ -235,17 +229,18 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
         setTimeout(resolve, 3000);
       });
       
-      // Draw stamp (right-top, not scaled)
-      ctx.drawImage(stampImg, canvas.width - 180, 40, 140, 160);
+      // Draw stamp (right-top, larger size)
+      ctx.drawImage(stampImg, canvas.width - 240, 50, 180, 200);
       
       // Draw separator line (simulating grid layout)
       ctx.beginPath();
-      ctx.moveTo(canvas.width / 2, 150);
-      ctx.lineTo(canvas.width / 2, canvas.height - 50);
+      ctx.moveTo(canvas.width / 2, 200);
+      ctx.lineTo(canvas.width / 2, canvas.height - 60);
       ctx.strokeStyle = '#ddd';
+      ctx.lineWidth = 2;
       ctx.stroke();
       
-      // Draw image (left side, enlarged)
+      // Draw image (left side, larger and less compressed)
       const postcardImg = new Image();
       postcardImg.crossOrigin = 'Anonymous';
       postcardImg.src = `/img_Level${level}/${imageId}.png`;
@@ -253,13 +248,13 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
       // Wait for image to load
       await new Promise((resolve) => {
         postcardImg.onload = () => {
-          // Draw image to canvas (left area)
-          const maxWidth = 500;
-          const maxHeight = 500;
+          // Draw image to canvas (left area) with larger size
+          const maxWidth = 750; // Increased from 700 to 750 to reduce compression
+          const maxHeight = 750; // Increased from 700 to 750 to reduce compression
           let width = postcardImg.width;
           let height = postcardImg.height;
           
-          // Scale proportionally
+          // Scale proportionally but with less compression
           if (width > maxWidth) {
             height *= maxWidth / width;
             width = maxWidth;
@@ -271,7 +266,7 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
           
           // Center in left area
           const leftAreaCenterX = canvas.width / 4;
-          const leftAreaCenterY = (canvas.height + 150) / 2;
+          const leftAreaCenterY = (canvas.height + 200) / 2;
           ctx.drawImage(
             postcardImg, 
             leftAreaCenterX - width / 2, 
@@ -287,45 +282,45 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
       });
       
       // Draw feedback title
-      const feedbackStartX = canvas.width / 2 + 50;
-      let currentY = 200;
+      const feedbackStartX = canvas.width / 2 + 70;
+      let currentY = 250;
       
       ctx.fillStyle = 'black';
-      ctx.font = 'bold 32px "Gloria Hallelujah"';
+      ctx.font = 'bold 42px "Gloria Hallelujah"';
       ctx.fillText(textContent.feedback, feedbackStartX, currentY);
-      currentY += 70;
+      currentY += 90;
       
       // Draw encouraging remarks
       ctx.fillStyle = '#2d7d49';
-      ctx.font = 'bold 26px "Inter"';
+      ctx.font = 'bold 32px "Inter"';
       ctx.fillText(textContent.encouragingRemarks, feedbackStartX, currentY);
-      currentY += 50;
+      currentY += 70;
       
       ctx.fillStyle = 'black';
-      ctx.font = '22px "Inter"';
-      const encouragingRemarksLines = wrapTextForCanvas(ctx, localFeedback.encouragingRemarks || '', feedbackStartX, currentY, 500, 35);
-      currentY += encouragingRemarksLines * 35 + 40;
+      ctx.font = '28px "Inter"';
+      const encouragingRemarksLines = wrapTextForCanvas(ctx, localFeedback.encouragingRemarks || '', feedbackStartX, currentY, 650, 45);
+      currentY += encouragingRemarksLines * 45 + 50;
       
       // Draw error summary
       ctx.fillStyle = '#b45309';
-      ctx.font = 'bold 26px "Inter"';
+      ctx.font = 'bold 32px "Inter"';
       ctx.fillText(textContent.errorSummary, feedbackStartX, currentY);
-      currentY += 50;
+      currentY += 70;
       
       ctx.fillStyle = 'black';
-      ctx.font = '22px "Inter"';
-      const errorSummaryLines = wrapTextForCanvas(ctx, localFeedback.errorSummary || '', feedbackStartX, currentY, 500, 35);
-      currentY += errorSummaryLines * 35 + 40;
+      ctx.font = '28px "Inter"';
+      const errorSummaryLines = wrapTextForCanvas(ctx, localFeedback.errorSummary || '', feedbackStartX, currentY, 650, 45);
+      currentY += errorSummaryLines * 45 + 50;
       
       // Draw suggestions
       ctx.fillStyle = '#1d4ed8';
-      ctx.font = 'bold 26px "Inter"';
+      ctx.font = 'bold 32px "Inter"';
       ctx.fillText(textContent.suggestions, feedbackStartX, currentY);
-      currentY += 50;
+      currentY += 70;
       
       ctx.fillStyle = 'black';
-      ctx.font = '22px "Inter"';
-      wrapTextForCanvas(ctx, localFeedback.suggestions || '', feedbackStartX, currentY, 500, 35);
+      ctx.font = '28px "Inter"';
+      wrapTextForCanvas(ctx, localFeedback.suggestions || '', feedbackStartX, currentY, 650, 45);
       
       // Convert canvas to image data URL
       const imageData = canvas.toDataURL('image/png');
@@ -383,7 +378,7 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
       const randomIndex = Math.floor(Math.random() * otherImages.length);
       const nextImageId = otherImages[randomIndex];
       
-      // Redirect to dialogue mode with new image
+      // Redirect to dialogue mode with new image using the hash routing pattern from App.js
       window.location.hash = `#/dialogue/${nextImageId}/${selectedLanguage}/${level}`;
     }
   };
@@ -498,7 +493,7 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
 
   return (
     <div className="flex flex-col items-center p-4" style={{ minHeight: '100vh', backgroundColor: '#e5f5fb' }}>
-      <div className="w-full max-w-6xl">
+      <div className="w-full max-w-8xl">
         {/* Success/Error messages */}
         {saveMessage && (
           <div className="fixed top-4 right-4 bg-green-500 text-white py-2 px-4 rounded-lg shadow-lg z-50">
@@ -516,43 +511,41 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
           </div>
         )}
 
-        {/* Buttons above Postcard area */}
-        <div className="flex justify-between items-center p-6 w-full">
-          {/* Home button - Top Left */}
+        {/* All buttons in one row at the top */}
+        <div className="flex flex-wrap justify-between items-center p-6 w-full gap-4">
+          {/* Home button */}
           <button
             onClick={onBack}
-            className="px-4 py-2 rounded-lg font-inter text-white font-bold"
-            style={{ backgroundColor: '#003153' }}
+            className="px-6 py-3 rounded-lg font-inter text-white font-bold text-3xl"
+            style={{ backgroundColor: '#003153', minWidth: '200px', minHeight: '80px' }}
           >
             {textContent.back}
           </button>
           
-          {/* Save and Send buttons - Top Right */}
-          <div className="flex space-x-2">
-            <button
-              onClick={handleSavePostcard}
-              disabled={isSaved}
-              className="px-4 py-2 rounded-lg font-inter text-white font-bold disabled:opacity-50"
-              style={{ backgroundColor: '#3fbdc7' }}
-            >
-              {textContent.save}
-            </button>
-            <button
-              onClick={handleSendPostcard}
-              className="px-4 py-2 rounded-lg font-inter text-white font-bold"
-              style={{ backgroundColor: '#66ab4b' }}
-            >
-              {textContent.send}
-            </button>
-          </div>
-        </div>
-
-        {/* Next Picture button - Below buttons, above postcard */}
-        <div className="flex justify-end p-6 w-full pt-0">
+          {/* Save Postcard button */}
+          <button
+            onClick={handleSavePostcard}
+            disabled={isSaved}
+            className="px-6 py-3 rounded-lg font-inter text-white font-bold text-3xl"
+            style={{ backgroundColor: '#3fbdc7', minWidth: '200px', minHeight: '80px' }}
+          >
+            {textContent.save}
+          </button>
+          
+          {/* Send Postcard button */}
+          <button
+            onClick={handleSendPostcard}
+            className="px-6 py-3 rounded-lg font-inter text-white font-bold text-3xl"
+            style={{ backgroundColor: '#66ab4b', minWidth: '200px', minHeight: '80px' }}
+          >
+            {textContent.send}
+          </button>
+          
+          {/* Next Picture button */}
           <button
             onClick={handleNextPicture}
-            className="px-4 py-2 rounded-lg font-inter text-white font-bold"
-            style={{ backgroundColor: '#4bc1eb' }}
+            className="px-6 py-3 rounded-lg font-inter text-white font-bold text-3xl"
+            style={{ backgroundColor: '#4bc1eb', minWidth: '200px', minHeight: '80px' }}
           >
             {textContent.nextPicture}
           </button>
@@ -597,7 +590,7 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
         {/* Preview modal */}
         {showPreviewModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full p-6">
+            <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full p-6">
               <h3 className="text-xl font-semibold text-gray-800 mb-4">{textContent.send}</h3>
               <p className="text-gray-600 mb-4">{textContent.sendPreviewConfirm}</p>
               
@@ -647,10 +640,10 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
         )}
 
         {/* Postcard */}
-        <div className="bg-white rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.15)] overflow-hidden mx-auto my-4" style={{ height: '75vh', width: '100%' }}>
+        <div className="bg-white rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.15)] overflow-hidden mx-auto my-4" style={{ height: '80vh', width: '100%' }}>
           <div className="relative h-full">
             {/* Stamp in top-right corner - moved to inside the content area to avoid overlapping with feedback */}
-            <div className="absolute top-6 right-6 w-32 h-36 z-10">
+            <div className="absolute top-6 right-6 w-48 h-52 z-10">
               <img 
                 src={`/img_post/img_post_0${Math.floor(Math.random() * 6) + 1}.png`} 
                 alt="Stamp" 
@@ -663,7 +656,7 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
               <div className="flex flex-col">
                 {/* Postal code above image */}
                 <div className="bg-white border-2 border-black self-start mb-4 px-3 py-1">
-                  <div className="text-xl font-bold text-black">Postcode: {postalCode}</div>
+                  <div className="text-4xl font-bold text-black">Postcode: {postalCode}</div>
                 </div>
                 
                 {/* Image */}
@@ -687,33 +680,33 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
               </div>
 
               {/* Right Column - Feedback - Added padding to avoid overlapping with stamp */}
-              <div className="space-y-8 pt-20"> {/* Added top padding to avoid overlapping with stamp */}
-                <h2 className="text-2xl font-gloria-hallelujah text-gray-800 mb-6 pb-2 border-b border-gray-300">
+              <div className="space-y-8 pt-28"> {/* Increased top padding to avoid overlapping with stamp */}
+                <h2 className="text-5xl font-gloria-hallelujah text-gray-800 mb-6 pb-2 border-b border-gray-300">
                   {textContent.feedback}
                 </h2>
 
                 {/* Encouraging Remarks */}
                 <div className="bg-green-50 p-6 rounded-lg border border-green-200">
-                  <h3 className="text-xl font-semibold text-green-800 mb-4 flex items-center font-inter">
+                  <h3 className="text-3xl font-semibold text-green-800 mb-4 flex items-center font-inter">
                     💬 {textContent.encouragingRemarks}
                   </h3>
-                  <p className="text-green-700 whitespace-pre-line text-lg font-inter">{localFeedback.encouragingRemarks}</p>
+                  <p className="text-green-700 whitespace-pre-line text-2xl font-inter">{localFeedback.encouragingRemarks}</p>
                 </div>
 
                 {/* Error Summary */}
                 <div className="bg-amber-50 p-6 rounded-lg border border-amber-200">
-                  <h3 className="text-xl font-semibold text-amber-800 mb-4 flex items-center font-inter">
+                  <h3 className="text-3xl font-semibold text-amber-800 mb-4 flex items-center font-inter">
                     ❗ {textContent.errorSummary}
                   </h3>
-                  <pre className="text-amber-700 whitespace-pre-line font-sans text-lg font-inter">{localFeedback.errorSummary}</pre>
+                  <pre className="text-amber-700 whitespace-pre-line font-sans text-2xl font-inter">{localFeedback.errorSummary}</pre>
                 </div>
 
                 {/* Suggestions */}
                 <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
-                  <h3 className="text-xl font-semibold text-blue-800 mb-4 flex items-center font-inter">
+                  <h3 className="text-3xl font-semibold text-blue-800 mb-4 flex items-center font-inter">
                     💡 {textContent.suggestions}
                   </h3>
-                  <pre className="text-blue-700 whitespace-pre-line font-sans text-lg font-inter">{localFeedback.suggestions}</pre>
+                  <pre className="text-blue-700 whitespace-pre-line font-sans text-2xl font-inter">{localFeedback.suggestions}</pre>
                 </div>
               </div>
             </div>

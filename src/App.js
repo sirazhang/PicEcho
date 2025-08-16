@@ -34,6 +34,46 @@ const App = () => {
     }
   }, []);
 
+  // Handle hash-based routing
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash;
+      
+      if (hash.startsWith('#/dialogue/')) {
+        // Parse the hash to extract imageId, language, and level
+        const parts = hash.substring(11).split('/');
+        const imageId = parts[0];
+        const language = parts[1] || 'en';
+        const level = parts[2] ? parseInt(parts[2], 10) : 1;
+        
+        setSelectedImage(imageId);
+        setSelectedLanguage(language);
+        setSelectedLevel(level);
+        setCurrentScreen('dialogue');
+      } else if (hash === '#/map') {
+        setMap(true);
+        setCurrentScreen('map');
+      } else {
+        // Default to home screen
+        setCurrentScreen('home');
+        setFeedback(null);
+        setConversationHistory([]);
+        setSelectedPostcard(null);
+      }
+    };
+
+    // Handle initial hash
+    handleHashChange();
+    
+    // Listen for hash changes
+    window.addEventListener('hashchange', handleHashChange);
+    
+    // Cleanup
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange);
+    };
+  }, []);
+
   const handleStartDialogue = (imageId, language, level) => {
     setSelectedImage(imageId);
     setSelectedLanguage(language || 'en'); // Set language when starting dialogue
@@ -97,7 +137,6 @@ const App = () => {
   };
 
   const handleSavePostcard = (postcardData) => {
-    // Add level information to postcard data
     const postcardDataWithLevel = {
       ...postcardData,
       level: selectedLevel
@@ -141,6 +180,9 @@ const App = () => {
     setFeedback(null);
     setConversationHistory([]);
     setSelectedPostcard(null);
+    
+    // Clear hash for home screen
+    window.location.hash = '';
   };
 
   return (
