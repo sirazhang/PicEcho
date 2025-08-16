@@ -92,7 +92,6 @@ const WorldMapReview = ({ onBack, onViewPostcard }) => {
         message: `Error: ${error.message}`,
         isError: true
       });
-      setShowReceivedPostcard(true);
     } finally {
       setIsFetching(false);
     }
@@ -111,74 +110,96 @@ const WorldMapReview = ({ onBack, onViewPostcard }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-800">Learning Journey Map</h1>
-          <button
-            onClick={onBack}
-            className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg transition duration-300"
-          >
-            Back to Home
-          </button>
-        </div>
+    <div className="min-h-screen bg-[#e5f5fb] p-0">
+      {/* Header with title and home button */}
+      <div className="flex justify-between items-center p-6">
+        <div></div> {/* Empty div for spacing */}
+        <h1 className="text-5xl font-gloria-hallelujah absolute left-1/2 transform -translate-x-1/2">
+          Learning Journey Map
+        </h1>
+        <button
+          onClick={onBack}
+          className="px-6 py-3 text-3xl font-inter font-bold focus:outline-none rounded-full"
+          style={{ 
+            backgroundColor: '#ffffff',
+            minWidth: '200px',
+            minHeight: '80px'
+          }}
+        >
+          Home
+        </button>
+      </div>
 
-        <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-          <div className="p-6">
-            <p className="text-gray-600 mb-6">
-              Click on the markers to review your learning progress. You've completed {savedPostcards.length} activities so far.
-            </p>
+      {/* Progress text */}
+      <div className="text-center px-6 mb-8">
+        <p className="text-2xl font-inter">
+          Click on the markers to review your learning progress.{' '}
+          You've completed <span className="font-bold text-3xl">{savedPostcards.length}</span> activities so far.
+        </p>
+      </div>
+
+      {/* Main content area - Map and controls */}
+      <div className="flex flex-col" style={{ height: '90vh' }}>
+        {/* Map Container - takes most of the space and fits the map image */}
+        <div className="flex-grow relative mb-6 flex justify-center items-center">
+          <div className="relative bg-blue-50 border-4 border-black flex justify-center items-center w-full h-full">
+            {/* World Map PNG Background */}
+            <img 
+              src="/map.png" 
+              alt="World Map" 
+              className="h-full w-full object-contain"
+            />
             
-            <div className="relative bg-blue-50 rounded-xl overflow-hidden" style={{ height: '70vh' }}>
-              {/* World Map SVG Background */}
-              <img 
-                src="/map.svg" 
-                alt="World Map" 
-                className="absolute inset-0 w-full h-full object-contain"
-              />
-              
-              {/* Location markers */}
-              {postcardLocations.map((location) => (
-                <div
-                  key={location.id}
-                  onClick={() => handleLocationClick(location)}
-                  className="absolute cursor-pointer transform -translate-x-1/2 -translate-y-1/2"
-                  style={{ left: `${location.x}%`, top: `${location.y}%` }}
-                >
-                  <div className="w-4 h-4 bg-red-500 rounded-full border-2 border-white shadow-lg hover:scale-125 transition-transform duration-200"></div>
-                  <div className="absolute inset-0 w-4 h-4 bg-red-500 rounded-full animate-ping opacity-20"></div>
-                </div>
-              ))}
-              
-              {/* Mailbox icon */}
-              <button
-                onClick={fetchRandomPostcard}
-                disabled={isFetching}
-                className="absolute bottom-4 right-4 bg-white rounded-full p-3 shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50"
+            {/* Location markers */}
+            {postcardLocations.map((location) => (
+              <div
+                key={location.id}
+                onClick={() => handleLocationClick(location)}
+                className="absolute cursor-pointer transform -translate-x-1/2 -translate-y-1/2"
+                style={{ left: `${location.x}%`, top: `${location.y}%` }}
               >
-                {isFetching ? (
-                  <div className="w-8 h-8 flex items-center justify-center">
-                    <svg className="animate-spin h-6 w-6 text-gray-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                  </div>
-                ) : (
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
-                )}
-              </button>
-              
-              {/* Legend */}
-              <div className="absolute bottom-4 left-4 bg-white bg-opacity-80 rounded-lg p-3 shadow-md">
-                <div className="flex items-center mb-2">
-                  <div className="w-4 h-4 bg-red-500 rounded-full mr-2"></div>
-                  <span className="text-sm">Completed Activities</span>
-                </div>
-                <div className="text-xs text-gray-600">Click on markers to review</div>
+                <div className="w-8 h-8 bg-red-500 rounded-full border-4 border-white shadow-lg hover:scale-125 transition-transform duration-200"></div>
+                <div className="absolute inset-0 w-8 h-8 bg-red-500 rounded-full animate-ping opacity-20"></div>
               </div>
+            ))}
+          </div>
+        </div>
+        
+        {/* Bottom row with legend on left and mailbox on right */}
+        <div className="flex justify-between items-end pb-6 px-6">
+          {/* Left Legend Panel */}
+          <div className="bg-white rounded-lg p-6 shadow-xl">
+            <div className="flex items-center mb-3">
+              <div className="w-8 h-8 bg-red-500 rounded-full mr-3"></div>
+              <span className="text-2xl font-inter font-bold">Completed Activities</span>
             </div>
+            <div className="text-xl text-gray-600 font-inter">
+              Click on markers to review
+            </div>
+          </div>
+          
+          {/* Right Panel with Mailbox */}
+          <div>
+            <button
+              onClick={fetchRandomPostcard}
+              disabled={isFetching}
+              className="bg-white rounded-full p-4 shadow-xl hover:shadow-2xl transition-all duration-200 disabled:opacity-50"
+            >
+              {isFetching ? (
+                <div className="w-16 h-16 flex items-center justify-center">
+                  <svg className="animate-spin h-12 w-12 text-gray-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                </div>
+              ) : (
+                <img 
+                  src="/design/box.png" 
+                  alt="Mailbox" 
+                  className="h-24 w-24 object-contain"
+                />
+              )}
+            </button>
           </div>
         </div>
       </div>

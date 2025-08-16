@@ -317,28 +317,44 @@ const DialogueMode = ({ imageId, language, level, onFinish, onCancel }) => {
   const textContent = getTextContent();
 
   return (
-    <div className="min-h-screen flex flex-col p-4">
-      <div className="max-w-6xl mx-auto w-full">
-        <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-bold text-gray-800">{textContent.title}</h1>
+    <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#e5f5fb' }}>
+      <div className="max-w-8xl mx-auto w-full">
+        {/* Header with Home and Complete buttons */}
+        <div className="flex justify-between items-center p-6">
           <button 
             onClick={onCancel}
-            className="text-gray-500 hover:text-gray-700 font-medium"
+            className="px-4 py-2 text-20 font-inter font-bold focus:outline-none rounded-full flex items-center"
+            style={{ 
+              backgroundColor: '#ffffff',
+              minWidth: '150px',
+              minHeight: '60px'
+            }}
           >
-            {textContent.cancel}
+            Home
+          </button>
+          <button
+            onClick={handleFinish}
+            className="px-4 py-2 text-20 font-inter font-bold focus:outline-none rounded-full"
+            style={{ 
+              backgroundColor: '#ffffff',
+              minWidth: '200px',
+              minHeight: '60px'
+            }}
+          >
+            Complete
           </button>
         </div>
         
-        <div className="flex flex-row gap-6">
-          {/* Image Section - Fixed position, no scroll */}
+        <div className="flex flex-row gap-6 px-6 pb-6" style={{ height: '90vh' }}>
+          {/* Image Section */}
           <div className="w-1/2">
-            <div className="bg-white rounded-xl shadow-lg p-4 sticky top-4">
-              <div className="flex items-center justify-center">
+            <div className="h-full flex items-center justify-center border-2 border-black">
+              <div className="flex items-center justify-center h-full">
                 {/* 根据难度级别加载对应的图片路径 */}
                 <img 
                   src={`/img_Level${level}/${imageId}.png`} 
                   alt={language === 'zh' ? '对话提示图片' : 'Conversation prompt'} 
-                  className="h-auto max-w-full object-contain rounded-lg"
+                  className="max-h-full max-w-full object-contain"
                   onError={(e) => {
                     // 如果特定级别的图片不存在，尝试加载默认级别图片
                     if (e.target.src.includes('/img_Level')) {
@@ -355,59 +371,76 @@ const DialogueMode = ({ imageId, language, level, onFinish, onCancel }) => {
             </div>
           </div>
           
-          {/* Conversation Section */}
+          {/* Chat Section */}
           <div className="w-1/2 flex flex-col">
-            <div className="bg-white rounded-xl shadow-lg p-4 flex flex-col h-[70vh]">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">
-                {textContent.conversation}
-              </h2>
-              
-              <div className="flex-grow mb-4 space-y-4 max-h-[45vh] overflow-y-auto">
-                {messages.map((message) => (
-                  <div 
-                    key={message.id} 
-                    className={`p-4 rounded-lg max-w-[80%] text-[1.5rem] ${
-                      message.sender === 'user' 
-                        ? 'bg-blue-100 ml-auto' 
-                        : 'bg-gray-100 mr-auto'
-                    }`}
-                  >
-                    <div className="font-semibold mb-1">
-                      {message.sender === 'user' 
-                        ? textContent.you
-                        : textContent.aiTutor}
-                    </div>
-                    <div>{message.text}</div>
-                  </div>
-                ))}
-                
-                {isLoading && (
-                  <div className="p-4 rounded-lg bg-gray-100 mr-auto max-w-[80%] text-[1.5rem]">
-                    <div className="font-semibold mb-1">
-                      {showImageAnalysisMessage ? '' : textContent.aiTutor}
-                    </div>
-                    <div>
-                      {showImageAnalysisMessage ? (
-                        <div className="flex items-center">
-                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-500 mr-2"></div>
-                          {textContent.imageAnalysis}
+            <div className="flex-grow border-8 border-[#77c6d7] bg-white rounded-xl p-6 flex flex-col" style={{ height: '90vh' }}>
+              <div className="flex-grow mb-4 overflow-y-auto">
+                <div className="space-y-2">
+                  {messages.map((message) => (
+                    <div 
+                      key={message.id} 
+                      className={`rounded-lg max-w-[90%] font-sans tracking-wide leading-relaxed ${
+                        message.sender === 'user' 
+                          ? 'ml-auto text-5xl' 
+                          : 'mr-auto text-5xl'
+                      }`}
+                    >
+                      <div className="flex items-start">
+                        {message.sender === 'ai' && (
+                          <img 
+                            src="/design/robot.png" 
+                            alt="AI Tutor" 
+                            className="w-80 h-80 mr-4 object-contain align-start" // 35vh equivalent
+                          />
+                        )}
+                        <div className="flex flex-col">
+                          <div className="font-semibold mb-1">
+                            {message.sender === 'user' 
+                              ? textContent.you
+                              : ''}
+                          </div>
+                          <div className={`p-6 rounded-lg ${message.sender === 'ai' ? 'bg-[#A6e2b1]' : ''}`}>
+                            {message.text}
+                          </div>
                         </div>
-                      ) : (
-                        <div className="flex space-x-2">
-                          <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></div>
-                          <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                          <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
-                        </div>
-                      )}
+                      </div>
                     </div>
-                  </div>
-                )}
-                
-                {speechError && (
-                  <div className="p-2 rounded-lg bg-red-100 text-red-700 text-sm">
-                    {textContent.speechError}: {speechError}
-                  </div>
-                )}
+                  ))}
+                  
+                  {isLoading && (
+                    <div className="rounded-lg mr-auto max-w-[90%] text-5xl font-sans tracking-wide leading-relaxed">
+                      <div className="flex items-start">
+                        <img 
+                          src="/design/robot.png" 
+                          alt="AI Tutor" 
+                          className="w-80 h-80 mr-4 object-contain align-start" // 35vh equivalent
+                        />
+                        <div className="flex flex-col">
+                          <div className="bg-[#A6e2b1] p-6 rounded-lg">
+                            {showImageAnalysisMessage ? (
+                              <div className="flex items-center">
+                                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-500 mr-2"></div>
+                                {textContent.imageAnalysis}
+                              </div>
+                            ) : (
+                              <div className="flex space-x-2">
+                                <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></div>
+                                <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                                <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {speechError && (
+                    <div className="p-2 rounded-lg bg-red-100 text-red-700 text-sm">
+                      {textContent.speechError}: {speechError}
+                    </div>
+                  )}
+                </div>
               </div>
               
               <div className="mt-auto">
@@ -418,7 +451,7 @@ const DialogueMode = ({ imageId, language, level, onFinish, onCancel }) => {
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyPress={handleKeyPress}
                     placeholder={textContent.placeholder}
-                    className="flex-grow border border-gray-300 rounded-l-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
+                    className="flex-grow border border-gray-300 p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 text-5xl font-sans"
                     rows="3"
                     disabled={isLoading}
                   />
@@ -426,33 +459,35 @@ const DialogueMode = ({ imageId, language, level, onFinish, onCancel }) => {
                     <button
                       onClick={handleSend}
                       disabled={isLoading || (inputValue.trim() === '' && transcript.trim() === '')}
-                      className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white px-4 rounded-tr-lg font-medium"
+                      className="bg-white p-2 rounded-tr-lg font-medium flex items-center justify-center"
                     >
-                      {textContent.send}
+                      <img 
+                        src="/design/send.png" 
+                        alt="Send" 
+                        className="w-32 h-32 object-contain" // 12vh equivalent
+                      />
                     </button>
                     <button
                       onClick={isListening ? stopListening : startListening}
                       disabled={isLoading}
-                      className={`${
-                        isListening 
-                          ? 'bg-red-500 hover:bg-red-600' 
-                          : 'bg-green-500 hover:bg-green-600'
-                      } text-white px-4 rounded-br-lg font-medium h-full flex items-center justify-center`}
+                      className="bg-white p-2 rounded-br-lg h-full flex items-center justify-center"
                     >
                       {isListening ? (
                         <div className="flex items-center">
-                          <div className="w-3 h-3 bg-white rounded-full mr-1 animate-pulse"></div>
+                          <div className="w-3 h-3 bg-red-500 rounded-full mr-1 animate-pulse"></div>
                           <span>●</span>
                         </div>
                       ) : (
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clipRule="evenodd" />
-                        </svg>
+                        <img 
+                          src="/design/voice.png" 
+                          alt="Voice Input" 
+                          className="w-32 h-32 object-contain" // 12vh equivalent
+                        />
                       )}
                     </button>
                   </div>
                 </div>
-                <div className="mt-2 text-sm text-gray-500">
+                <div className="mt-2 text-2xl text-gray-500">
                   {textContent.pressEnter}
                 </div>
                 {isListening && (
@@ -461,15 +496,6 @@ const DialogueMode = ({ imageId, language, level, onFinish, onCancel }) => {
                   </div>
                 )}
               </div>
-            </div>
-            
-            <div className="mt-4 flex justify-end">
-              <button
-                onClick={handleFinish}
-                className="bg-indigo-500 hover:bg-indigo-600 text-white font-medium py-2 px-6 rounded-lg"
-              >
-                {textContent.finish}
-              </button>
             </div>
           </div>
         </div>
