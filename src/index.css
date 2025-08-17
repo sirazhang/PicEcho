@@ -1,5 +1,8 @@
+/* prettier-ignore */
 @tailwind base;
+/* prettier-ignore */
 @tailwind components;
+/* prettier-ignore */
 @tailwind utilities;
 
 /* Import Google Fonts */
@@ -61,6 +64,40 @@
 
 .text-520 {
   font-size: 520px;
+}
+
+/* PostcardShell.css */
+.postcard-shell {
+  position: relative;
+  background: #000;          /* 黑框 */
+  border-radius: 14px;
+  padding: 16px 16px 20px;   /* 统一内边距 */
+  overflow: hidden;          /* 关键：别让内容溢出黑框 */
+  box-shadow: 0 8px 24px rgba(0,0,0,.3);
+}
+
+/* 顶部图像区域 */
+.postcard-dialogue-image {
+  display: block;
+  width: 100%;
+  height: auto;              /* 保持比例 */
+  margin: 0;                 /* 清掉可能的默认 margin */
+  transform: translateY(-8px); /* 轻微上移（根据视觉微调 -6 ~ -10px）*/
+}
+
+/* 分割线 */
+.postcard-divider {
+  height: 1px;
+  background: rgba(255,255,255,.14);
+  margin: 6px 0 12px;       /* 上移：减少上边距 */
+}
+
+/* 文字区避免再产生外部 margin 把内容顶出去 */
+.postcard-content > *:first-child {
+  margin-top: 0;
+}
+.postcard-content > *:last-child {
+  margin-bottom: 0;
 }
 
 /* Ensure the body takes full height */

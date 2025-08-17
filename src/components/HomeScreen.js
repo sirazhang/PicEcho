@@ -16,7 +16,7 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview, selectedLanguage, setSel
     if (savedLanguage) {
       setSelectedLanguage(savedLanguage);
     }
-  }, []);
+  }, [setSelectedLanguage]);
 
   // Check if an image exists in a specific level
   const checkImageExistsInLevel = (imageId, level) => {
@@ -185,14 +185,14 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview, selectedLanguage, setSel
               <div className="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10" style={{ border: '2px solid #003153' }}>
                 <button
                   onClick={() => handleLanguageChange('en')}
-                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left flex items-center"
+                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
                 >
                   <span className="mr-2">🇺🇸</span>
                   English
                 </button>
                 <button
                   onClick={() => handleLanguageChange('zh')}
-                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left flex items-center"
+                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
                 >
                   <span className="mr-2">🇨🇳</span>
                   中文
@@ -236,8 +236,17 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview, selectedLanguage, setSel
 
           {/* Subtitle - English and Chinese on separate lines */}
           <div className="text-xl font-inter text-black mb-6 max-w-2xl">
-            <p className="mb-1">Chat with the world, one picture at a time.</p>
-            <p>看图聊天，寄出世界</p>
+            {selectedLanguage === 'zh' ? (
+              <>
+                <p className="mb-1">看图聊天，寄出世界</p>
+                <p>Chat with the world, one picture at a time.</p>
+              </>
+            ) : (
+              <>
+                <p className="mb-1">Chat with the world, one picture at a time.</p>
+                <p>看图聊天，寄出世界</p>
+              </>
+            )}
           </div>
 
           {/* Level Buttons */}
@@ -247,7 +256,7 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview, selectedLanguage, setSel
               style={{ backgroundColor: '#7ecc8f' }}
               onClick={() => handleLevelChange(1)}
             >
-              Level 1
+              {selectedLanguage === 'zh' ? '等级 1' : 'Level 1'}
             </button>
             
             <button
@@ -255,7 +264,7 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview, selectedLanguage, setSel
               style={{ backgroundColor: '#558e23' }}
               onClick={() => handleLevelChange(2)}
             >
-              Level 2
+              {selectedLanguage === 'zh' ? '等级 2' : 'Level 2'}
             </button>
             
             <button
@@ -263,7 +272,7 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview, selectedLanguage, setSel
               style={{ backgroundColor: '#337d2f' }}
               onClick={() => handleLevelChange(3)}
             >
-              Level 3
+              {selectedLanguage === 'zh' ? '等级 3' : 'Level 3'}
             </button>
           </div>
         </div>

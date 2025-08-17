@@ -91,7 +91,8 @@ const WorldMapReview = ({ onBack, onViewPostcard }) => {
       receiveButton: 'Receive Postcard', // Add receive button text
       close: 'Close',
       noPostcards: 'No postcards available at the moment.',
-      view: 'View'
+      view: 'View',
+      completedActivities: 'Completed Activities'
     };
   };
 
@@ -186,11 +187,11 @@ const WorldMapReview = ({ onBack, onViewPostcard }) => {
         ))}
       </div>
 
-      {/* Legend */}
-      <div className="flex justify-center mt-4 mb-4">
-        <div className="flex items-center mr-6">
+      {/* Legend section */}
+      <div className="flex justify-center mt-4">
+        <div className="flex items-center font-inter text-xl">
           <div className="w-4 h-4 bg-red-500 rounded-full mr-2"></div>
-          <span className="font-inter text-xl">Completed Activities</span>
+          <span>{textContent.completedActivities}</span>
         </div>
       </div>
 

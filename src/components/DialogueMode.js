@@ -424,7 +424,7 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
               minHeight: '40px'
             }}
           >
-            Home
+            {language === 'zh' ? '主页' : 'Home'}
           </button>
           <button
             onClick={handleFinish}
@@ -436,7 +436,7 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
               minHeight: '40px'
             }}
           >
-            Complete
+            {language === 'zh' ? '完成' : 'Complete'}
           </button>
         </div>
         
@@ -449,17 +449,17 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
                 {imageLoading ? (
                   <div className="flex items-center justify-center h-full">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mr-2"></div>
-                    <span className="text-gray-700">Loading image...</span>
+                    <span className="text-gray-700">{language === 'zh' ? '加载图片中...' : 'Loading image...'}</span>
                   </div>
                 ) : imageError ? (
                   <div className="flex items-center justify-center h-full bg-gray-100">
                     <div className="text-center">
-                      <p className="text-red-500 mb-2">Image not found</p>
+                      <p className="text-red-500 mb-2">{language === 'zh' ? '图片未找到' : 'Image not found'}</p>
                       <button
                         onClick={() => window.location.reload()}
                         className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
                       >
-                        Retry
+                        {language === 'zh' ? '重试' : 'Retry'}
                       </button>
                     </div>
                   </div>
@@ -500,6 +500,8 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
                           <div className="font-semibold mb-1">
                             {message.sender === 'user' 
                               ? textContent.you
+                              : message.sender === 'ai'
+                              ? textContent.aiTutor
                               : ''}
                           </div>
                           <div className={`p-6 rounded-lg ${message.sender === 'ai' ? 'bg-[#A6e2b1]' : ''}`}>
@@ -519,6 +521,7 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
                           className="w-24 h-24 mr-4 object-contain align-start" // Reduced from 80 to 24 (8vh)
                         />
                         <div className="flex flex-col">
+                          <div className="font-semibold mb-1">{textContent.aiTutor}</div>
                           <div className="bg-[#A6e2b1] p-6 rounded-lg">
                             {showImageAnalysisMessage ? (
                               <div className="flex items-center">
@@ -607,6 +610,6 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
       </div>
     </div>
   );
-};
+}
 
 export default DialogueMode;

@@ -10,15 +10,15 @@ const getImagePath = (level, imageId) => {
 const getTemplateFeedback = (language) => {
   if (language === 'zh') {
     return {
-      encouragingRemarks: "做得很好！🌟\\n你的表达清晰自信，这真的很了不起！继续保持！👍",
-      errorSummary: "• \"I no know this word.\" → \"I don't know this word.\"\\n• \"She is more higher than me.\" → \"She is higher than me.\"",
-      suggestions: "• 用 \"I'm not familiar with this word.\" 替代 \"I don't know this word.\"\\n• 用 \"I haven't heard of this word before.\" 替代 \"I don't know this word.\""
+      encouragingRemarks: "✅ 很棒的努力！🌟\n你的中文表达清晰而自然 👍，语气也很自信！继续保持，你的进步很明显！🚀",
+      errorSummary: "❗ 小修正\n* ❌ \"小狗在跑步步。\" → ✅ \"小狗在跑。\"\n* ❌ \"他们在吃苹果子。\" → ✅ \"他们在吃苹果。\"",
+      suggestions: "💡 可以试着这样说\n在看图说话时，可以尝试用更完整的句子，比如：\n* \"小狗正在公园里跑来跑去。\"\n* \"他们一家人坐在桌子旁边，一起吃苹果。\""
     };
   } else {
     return {
-      encouragingRemarks: "Excellent Effort! 🌟\\nYour speaking was clear and confident, which is really impressive! Keep up the good work! 👍",
-      errorSummary: "• \"I no know this word.\" → \"I don't know this word.\"\\n• \"She is more higher than me.\" → \"She is higher than me.\"",
-      suggestions: "Instead of \"I don't know this word,\" you can say:\\n• \"I'm not familiar with this word.\"\\n• \"I haven't heard of this word before.\""
+      encouragingRemarks: "✅ Excellent Effort! 🌟\n* Your speaking was clear and confident👍, which is really impressive! Keep it up, you're improving fast. 🚀",
+      errorSummary: "⚠️ Small Fixes\n❌ \"I no know this word.\" → ✅ \"I don't know this word.\"\n❌ \"She is more higher than me.\" → ✅ \"She is higher than me.\"",
+      suggestions: "💡 Try These Improvements\nInstead of \"I don't know this word\", you can say:\n* \"I'm not familiar with this word.\"\n* \"I haven't heard this word before.\""
     };
   }
 };
@@ -165,7 +165,9 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
 
   // Handle sending the postcard
   const handleSendPostcard = async () => {
-    setShowSendModal(true);
+    // Generate postcard image first
+    await generatePostcardImage();
+    setShowPreviewModal(true);
   };
 
   // Confirm and send the postcard
@@ -174,9 +176,6 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
     setSendStatus('');
     
     try {
-      // Generate postcard image first
-      await generatePostcardImage();
-      
       // Send the postcard
       const response = await sendPostcard({
         senderId: 'user_' + Math.random().toString(36).substr(2, 9), // Generate a simple sender ID
@@ -389,51 +388,54 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
 
   // Handle next picture button click
   const handleNextPicture = () => {
-    // Get all images for current level from localStorage or fallback to hardcoded list
-    let levelImages = [];
-    
+    // Step 1: 拿到同 level 的图片池
+    let pool = [];
     try {
-      // Try to get image list from localStorage (set by HomeScreen)
       const levelImageData = localStorage.getItem('levelImages');
       if (levelImageData) {
         const parsedData = JSON.parse(levelImageData);
         if (parsedData[`level${level}`]) {
-          levelImages = parsedData[`level${level}`];
+          pool = parsedData[`level${level}`];
         }
       }
     } catch (e) {
       console.warn('Failed to parse level images from localStorage', e);
     }
-    
-    // Fallback to hardcoded lists if localStorage data is not available
-    if (levelImages.length === 0) {
+
+    // fallback: 如果 localStorage 没有，就用硬编码的 levelImageMap
+    if (!pool.length) {
       const levelImageMap = {
         1: ['img_01', 'img_02', 'img_03', 'img_04', 'img_05', 'img_06', 'img_07', 'img_08', 'img_09', 'img_10', 'img_11', 'img_12', 'img_13', 'img_14', 'img_16', 'img_17', 'img_20', 'img_23', 'img_29', 'img_30', 'img_31', 'img_33', 'img_34', 'img_40', 'img_41', 'img_47', 'img_48', 'img_51'],
         2: ['img_15', 'img_18', 'img_19', 'img_21', 'img_22', 'img_32', 'img_35', 'img_36', 'img_37', 'img_38', 'img_39', 'img_42', 'img_43', 'img_44', 'img_45', 'img_46', 'img_49', 'img_50'],
         3: ['img_24', 'img_25', 'img_26', 'img_27', 'img_28', 'img_52']
       };
       
-      levelImages = levelImageMap[level] || levelImageMap[1];
+      if (levelImageMap[level]) {
+        pool = levelImageMap[level];
+      }
     }
-    
-    // Filter out current image
-    const otherImages = levelImages.filter(img => img !== imageId);
-    
-    // Select random image from remaining images
-    if (otherImages.length > 0) {
-      const randomIndex = Math.floor(Math.random() * otherImages.length);
-      const nextImageId = otherImages[randomIndex];
-      
-      // Redirect to dialogue mode with new image using the hash routing pattern from App.js
-      window.location.hash = `#/dialogue/${nextImageId}/${selectedLanguage}/${level}`;
+
+    // Step 2: 随机挑选不同于当前的 imageId
+    let nextId = imageId;
+    if (pool.length > 1) {
+      // 确保不会选择到当前图片，除非池子只有一张图
+      while (nextId === imageId) {
+        nextId = pool[Math.floor(Math.random() * pool.length)];
+      }
+    } else if (pool.length === 1) {
+      // 如果池子只有一张图，就使用那张图
+      nextId = pool[0];
     }
+
+    // Step 3: 跳转到新的对话页面
+    window.location.hash = `#/dialogue/${nextId}/${selectedLanguage}/${level}`;
   };
 
   // Define text content
   const getTextContent = () => {
     if (selectedLanguage === 'zh') {
       return {
-        back: 'Home',
+        back: '返回',
         save: isSaved ? '已保存' : '保存明信片',
         send: '发送明信片',
         nextPicture: '下一张图片',
@@ -444,13 +446,13 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
         sending: '发送中...',
         sendSuccess: '明信片已发送！',
         sendError: '发送失败，请重试',
-        feedback: 'Feedback',
+        feedback: '反馈',
         encouragingRemarks: '鼓励评价',
         errorSummary: '错误总结',
         suggestions: '改进建议',
         generatingFeedback: '正在生成反馈...',
         errorGeneratingFeedback: '生成反馈时出错',
-        postalCode: 'Postal Code',
+        postalCode: '邮编',
       };
     } else {
       return {
@@ -489,49 +491,6 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
               ? '我们正在分析您的对话并生成个性化反馈' 
               : 'We are analyzing your conversation and generating personalized feedback'}
           </p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-4">
-        <div className="bg-white p-8 rounded-xl shadow-lg text-center max-w-2xl w-full">
-          <div className="text-red-500 text-5xl mb-4">⚠️</div>
-          <h2 className="text-2xl font-semibold text-gray-800 mb-4">{textContent.errorGeneratingFeedback}</h2>
-          
-          <div className="mb-6 text-left inline-block text-gray-600 max-w-lg">
-            <p className="mb-4">
-              {selectedLanguage === 'zh' 
-                ? '我们遇到了一些问题来生成您的反馈。以下是一些可能的原因和解决办法：' 
-                : 'We encountered some issues generating your feedback. Here are some possible causes and solutions:'}
-            </p>
-            <ul className={`list-disc pl-5 space-y-2 ${selectedLanguage === 'zh' ? 'list-outside' : ''}`}>
-              {selectedLanguage === 'zh' ? (
-                <>
-                  <li>网络连接不稳定，请检查您的网络</li>
-                  <li>对话内容可能过短，请尝试更详细的对话</li>
-                  <li>服务器可能暂时不可用，请稍后再试</li>
-                </>
-              ) : (
-                <>
-                  <li>Unstable network connection, please check your network</li>
-                  <li>Conversation content may be too brief, try having a more detailed conversation</li>
-                  <li>Server may be temporarily unavailable, please try again later</li>
-                </>
-              )}
-            </ul>
-          </div>
-          
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button
-              onClick={onBack}
-              className="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition duration-200 font-medium"
-            >
-              {textContent.back}
-            </button>
-          </div>
         </div>
       </div>
     );
@@ -636,7 +595,7 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
         {/* Preview modal */}
         {showPreviewModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full p-6" style={{ transform: 'scale(0.9)', transformOrigin: 'center' }}>
+            <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full p-6">
               <h3 className="text-xl font-semibold text-gray-800 mb-4">{textContent.send}</h3>
               <p className="text-gray-600 mb-4">{textContent.sendPreviewConfirm}</p>
               
@@ -650,7 +609,9 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
                 ) : (
                   <div className="flex flex-col items-center justify-center py-12">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500 mb-4"></div>
-                    <p className="text-gray-600">生成预览中...</p>
+                    <p className="text-gray-600">
+                      {selectedLanguage === 'zh' ? '生成预览中...' : 'Generating preview...'}
+                    </p>
                   </div>
                 )}
               </div>
@@ -689,31 +650,26 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
         <div className="flex flex-col items-center mt-6">
           <div 
             ref={postcardRef}
-            className="bg-white rounded-lg shadow-lg p-6 border-4 border-black"
+            className="border-4 border-black rounded-lg relative"  // 添加黑框和相对定位
             style={{ 
-              width: '80vw', 
-              height: '78vh',
-              maxWidth: '1200px',
-              maxHeight: '900px'
+              width: '75vw', 
+              height: '75vh',
+              maxWidth: '1100px',
+              maxHeight: '850px',
+              backgroundColor: 'white'  // 确保背景为白色
             }}
           >
-            {/* Header section with postal code and stamp */}
-            <div className="flex justify-between items-start mb-4">
-              <div className="border-2 border-black px-3 py-1">
-                <span className="text-2xl font-gloria-hallelujah">Postcode: {postalCode}</span>
-              </div>
-              <img 
-                src={`/img_post/img_post_0${Math.floor(Math.random() * 6) + 1}.png`} 
-                alt="Stamp" 
-                className="w-32 h-36 object-contain"
-              />
-            </div>
-            
             {/* Main content area with image and feedback */}
-            <div className="flex h-full">
-              {/* Image Section */}
-              <div className="w-1/2 flex items-center justify-center pr-4">
-                <div className="relative w-full h-full flex items-center justify-center">
+            <div className="flex h-full p-6">
+              {/* Left side - Image with postcode */}
+              <div className="w-1/2 pr-4 flex flex-col">
+                {/* Postcode above image */}
+                <div className="self-start mb-4 border-2 border-black px-3 py-1">
+                  <span className="font-gloria-hallelujah text-2xl">Postcode: {postalCode}</span>
+                </div>
+                
+                {/* Image */}
+                <div className="flex-grow flex items-center justify-center">
                   <img 
                     src={getImagePath(level, imageId)} 
                     alt={selectedLanguage === 'zh' ? "图片" : "Image"} 
@@ -731,44 +687,90 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
               {/* Divider */}
               <div className="w-px bg-gray-400 mx-4"></div>
               
-              {/* Feedback section */}
-              <div className="w-1/2 flex flex-col pl-4">
-                <h2 className="text-2xl font-inter font-bold mb-6 text-center">
-                  {textContent.feedback}
-                </h2>
+              {/* Right side - Feedback */}
+              <div className="w-1/2 pl-4 flex flex-col">
+                {/* Postcode and Feedback title */}
+                <div className="mb-4">
+                  <h2 className="font-inter font-bold text-2xl">{textContent.feedback}</h2>
+                </div>
                 
-                <div className="flex-grow overflow-y-auto pr-2">
+                {/* Feedback content */}
+                <div className="flex-grow overflow-y-auto">
                   {/* Encouraging Remarks */}
-                  <div className="mb-6">
-                    <h3 className="text-xl font-inter font-bold text-green-700 mb-2 flex items-center">
-                      <span className="mr-2">✅</span> {textContent.encouragingRemarks}
-                    </h3>
-                    <p className={`font-inter text-base text-gray-800 whitespace-pre-line`}>
-                      {localFeedback?.encouragingRemarks || getTemplateFeedback(selectedLanguage).encouragingRemarks}
-                    </p>
+                  <div className="mb-4 p-3 rounded-lg" style={{ backgroundColor: '#e1fcc0', color: '#2c677b' }}>
+                    <div className="font-inter text-xl font-bold mb-2">
+                      {selectedLanguage === 'zh' ? '✅ 很棒的努力！🌟' : '✅ Excellent Effort! 🌟'}
+                    </div>
+                    <div className="font-inter text-xl whitespace-pre-line">
+                      {localFeedback?.encouragingRemarks ? 
+                        (selectedLanguage === 'zh' ? 
+                          localFeedback.encouragingRemarks :
+                          localFeedback.encouragingRemarks.split('\n').slice(1).join('\n')) :
+                       (selectedLanguage === 'zh' ?
+                         getTemplateFeedback(selectedLanguage).encouragingRemarks :
+                         getTemplateFeedback(selectedLanguage).encouragingRemarks.split('\n').slice(1).join('\n'))
+                      }
+                    </div>
                   </div>
                   
                   {/* Error Summary */}
-                  <div className="mb-6">
-                    <h3 className="text-xl font-inter font-bold text-orange-700 mb-2 flex items-center">
-                      <span className="mr-2">⚠️</span> {textContent.errorSummary}
-                    </h3>
-                    <p className={`font-inter text-base text-gray-800 whitespace-pre-line`}>
-                      {localFeedback?.errorSummary || getTemplateFeedback(selectedLanguage).errorSummary}
-                    </p>
+                  <div className="mb-4 p-3 rounded-lg" style={{ backgroundColor: '#f5e7B2', color: '#973131' }}>
+                    <div className="font-inter text-xl font-bold mb-2">
+                      {selectedLanguage === 'zh' ? '❗ 小修正' : '⚠️ Small Fixes'}
+                    </div>
+                    <div className="font-inter text-xl">
+                      {localFeedback?.errorSummary ? (
+                        <pre className="whitespace-pre-wrap font-sans m-0 p-0 text-xl" dangerouslySetInnerHTML={{
+                          __html: selectedLanguage === 'zh' ?
+                            localFeedback.errorSummary :
+                            localFeedback.errorSummary
+                              .replace(/⚠️ Small Fixes\n/g, '')
+                              .replace(/❌\s*"([^"]+)"\s*→\s*✅\s*"([^"]+)"/g, 
+                                '❌ <span style="text-decoration: line-through;">"$1"</span> → ✅ <span style="font-weight: bold;">"$2"</span>')
+                        }} />
+                      ) : (
+                        <pre className="whitespace-pre-wrap font-sans m-0 p-0 text-xl" dangerouslySetInnerHTML={{
+                          __html: selectedLanguage === 'zh' ?
+                            getTemplateFeedback(selectedLanguage).errorSummary :
+                            getTemplateFeedback(selectedLanguage).errorSummary
+                              .replace(/⚠️ Small Fixes\n/g, '')
+                              .replace(/❌\s*"([^"]+)"\s*→\s*✅\s*"([^"]+)"/g, 
+                                '❌ <span style="text-decoration: line-through;">"$1"</span> → ✅ <span style="font-weight: bold;">"$2"</span>')
+                        }} />
+                      )}
+                    </div>
                   </div>
                   
                   {/* Suggestions */}
-                  <div className="mb-6">
-                    <h3 className="text-xl font-inter font-bold text-blue-700 mb-2 flex items-center">
-                      <span className="mr-2">💡</span> {textContent.suggestions}
-                    </h3>
-                    <p className={`font-inter text-base text-gray-800 whitespace-pre-line`}>
-                      {localFeedback?.suggestions || getTemplateFeedback(selectedLanguage).suggestions}
-                    </p>
+                  <div className="mb-4 p-3 rounded-lg" style={{ backgroundColor: '#c0e0ff', color: '#253a82' }}>
+                    <div className="font-inter text-xl font-bold mb-2">
+                      {selectedLanguage === 'zh' ? '💡 可以试着这样说' : '💡 Try These Improvements'}
+                    </div>
+                    <div className="font-inter text-xl whitespace-pre-line">
+                      {localFeedback?.suggestions ? (
+                        selectedLanguage === 'zh' ?
+                        localFeedback.suggestions :
+                        localFeedback.suggestions
+                          .replace(/💡 Try These Improvements\n/g, '')
+                      ) : (
+                        selectedLanguage === 'zh' ?
+                        getTemplateFeedback(selectedLanguage).suggestions :
+                        getTemplateFeedback(selectedLanguage).suggestions
+                          .replace(/💡 Try These Improvements\n/g, '')
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
+            </div>
+            
+            {/* Stamp */}
+            <div className="absolute top-6 right-6 w-28 h-32">
+              <img 
+                src={`/img_post/img_post_0${Math.floor(Math.random() * 6) + 1}.png`} 
+                alt="Stamp" 
+                className="w-full h-full object-contain"
+              />
             </div>
           </div>
         </div>
