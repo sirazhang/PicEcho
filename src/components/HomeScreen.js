@@ -2,11 +2,10 @@ import React, { useState, useEffect } from 'react';
 
 // 工具函数：生成图片路径
 const getImagePath = (level, imageId) => {
-  return `/img_Level${level}/${imageId}.png`;
+  return `/Level${level}/${imageId}.png`;
 };
 
-const HomeScreen = ({ onStartDialogue, onOpenMapReview }) => {
-  const [selectedLanguage, setSelectedLanguage] = useState('en');
+const HomeScreen = ({ onStartDialogue, onOpenMapReview, selectedLanguage, setSelectedLanguage }) => {
   const [selectedLevel, setSelectedLevel] = useState(1);
   const [availableImages, setAvailableImages] = useState([]);
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
@@ -37,21 +36,19 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview }) => {
 
   // Helper function to get images for a specific level (fallback)
   const getLevelImages = (level) => {
+    // 这些是每个级别中可用的图片ID列表
     const level1Images = [
-      'img_01', 'img_02', 'img_03', 'img_04', 'img_05', 'img_06', 'img_07', 'img_08', 
-      'img_09', 'img_10', 'img_11', 'img_12', 'img_13', 'img_14', 'img_16', 'img_17', 
-      'img_20', 'img_23', 'img_29', 'img_30', 'img_31', 'img_33', 'img_34', 'img_40', 
-      'img_41', 'img_47', 'img_48', 'img_51'
+      'img_01', 'img_02', 'img_03', 'img_04', 'img_05', 'img_06', 'img_07', 'img_08',
+      'img_09', 'img_10', 'img_11', 'img_12', 'img_13', 'img_14', 'img_15', 'img_16'
     ];
     
     const level2Images = [
-      'img_15', 'img_18', 'img_19', 'img_21', 'img_22', 'img_32', 'img_35', 'img_36', 
-      'img_37', 'img_38', 'img_39', 'img_42', 'img_43', 'img_44', 'img_45', 'img_46', 
-      'img_49', 'img_50'
+      'img_01', 'img_02', 'img_03', 'img_04', 'img_05', 'img_06', 'img_07', 'img_08',
+      'img_09', 'img_10', 'img_11', 'img_12', 'img_13', 'img_14', 'img_15', 'img_16'
     ];
     
     const level3Images = [
-      'img_24', 'img_25', 'img_26', 'img_27', 'img_28', 'img_52'
+      'img_01', 'img_02', 'img_03', 'img_04', 'img_05', 'img_06'
     ];
     
     switch (level) {
@@ -69,7 +66,7 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview }) => {
     const loadAvailableImages = async () => {
       try {
         // Load image descriptions from the appropriate level file
-        const response = await fetch(`/descriptions_level${selectedLevel}.json`);
+        const response = await fetch(`/Level${selectedLevel}/descriptions.json`);
         const descriptions = await response.json();
         const allImageIds = Object.keys(descriptions);
         
@@ -79,19 +76,19 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview }) => {
         let levelImages = [];
         switch (selectedLevel) {
           case 1:
-            // Filter images that exist in img_Level1 folder
+            // Filter images that exist in Level1 folder
             const level1Checks = allImageIds.map(id => checkImageExistsInLevel(id, 1));
             const level1Results = await Promise.all(level1Checks);
             levelImages = allImageIds.filter((id, index) => level1Results[index]);
             break;
           case 2:
-            // Filter images that exist in img_Level2 folder
+            // Filter images that exist in Level2 folder
             const level2Checks = allImageIds.map(id => checkImageExistsInLevel(id, 2));
             const level2Results = await Promise.all(level2Checks);
             levelImages = allImageIds.filter((id, index) => level2Results[index]);
             break;
           case 3:
-            // Filter images that exist in img_Level3 folder
+            // Filter images that exist in Level3 folder
             const level3Checks = allImageIds.map(id => checkImageExistsInLevel(id, 3));
             const level3Results = await Promise.all(level3Checks);
             levelImages = allImageIds.filter((id, index) => level3Results[index]);
@@ -100,13 +97,13 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview }) => {
             levelImages = allImageIds;
         }
         
-        console.log('Level', selectedLevel, 'images:', levelImages); // 添加日志以便调试
+        console.log('Level', selectedLevel, 'images:', levelImages);
         setAvailableImages(levelImages);
       } catch (error) {
         console.error('Error loading image descriptions:', error);
         // Fallback to hardcoded list if fetch fails
         const images = getLevelImages(selectedLevel);
-        console.log('Using fallback images for level', selectedLevel, ':', images); // 添加日志以便调试
+        console.log('Using fallback images for level', selectedLevel, ':', images);
         setAvailableImages(images);
       }
     };
@@ -137,9 +134,16 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview }) => {
     return availableImages[randomIndex];
   };
 
-  const handleStart = () => {
-    const randomImage = getRandomImage();
-    onStartDialogue(randomImage, selectedLanguage, selectedLevel);
+  const handleLevelChange = (level) => {
+    setSelectedLevel(level);
+    // Save level to localStorage
+    localStorage.setItem('selectedLevel', level);
+    // Start dialogue immediately when level is selected
+    setTimeout(() => {
+      const randomImage = getRandomImage();
+      console.log('Starting dialogue with level:', level, 'image:', randomImage);
+      onStartDialogue(randomImage, selectedLanguage, level);
+    }, 300);
   };
 
   const handleLanguageChange = (language) => {
@@ -149,192 +153,117 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview }) => {
     setShowLanguageDropdown(false);
   };
 
-  const handleLevelChange = (level) => {
-    setSelectedLevel(level);
-    // Save level to localStorage
-    localStorage.setItem('selectedLevel', level);
-    // Start dialogue immediately when level is selected
-    setTimeout(() => {
-      const randomImage = getRandomImage();
-      console.log('Starting dialogue with level:', level, 'image:', randomImage); // 添加日志以便调试
-      onStartDialogue(randomImage, selectedLanguage, level);
-    }, 300);
-  };
-
-  // Define text content for different languages
-  const getTextContent = () => {
-    if (selectedLanguage === 'zh') {
-      return {
-        title: 'PicEcho',
-        subtitle: '看图聊天，寄出世界',
-        start: '开始',
-        level1: 'Level 1',
-        level2: 'Level 2',
-        level3: 'Level 3',
-        language: 'Language',
-        english: 'English',
-        chinese: '中文',
-        viewMap: '查看地图',
-        placeholder: '选择语言'
-      };
-    } else {
-      return {
-        title: 'PicEcho',
-        subtitle: 'Chat with the world, one picture at a time',
-        start: 'Start',
-        level1: 'Level 1',
-        level2: 'Level 2',
-        level3: 'Level 3',
-        language: 'Language',
-        english: 'English',
-        chinese: 'Chinese',
-        viewMap: 'View Map',
-        placeholder: 'Select Language'
-      };
-    }
-  };
-
-  const textContent = getTextContent();
-
   return (
     <div 
-      className="flex flex-col items-center justify-center min-h-screen p-4 relative"
-      style={{
-        backgroundImage: "url('/design/background_01.svg')",
+      className="min-h-screen flex flex-col relative"
+      style={{ 
+        backgroundImage: 'url(/design/background_01.png)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat'
       }}
     >
-      {/* Language Button - Top Left */}
-      <div className="absolute top-6 left-6 z-10">
-        <button
-          onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
-          className="px-4 py-2 text-base font-inter font-bold focus:outline-none rounded-lg"
-          style={{ 
-            backgroundColor: '#003153',
-            color: 'white',
-            minWidth: '120px',
-            minHeight: '40px'
-          }}
-        >
-          Language
-        </button>
-        
-        {showLanguageDropdown && (
-          <div className="absolute mt-2 w-48 rounded-md shadow-lg ring-1 ring-black ring-opacity-5">
-            <div className="py-1">
-              <button
-                onClick={() => handleLanguageChange('en')}
-                className="flex items-center w-full px-4 py-2 text-base font-inter font-bold text-left hover:bg-gray-100 rounded-lg"
-                style={{ 
-                  backgroundColor: '#faf6e8',
-                  color: 'black',
-                  minHeight: '40px'
-                }}
-              >
-                <span className="mr-2">🇺🇸</span>
-                <span className="w-full text-center">English</span>
-              </button>
-              <button
-                onClick={() => handleLanguageChange('zh')}
-                className="flex items-center w-full px-4 py-2 text-base font-inter font-bold text-left hover:bg-gray-100 rounded-lg"
-                style={{ 
-                  backgroundColor: '#faf6e8',
-                  color: 'black',
-                  minHeight: '40px'
-                }}
-              >
-                <span className="mr-2">🇨🇳</span>
-                <span className="w-full text-center">中文</span>
-              </button>
-            </div>
+      <div className="absolute inset-0 flex flex-col items-center justify-center pt-0">
+        {/* Language Selector at top left */}
+        <div className="absolute top-6 left-6">
+          <div className="relative">
+            <button
+              onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
+              className="px-4 py-2 bg-white rounded-lg font-inter font-bold text-base focus:outline-none flex items-center shadow-lg"
+              style={{ 
+                border: '2px solid #003153',
+                color: '#003153'
+              }}
+            >
+              🌐
+              <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+              </svg>
+            </button>
+            
+            {showLanguageDropdown && (
+              <div className="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10" style={{ border: '2px solid #003153' }}>
+                <button
+                  onClick={() => handleLanguageChange('en')}
+                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left flex items-center"
+                >
+                  <span className="mr-2">🇺🇸</span>
+                  English
+                </button>
+                <button
+                  onClick={() => handleLanguageChange('zh')}
+                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left flex items-center"
+                >
+                  <span className="mr-2">🇨🇳</span>
+                  中文
+                </button>
+              </div>
+            )}
           </div>
-        )}
-      </div>
-      
-      {/* Review Button - Top Right */}
-      <div className="absolute top-6 right-6">
-        <button
-          onClick={onOpenMapReview}
-          className="px-4 py-2 text-base font-inter font-bold focus:outline-none rounded-lg"
-          style={{ 
-            backgroundColor: '#4bc1eb',
-            color: 'white',
-            minWidth: '120px',
-            minHeight: '40px'
-          }}
-        >
-          {selectedLanguage === 'zh' ? '回顾' : 'Review'}
-        </button>
-      </div>
-      
-      {/* Main Content */}
-      <div className="flex flex-col items-center justify-start flex-grow pt-12">
-        <div className="flex flex-col items-center justify-center">
-          {/* Logo with Earth replacing 'o' */}
-          <div className="relative mb-4 flex items-center justify-center">
-            <h1 className="text-10xl font-gloria-hallelujah text-center inline-block">
+        </div>
+
+        {/* View Map button at top right */}
+        <div className="absolute top-6 right-6">
+          <button
+            onClick={onOpenMapReview}
+            className="px-4 py-2 rounded-lg font-inter font-bold text-base focus:outline-none flex items-center justify-center shadow-lg"
+            style={{ 
+              backgroundColor: '#3fbdc7',
+              color: 'white'
+            }}
+          >
+            {selectedLanguage === 'zh' ? '查看地图' : 'View Map'}
+          </button>
+        </div>
+
+        {/* Main Content */}
+        <div className="flex flex-col items-center justify-center text-center" style={{ transform: 'translateY(-10px)' }}>
+          {/* PicEcho Title with Earth Overlay */}
+          <div className="relative mb-2 flex items-center justify-center">
+            <h1 className="text-10xl font-gloria-hallelujah text-gray-800 relative flex items-center">
               PicEch
+              <span className="relative inline-block" style={{ width: '1.3em', height: '1.3em' }}>
+                <span className="opacity-0">o</span>
+                <img 
+                  src="/design/earth.png" 
+                  alt="Earth" 
+                  className="absolute inset-0 w-full h-full object-contain"
+                  style={{ transform: 'translate(-20%, 5%)', zIndex: 10 }}
+                />
+              </span>
             </h1>
-            <div className="inline-block relative" style={{ width: '240px', height: '240px', marginLeft: '-45px', marginRight: '-45px' }}>
-              <img 
-                src="/design/earth.png" 
-                alt="Earth" 
-                className="w-full h-full object-contain"
-              />
-            </div>
           </div>
-          
-          {/* Subtitle - Centered */}
-          <div className="text-xl font-roboto text-center mb-6 leading-relaxed">
-            <div style={{ display: 'block' }}>{textContent.subtitle1}</div>
-            <div style={{ display: 'block' }}>{textContent.subtitle2}</div>
+
+          {/* Subtitle - English and Chinese on separate lines */}
+          <div className="text-xl font-inter text-black mb-6 max-w-2xl">
+            <p className="mb-1">Chat with the world, one picture at a time.</p>
+            <p>看图聊天，寄出世界</p>
           </div>
-          
-          {/* Level Buttons - Centered */}
-          <div className="flex gap-8 mt-4">
+
+          {/* Level Buttons */}
+          <div className="flex flex-wrap justify-center gap-8 mt-2">
             <button
+              className="px-8 py-4 rounded-lg font-inter font-bold text-2xl text-white focus:outline-none shadow-lg transform transition duration-300 hover:scale-105"
+              style={{ backgroundColor: '#7ecc8f' }}
               onClick={() => handleLevelChange(1)}
-              className={`px-6 py-4 text-2xl font-inter font-bold focus:outline-none transform hover:scale-105 transition-transform rounded-lg ${
-                selectedLevel === 1 ? 'ring-4 ring-blue-300' : ''
-              }`}
-              style={{ 
-                backgroundColor: '#7ecc8f',
-                color: 'white',
-                minWidth: '180px',
-                minHeight: '70px'
-              }}
             >
-              {textContent.level1}
+              Level 1
             </button>
+            
             <button
+              className="px-8 py-4 rounded-lg font-inter font-bold text-2xl text-white focus:outline-none shadow-lg transform transition duration-300 hover:scale-105"
+              style={{ backgroundColor: '#558e23' }}
               onClick={() => handleLevelChange(2)}
-              className={`px-6 py-4 text-2xl font-inter font-bold focus:outline-none transform hover:scale-105 transition-transform rounded-lg ${
-                selectedLevel === 2 ? 'ring-4 ring-blue-300' : ''
-              }`}
-              style={{ 
-                backgroundColor: '#558e23',
-                color: 'white',
-                minWidth: '180px',
-                minHeight: '70px'
-              }}
             >
-              {textContent.level2}
+              Level 2
             </button>
+            
             <button
+              className="px-8 py-4 rounded-lg font-inter font-bold text-2xl text-white focus:outline-none shadow-lg transform transition duration-300 hover:scale-105"
+              style={{ backgroundColor: '#337d2f' }}
               onClick={() => handleLevelChange(3)}
-              className={`px-6 py-4 text-2xl font-inter font-bold focus:outline-none transform hover:scale-105 transition-transform rounded-lg ${
-                selectedLevel === 3 ? 'ring-4 ring-blue-300' : ''
-              }`}
-              style={{ 
-                backgroundColor: '#337d2f',
-                color: 'white',
-                minWidth: '180px',
-                minHeight: '70px'
-              }}
             >
-              {textContent.level3}
+              Level 3
             </button>
           </div>
         </div>

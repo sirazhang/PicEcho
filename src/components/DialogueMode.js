@@ -3,7 +3,7 @@ import { startKimiDialogue, sendToKimi } from '../utils/kimiApi';
 
 // 工具函数：生成图片路径
 const getImagePath = (level, imageId) => {
-  return `/img_Level${level}/${imageId}.png`;
+  return `/Level${level}/${imageId}.png`;
 };
 
 const DialogueMode = ({ imageId, language, level, onConversationComplete, onCancel }) => {
@@ -36,7 +36,7 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
     
     try {
       // Load image descriptions from the appropriate level file
-      const response = await fetch(`/descriptions_level${level}.json`);
+      const response = await fetch(`/Level${level}/descriptions.json`);
       const descriptions = await response.json();
       const description = descriptions[imageId] || 'A beautiful image';
       

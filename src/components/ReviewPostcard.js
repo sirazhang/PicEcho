@@ -3,7 +3,7 @@ import { sendPostcard } from '../utils/api';
 
 // 工具函数：生成图片路径
 const getImagePath = (level, imageId) => {
-  return `/img_Level${level}/${imageId}.png`;
+  return `/Level${level}/${imageId}.png`;
 };
 
 // 模板化反馈内容
@@ -72,7 +72,7 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
     const loadImageDescription = async () => {
       try {
         // Load image descriptions from the appropriate level file
-        const response = await fetch(`/descriptions_level${level}.json`);
+        const response = await fetch(`/Level${level}/descriptions.json`);
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -226,90 +226,63 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       
       // Draw decorative border
-      ctx.strokeStyle = '#ddd';
-      ctx.lineWidth = 6;
-      ctx.strokeRect(30, 30, canvas.width - 60, canvas.height - 60);
+      ctx.strokeStyle = '#3fbdc7';
+      ctx.lineWidth = 10;
+      ctx.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
       
-      // Draw postal code (top-left)
-      ctx.fillStyle = '#333';
-      ctx.font = 'bold 32px "Gloria Hallelujah"';
-      ctx.fillText('Postcode: ' + postalCode, 60, 80);
+      // Draw header with postal code and stamp area
+      ctx.fillStyle = '#000000';
+      ctx.font = 'bold 60px "Gloria Hallelujah", cursive';
+      ctx.fillText(`Postcode: ${postalCode || 'N/A'}`, 60, 100);
       
-      
-      // Load and draw stamp (top-right)
-      const stampImg = new Image();
-      stampImg.crossOrigin = 'Anonymous';
-      // Use the same stamp as shown in the postcard
-      stampImg.src = `/img_post/img_post_0${Math.floor(Math.random() * 6) + 1}.png`;
-      
-      // Wait for stamp to load
-      await new Promise((resolve) => {
-        stampImg.onload = resolve;
-        stampImg.onerror = () => resolve(); // Continue even if stamp fails to load
-        // Add timeout to prevent infinite waiting
-        setTimeout(resolve, 3000);
-      });
-      
-      // Draw stamp (right-top, larger size)
-      ctx.drawImage(stampImg, canvas.width - 240, 50, 180, 200);
-      
-      // Draw separator line (simulating grid layout)
-      ctx.beginPath();
-      ctx.moveTo(canvas.width / 2, 200);
-      ctx.lineTo(canvas.width / 2, canvas.height - 60);
-      ctx.strokeStyle = '#ddd';
-      ctx.lineWidth = 2;
-      ctx.stroke();
-      
-      // Draw image (left side, larger and less compressed)
-      const postcardImg = new Image();
-      postcardImg.crossOrigin = 'Anonymous';
-      postcardImg.src = `/img_Level${level}/${imageId}.png`;
+      // Draw image on postcard (left side)
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.src = getImagePath(level, imageId);
       
       // Wait for image to load
-      await new Promise((resolve) => {
-        postcardImg.onload = () => {
-          // Draw image to canvas (left area) with larger size
-          const maxWidth = 750; // Increased from 700 to 750 to reduce compression
-          const maxHeight = 750; // Increased from 700 to 750 to reduce compression
-          let width = postcardImg.width;
-          let height = postcardImg.height;
-          
-          // Scale proportionally but with less compression
-          if (width > maxWidth) {
-            height *= maxWidth / width;
-            width = maxWidth;
-          }
-          if (height > maxHeight) {
-            width *= maxHeight / height;
-            height = maxHeight;
-          }
-          
-          // Center in left area
-          const leftAreaCenterX = canvas.width / 4;
-          const leftAreaCenterY = (canvas.height + 200) / 2;
-          ctx.drawImage(
-            postcardImg, 
-            leftAreaCenterX - width / 2, 
-            leftAreaCenterY - height / 2, 
-            width, 
-            height
-          );
-          resolve();
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = () => {
+          // Try fallback to level 1 image
+          img.src = getImagePath(1, imageId);
+          img.onload = resolve;
+          img.onerror = reject;
         };
-        postcardImg.onerror = () => resolve(); // Continue even if image fails to load
-        // Add timeout to prevent blocking
-        setTimeout(resolve, 3000);
       });
       
-      // Draw feedback title
-      const feedbackStartX = canvas.width / 2 + 70;
-      let currentY = 250;
+      // Draw image
+      const imgWidth = canvas.width * 0.45; // 45% of canvas width
+      const imgHeight = canvas.height * 0.6; // 60% of canvas height
+      const imgX = 60;
+      const imgY = 150;
       
-      ctx.fillStyle = 'black';
-      ctx.font = 'bold 42px "Gloria Hallelujah"';
-      ctx.fillText(textContent.feedback, feedbackStartX, currentY);
-      currentY += 90;
+      // Draw image border
+      ctx.strokeStyle = '#cccccc';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(imgX - 10, imgY - 10, imgWidth + 20, imgHeight + 20);
+      
+      // Draw image
+      ctx.drawImage(img, imgX, imgY, imgWidth, imgHeight);
+      
+      // Draw feedback section (right side)
+      const feedbackX = imgX + imgWidth + 60;
+      const feedbackY = 150;
+      const feedbackWidth = canvas.width - feedbackX - 60;
+      const feedbackHeight = canvas.height - feedbackY - 60;
+      
+      // Define fixed values for text positioning
+      const lineHeight = 40;
+      
+      // Draw feedback section title
+      ctx.fillStyle = '#000000';
+      ctx.font = 'bold 70px "Gloria Hallelujah", cursive';
+      ctx.textAlign = 'center';
+      ctx.fillText('Feedback', feedbackX + feedbackWidth / 2, feedbackY + 60);
+      ctx.textAlign = 'left';
+      
+      // Draw feedback content
+      let currentY = feedbackY + 120;
       
       // Encouraging remarks
       ctx.font = 'bold 40px "Inter", sans-serif';
@@ -321,7 +294,7 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
       currentY += lineHeight;
       
       const encouragingRemarks = localFeedback?.encouragingRemarks || getTemplateFeedback(selectedLanguage).encouragingRemarks;
-      const encouragingLines = encouragingRemarks.split('\\n');
+      const encouragingLines = encouragingRemarks.split('\n');
       encouragingLines.forEach(line => {
         ctx.fillText(line, feedbackX, currentY);
         currentY += lineHeight;
@@ -339,7 +312,7 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
       currentY += lineHeight;
       
       const errorSummary = localFeedback?.errorSummary || getTemplateFeedback(selectedLanguage).errorSummary;
-      const errorLines = errorSummary.split('\\n');
+      const errorLines = errorSummary.split('\n');
       errorLines.forEach(line => {
         ctx.fillText(line, feedbackX, currentY);
         currentY += lineHeight;
@@ -357,18 +330,38 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
       currentY += lineHeight;
       
       const suggestions = localFeedback?.suggestions || getTemplateFeedback(selectedLanguage).suggestions;
-      const suggestionLines = suggestions.split('\\n');
+      const suggestionLines = suggestions.split('\n');
       suggestionLines.forEach(line => {
         ctx.fillText(line, feedbackX, currentY);
         currentY += lineHeight;
       });
       
-      // Convert canvas to image data URL
-      const imageData = canvas.toDataURL('image/png');
-      setPostcardImage(imageData);
-      setShowPreviewModal(true);
-    } catch (err) {
-      console.error('Error generating postcard image:', err);
+      // Convert canvas to data URL
+      const dataUrl = canvas.toDataURL('image/png');
+      setPostcardImage(dataUrl);
+      
+      return dataUrl;
+    } catch (error) {
+      console.error('Error generating postcard image:', error);
+      
+      // Generate a simple fallback image
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = 800;
+      canvas.height = 600;
+      
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      ctx.fillStyle = '#000000';
+      ctx.font = '30px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('Postcard Image', canvas.width / 2, canvas.height / 2);
+      
+      const dataUrl = canvas.toDataURL('image/png');
+      setPostcardImage(dataUrl);
+      
+      return dataUrl;
     }
   };
 
@@ -701,7 +694,7 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
         <div className="flex flex-col items-center mt-6">
           <div 
             ref={postcardRef}
-            className="bg-white rounded-lg shadow-lg p-8 border-2 border-gray-200"
+            className="bg-white rounded-lg shadow-lg p-6 border-4 border-black"
             style={{ 
               width: '80vw', 
               height: '78vh',
@@ -710,9 +703,9 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
             }}
           >
             {/* Header section with postal code and stamp */}
-            <div className="flex justify-between items-start mb-6">
-              <div className="text-4xl font-gloria-hallelujah">
-                Postcode: {postalCode}
+            <div className="flex justify-between items-start mb-4">
+              <div className="border-2 border-black px-3 py-1">
+                <span className="text-2xl font-gloria-hallelujah">Postcode: {postalCode}</span>
               </div>
               <img 
                 src={`/img_post/img_post_0${Math.floor(Math.random() * 6) + 1}.png`} 
@@ -724,12 +717,12 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
             {/* Main content area with image and feedback */}
             <div className="flex h-full">
               {/* Image Section */}
-              <div className="w-full md:w-2/5 flex items-center justify-center mb-2 md:mb-0">
-                <div className="relative w-full h-64 md:h-80 flex items-center justify-center">
+              <div className="w-1/2 flex items-center justify-center pr-4">
+                <div className="relative w-full h-full flex items-center justify-center">
                   <img 
                     src={getImagePath(level, imageId)} 
                     alt={selectedLanguage === 'zh' ? "图片" : "Image"} 
-                    className="max-h-full max-w-full object-contain rounded-lg border-2 border-gray-300"
+                    className="max-h-full max-w-full object-contain"
                     onError={(e) => {
                       console.log(`Failed to load image: ${getImagePath(level, imageId)}`);
                       // Try to load level 1 image as fallback
@@ -740,39 +733,42 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
                 </div>
               </div>
               
-              {/* Feedback section (right 50%) */}
-              <div className="w-1/2 flex flex-col p-6">
-                <h2 className="text-5xl font-gloria-hallelujah mb-8 text-center">
+              {/* Divider */}
+              <div className="w-px bg-gray-400 mx-4"></div>
+              
+              {/* Feedback section */}
+              <div className="w-1/2 flex flex-col pl-4">
+                <h2 className="text-2xl font-inter font-bold mb-6 text-center">
                   {textContent.feedback}
                 </h2>
                 
                 <div className="flex-grow overflow-y-auto pr-2">
                   {/* Encouraging Remarks */}
                   <div className="mb-6">
-                    <h3 className="text-2xl font-inter font-bold text-green-700 mb-3 flex items-center">
+                    <h3 className="text-xl font-inter font-bold text-green-700 mb-2 flex items-center">
                       <span className="mr-2">✅</span> {textContent.encouragingRemarks}
                     </h3>
-                    <p className={`font-inter ${localFeedback?.encouragingRemarks?.length > 200 ? 'text-sm' : 'text-base'} text-gray-800`}>
+                    <p className={`font-inter text-base text-gray-800`}>
                       {localFeedback?.encouragingRemarks || 'No encouraging remarks available.'}
                     </p>
                   </div>
                   
                   {/* Error Summary */}
                   <div className="mb-6">
-                    <h3 className="text-2xl font-inter font-bold text-orange-700 mb-3 flex items-center">
+                    <h3 className="text-xl font-inter font-bold text-orange-700 mb-2 flex items-center">
                       <span className="mr-2">⚠️</span> {textContent.errorSummary}
                     </h3>
-                    <p className={`font-inter ${localFeedback?.errorSummary?.length > 200 ? 'text-sm' : 'text-base'} text-gray-800`}>
+                    <p className={`font-inter text-base text-gray-800`}>
                       {localFeedback?.errorSummary || 'No error summary available.'}
                     </p>
                   </div>
                   
                   {/* Suggestions */}
                   <div className="mb-6">
-                    <h3 className="text-2xl font-inter font-bold text-blue-700 mb-3 flex items-center">
+                    <h3 className="text-xl font-inter font-bold text-blue-700 mb-2 flex items-center">
                       <span className="mr-2">💡</span> {textContent.suggestions}
                     </h3>
-                    <p className={`font-inter ${localFeedback?.suggestions?.length > 200 ? 'text-sm' : 'text-base'} text-gray-800`}>
+                    <p className={`font-inter text-base text-gray-800`}>
                       {localFeedback?.suggestions || 'No suggestions available.'}
                     </p>
                   </div>
