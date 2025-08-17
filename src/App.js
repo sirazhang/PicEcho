@@ -4,11 +4,11 @@ import DialogueMode from './components/DialogueMode';
 import ReviewPostcard from './components/ReviewPostcard';
 import WorldMapReview from './components/WorldMapReview';
 import { generateKimiFeedback } from './utils/kimiApi';
-import './index.css'; // Import the CSS file
+import { getTemplateFeedback } from './components/ReviewPostcard';
 
-const App = () => {
+function App() {
   const [currentScreen, setCurrentScreen] = useState('home'); // 'home', 'dialogue', 'review', 'loading'
-  const [selectedImage, setSelectedImage] = useState('');
+  const [selectedImage, setSelectedImage] = useState('img_01');
   const [selectedLanguage, setSelectedLanguage] = useState('en');
   const [selectedLevel, setSelectedLevel] = useState(1);
   const [conversationHistory, setConversationHistory] = useState([]);
@@ -16,6 +16,8 @@ const App = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [selectedPostcard, setSelectedPostcard] = useState(null);
+  const [currentImageId, setCurrentImageId] = useState('img_01');
+  const [currentLevel, setCurrentLevel] = useState(1);
 
   // Load saved preferences from localStorage on component mount
   useEffect(() => {
@@ -31,6 +33,22 @@ const App = () => {
     }
   }, []);
 
+  const handleNextPicture = (level) => {
+    // 根据 level 来确定有多少张图
+    let maxCount = level === 1 ? 16 : level === 2 ? 16 : 6;
+
+    let nextId = currentImageId;
+    while (nextId === currentImageId && maxCount > 1) {
+      const rand = Math.floor(Math.random() * maxCount) + 1;
+      nextId = `img_${String(rand).padStart(2, "0")}`;
+    }
+
+    setCurrentImageId(nextId);
+    setCurrentLevel(level);
+    setSelectedImage(nextId);
+    setSelectedLevel(level);
+    setCurrentScreen('dialogue');
+  };
 
   const handleStartDialogue = (imageId, language, level) => {
     setSelectedImage(imageId);
@@ -44,6 +62,8 @@ const App = () => {
     window.location.hash = `#/dialogue/${imageId}/${language || 'en'}/${level || 1}`;
     
     setCurrentScreen('dialogue');
+    setCurrentImageId(imageId);
+    setCurrentLevel(level || 1);
   };
 
   const handleFinishDialogue = async (conversation) => {
@@ -51,46 +71,45 @@ const App = () => {
     setCurrentScreen('loading');
     setIsLoading(true);
     setError('');
+    
+    // 保存当前状态的副本
+    const currentImage = selectedImage;
+    const currentLevel = selectedLevel;
 
     try {
       // Get image description from the appropriate level file
-      const response = await fetch(`/Level${selectedLevel}/descriptions.json`);
+      const response = await fetch(`/Level${currentLevel}/descriptions.json`);
       const descriptions = await response.json();
-      const imageDescription = descriptions[selectedImage] || 'A beautiful image';
+      const imageDescription = descriptions[currentImage] || 'A beautiful image';
 
       // Generate feedback using Kimi API with selected language
       const feedbackData = await generateKimiFeedback(conversation, imageDescription, selectedLanguage);
       
-      setFeedback(feedbackData);
-      setIsLoading(false);
-      setCurrentScreen('review');
+      setFeedback({
+        ...feedbackData,
+        imageId: currentImage,
+        level: currentLevel,
+        conversationHistory: conversation
+      });
     } catch (err) {
       console.error('Error generating feedback:', err);
       setError('Failed to load description or generate feedback');
-      setIsLoading(false);
-      // 即使出错也跳转到review页面
+      // 即使出错也跳转到review页面，使用标准反馈模板
+      const templateFeedback = getTemplateFeedback(selectedLanguage);
+      setFeedback({
+        ...templateFeedback,
+        imageId: currentImage,
+        level: currentLevel,
+        conversationHistory: conversation
+      });
       setCurrentScreen('review');
     } finally {
+      // 确保加载状态被清除
       setIsLoading(false);
+      setCurrentScreen('review');
     }
   };
 
-  // Generate simulated feedback when API is not available
-  const generateSimulatedFeedback = (language) => {
-    if (language === 'zh') {
-      return {
-        encouragingRemarks: "做得很好！你的英语表达能力在不断提高。继续保持！",
-        errorSummary: "有一些小的语法错误，特别是在时态使用方面。",
-        suggestions: "建议多练习动词时态，可以尝试用过去时描述图片中的动作。"
-      };
-    } else {
-      return {
-        encouragingRemarks: "Great job! Your English expression skills are improving. Keep it up!",
-        errorSummary: "There are some minor grammar errors, especially with tense usage.",
-        suggestions: "Try to practice verb tenses more. You could describe the actions in the image using past tense."
-      };
-    }
-  };
 
   const handleCancelDialogue = () => {
     setCurrentScreen('home');
@@ -141,39 +160,56 @@ const App = () => {
 
       {currentScreen === 'dialogue' && (
         <DialogueMode 
-          imageId={selectedImage}
+          imageId={currentImageId || selectedImage}
           language={selectedLanguage}
-          level={selectedLevel}
+          level={currentLevel || selectedLevel}
           onConversationComplete={handleFinishDialogue}
           onCancel={handleCancelDialogue}
         />
       )}
 
-      {currentScreen === 'loading' && (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
-          <div className="bg-white p-8 rounded-xl shadow-lg text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-            <h2 className="text-2xl font-semibold text-gray-800 mb-2">
-              {selectedLanguage === 'zh' ? '正在生成反馈...' : 'Generating Feedback...'}
-            </h2>
-            <p className="text-gray-600">
-              {selectedLanguage === 'zh' ? '这可能需要几秒钟时间' : 'This may take a few seconds'}
-            </p>
-          </div>
-        </div>
+      {currentScreen === 'review' && (
+        selectedPostcard ? (
+          <ReviewPostcard
+            imageId={selectedPostcard.imageId}
+            conversationHistory={selectedPostcard.conversationHistory}
+            feedback={selectedPostcard.feedback}
+            onSave={handleSavePostcard}
+            onBack={handleBackToMap}
+            onNextPicture={handleNextPicture}
+            level={selectedPostcard.level}
+            isLoading={false}
+            error={null}
+            selectedLanguage={selectedLanguage}
+          />
+        ) : (
+          <ReviewPostcard
+            imageId={selectedImage}
+            conversationHistory={conversationHistory}
+            feedback={feedback}
+            onSave={handleSavePostcard}
+            onBack={handleBackToHome}
+            onNextPicture={handleNextPicture}
+            level={selectedLevel}
+            isLoading={false}
+            error={error}
+            selectedLanguage={selectedLanguage}
+          />
+        )
       )}
 
-      {currentScreen === 'review' && (
+      {currentScreen === 'loading' && (
         <ReviewPostcard
           imageId={selectedImage}
           conversationHistory={conversationHistory}
           feedback={feedback}
           onSave={handleSavePostcard}
           onBack={handleBackToHome}
-          isLoading={isLoading}
+          onNextPicture={handleNextPicture}
+          level={selectedLevel}
+          isLoading={true}
           error={error}
           selectedLanguage={selectedLanguage}
-          level={selectedLevel}
         />
       )}
 

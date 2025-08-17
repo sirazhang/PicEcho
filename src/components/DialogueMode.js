@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { startKimiDialogue, sendToKimi } from '../utils/kimiApi';
+import { queueKimiRequest } from '../utils/kimiApi';
 
 // 工具函数：生成图片路径
 const getImagePath = (level, imageId) => {
@@ -49,7 +50,8 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
       
       // Call Kimi API to start the conversation with selected language and level
       setIsLoading(true);
-      const firstQuestion = await startKimiDialogue(description, language, level);
+      // 使用队列机制调用Kimi API
+      const firstQuestion = await queueKimiRequest(() => startKimiDialogue(description, language, level));
       setIsLoading(false);
       setShowImageAnalysisMessage(false);
       
@@ -183,9 +185,23 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
     }
   };
 
-  const handleSend = async () => {
-    if ((inputValue.trim() === '' && transcript.trim() === '') || isLoading) return;
+  const isProcessing = useRef(false); // 防止重复调用
+  const lastCallTime = useRef(0); // 用于防抖
 
+  const handleSend = async () => {
+    // 防止重复调用
+    if ((inputValue.trim() === '' && transcript.trim() === '') || isLoading || isProcessing.current) {
+      return;
+    }
+
+    // 防抖处理，防止频繁调用
+    const now = Date.now();
+    if (now - lastCallTime.current < 1000) { // 最小间隔1秒
+      return;
+    }
+
+    isProcessing.current = true;
+    
     // Add user message
     const newUserMessageId = messages.length + 1;
     const userMessage = {
@@ -213,77 +229,72 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
 
       setMessages(prev => [...prev, aiMessage]);
       setIsLoading(false);
-
-      // Determine question count based on level
-      const getQuestionCount = () => {
-        switch (level) {
-          case 1: return 4;
-          case 2: return 6;
-          case 3: return 8;
-          default: return 4;
-        }
-      };
+      lastCallTime.current = Date.now(); // 更新最后调用时间
       
-      const questionCount = getQuestionCount();
-      const userMessageCount = messages.filter(m => m.sender === 'user').length + 1; // +1 for the new user message
-      
-      if (userMessageCount >= questionCount) {
-        setTimeout(() => {
-          onConversationComplete([...messages, userMessage, aiMessage]);
-        }, 1500);
-      }
+      // 检查是否达到问题数量限制
+      checkQuestionLimit([...messages, userMessage, aiMessage]);
     } catch (error) {
       console.error('Error getting AI response:', error);
       setIsLoading(false);
       
-      // Create simulated AI response as fallback
-      let simulatedResponse;
-      const userMessageCount = messages.filter(m => m.sender === 'user').length + 1; // +1 for the new user message
-      
-      if (language === 'zh') {
-        const simulatedResponses = [
-          "很有趣！能告诉我更多吗？😊",
-          "观察得很好！这让你有什么感受？🌟",
-          "我明白了！你还注意到图片中的什么？🔍",
-          "很棒！让我们用一个有创意的问题来结束 - 如果你能进入这张图片，你会做什么？✨"
-        ];
-        simulatedResponse = simulatedResponses[userMessageCount - 1] || "谢谢你和我练习！🎉";
-      } else {
-        const simulatedResponses = [
-          "That's interesting! Can you tell me more about it? 😊",
-          "Great observation! How does this make you feel? 🌟",
-          "I see! What else do you notice in the image? 🔍",
-          "Wonderful! Let's wrap up with a creative question - if you could step into this image, what would you do? ✨"
-        ];
-        simulatedResponse = simulatedResponses[userMessageCount - 1] || "Thanks for practicing with me! 🎉";
-      }
-      
-      const aiMessage = {
-        id: newUserMessageId + 1,
-        sender: 'ai',
-        text: simulatedResponse,
-        timestamp: new Date()
-      };
-
+      // 使用统一的回退响应处理
+      const aiMessage = generateFallbackResponse(userMessageCount, language, newUserMessageId);
       setMessages(prev => [...prev, aiMessage]);
-
-      // If this was the last question, finish the dialogue even with simulated response
-      // Different levels have different question counts
-      let questionCount = 4; // Default
-      if (level === 1) {
-        questionCount = 4;
-      } else if (level === 2) {
-        questionCount = 6;
-      } else if (level === 3) {
-        questionCount = 8;
-      }
       
-      const userMessageCountWithSimulated = messages.filter(m => m.sender === 'user').length + 1; // +1 for the new user message
-      if (userMessageCountWithSimulated >= questionCount) {
-        setTimeout(() => {
-          onConversationComplete([...messages, userMessage, aiMessage]);
-        }, 1500);
+      // 检查是否达到问题数量限制（包括回退情况）
+      checkQuestionLimit([...messages, userMessage, aiMessage]);
+    } finally {
+      isProcessing.current = false;
+    }
+  };
+
+  // 生成统一的回退响应
+  const generateFallbackResponse = (userMessageCount, language, newUserMessageId) => {
+    const baseResponses = {
+      zh: [
+        "很有趣！能告诉我更多吗？😊",
+        "观察得很好！这让你有什么感受？🌟",
+        "我明白了！你还注意到图片中的什么？🔍",
+        "很棒！让我们用一个有创意的问题来结束 - 如果你能进入这张图片，你会做什么？✨"
+      ],
+      en: [
+        "That's interesting! Can you tell me more about it? 😊",
+        "Great observation! How does this make you feel? 🌟",
+        "I see! What else do you notice in the image? 🔍",
+        "Wonderful! Let's wrap up with a creative question - if you could step into this image, what would you do? ✨"
+      ]
+    };
+    
+    const responses = baseResponses[language === 'zh' ? 'zh' : 'en'];
+    const responseText = responses[userMessageCount - 1] || (language === 'zh' ? "谢谢你和我练习！🎉" : "Thanks for practicing with me! 🎉");
+    
+    return {
+      id: newUserMessageId + 1,
+      sender: 'ai',
+      text: responseText,
+      timestamp: new Date()
+    };
+  };
+
+  // 统一的问题数量检查逻辑
+  const checkQuestionLimit = (conversationMessages) => {
+    // 根据等级获取问题数量限制
+    const getQuestionCount = () => {
+      switch (level) {
+        case 1: return 4;
+        case 2: return 6;
+        case 3: return 8;
+        default: return 4;
       }
+    };
+    
+    const questionCount = getQuestionCount();
+    const userMessageCount = conversationMessages.filter(m => m.sender === 'user').length;
+    
+    if (userMessageCount >= questionCount) {
+      setTimeout(() => {
+        onConversationComplete(conversationMessages);
+      }, 1500);
     }
   };
 

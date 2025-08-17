@@ -35,19 +35,30 @@ app.get('/', (req, res) => {
 // POST /api/postcards/send - Send a postcard
 app.post('/api/postcards/send', (req, res) => {
   console.log('POST /api/postcards/send endpoint hit');
-  console.log('Request body:', req.body);
+  console.log('Request body keys:', Object.keys(req.body));
+  console.log('imageUrl length:', req.body.imageUrl?.length);
+  console.log('imageUrl starts with:', req.body.imageUrl?.substring(0, 50));
   
   const { senderId, imageUrl, feedbackText, postalCode } = req.body;
 
   // Validate required fields
   if (!senderId || !imageUrl || !feedbackText) {
-    return res.status(400).json({ error: 'Missing required fields: senderId, imageUrl, and feedbackText are required' });
+    const missingFields = [];
+    if (!senderId) missingFields.push('senderId');
+    if (!imageUrl) missingFields.push('imageUrl');
+    if (!feedbackText) missingFields.push('feedbackText');
+    
+    console.log('Missing fields:', missingFields);
+    return res.status(400).json({ 
+      error: 'Missing required fields',
+      missingFields: missingFields
+    });
   }
   
   Postcard.create(senderId, imageUrl, feedbackText, postalCode, (err, postcard) => {
     if (err) {
       console.error('Error saving postcard:', err);
-      return res.status(500).json({ error: 'Failed to send postcard' });
+      return res.status(500).json({ error: 'Failed to send postcard', details: err.message });
     }
     
     console.log('Postcard saved successfully:', postcard);

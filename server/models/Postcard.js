@@ -51,14 +51,26 @@ class Postcard {
       const imagePath = path.join(uploadDir, filename);
       const relativePath = `uploads/${filename}`;
       
-      // Download image data
-      console.log('Downloading image from URL:', imageUrl);
-      const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
-      const imageData = response.data;
-      
-      // Save image to local file system
-      await fs.writeFile(imagePath, imageData);
-      console.log('Image saved to:', imagePath);
+      // Check if imageUrl is a base64 data URL or regular URL
+      if (imageUrl.startsWith('data:image')) {
+        // Handle base64 image data
+        console.log('Processing base64 image data');
+        const base64Data = imageUrl.replace(/^data:image\/\w+;base64,/, '');
+        const imageBuffer = Buffer.from(base64Data, 'base64');
+        
+        // Save image to local file system
+        await fs.writeFile(imagePath, imageBuffer);
+        console.log('Base64 image saved to:', imagePath);
+      } else {
+        // Handle regular URL - download image data
+        console.log('Downloading image from URL:', imageUrl);
+        const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+        const imageData = response.data;
+        
+        // Save image to local file system
+        await fs.writeFile(imagePath, imageData);
+        console.log('Image saved to:', imagePath);
+      }
       
       // Insert record into database with relative path
       const insertSql = `
@@ -102,8 +114,7 @@ class Postcard {
         callback(null, postcard);
       });
     } catch (error) {
-      console.error('Error in Postcard.create:', error.message);
-      console.error('Full error details:', error);
+      console.error('Error in Postcard.create:', error);
       callback(error, null);
     }
   }
