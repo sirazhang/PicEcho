@@ -128,7 +128,7 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
       setIsSaved(true);
       setSaveMessage(selectedLanguage === 'zh' ? '明信片已保存' : 'Postcard saved');
     }
-  }, [feedback, imageId]);
+  }, [feedback, imageId, selectedLanguage]);
 
   // Set template feedback if no feedback is provided
   useEffect(() => {
@@ -294,11 +294,9 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
       currentY += lineHeight;
       
       const encouragingRemarks = localFeedback?.encouragingRemarks || getTemplateFeedback(selectedLanguage).encouragingRemarks;
-      const encouragingLines = encouragingRemarks.split('\n');
-      encouragingLines.forEach(line => {
-        ctx.fillText(line, feedbackX, currentY);
-        currentY += lineHeight;
-      });
+      // 使用 wrapTextForCanvas 函数来绘制鼓励评价
+      const encouragingLines = wrapTextForCanvas(ctx, encouragingRemarks, feedbackX, currentY, feedbackWidth, lineHeight);
+      currentY += lineHeight * encouragingLines;
       
       currentY += lineHeight / 2;
       
@@ -312,11 +310,9 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
       currentY += lineHeight;
       
       const errorSummary = localFeedback?.errorSummary || getTemplateFeedback(selectedLanguage).errorSummary;
-      const errorLines = errorSummary.split('\n');
-      errorLines.forEach(line => {
-        ctx.fillText(line, feedbackX, currentY);
-        currentY += lineHeight;
-      });
+      // 使用 wrapTextForCanvas 函数来绘制错误总结
+      const errorLines = wrapTextForCanvas(ctx, errorSummary, feedbackX, currentY, feedbackWidth, lineHeight);
+      currentY += lineHeight * errorLines;
       
       currentY += lineHeight / 2;
       
@@ -330,11 +326,9 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
       currentY += lineHeight;
       
       const suggestions = localFeedback?.suggestions || getTemplateFeedback(selectedLanguage).suggestions;
-      const suggestionLines = suggestions.split('\n');
-      suggestionLines.forEach(line => {
-        ctx.fillText(line, feedbackX, currentY);
-        currentY += lineHeight;
-      });
+      // 使用 wrapTextForCanvas 函数来绘制改进建议
+      const suggestionLines = wrapTextForCanvas(ctx, suggestions, feedbackX, currentY, feedbackWidth, lineHeight);
+      currentY += lineHeight * suggestionLines;
       
       // Convert canvas to data URL
       const dataUrl = canvas.toDataURL('image/png');
@@ -372,6 +366,7 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
     const words = text.split(' ');
     let line = '';
     let lines = 1;
+    let currentY = y;
     
     for (let n = 0; n < words.length; n++) {
       const testLine = line + words[n] + ' ';
@@ -379,16 +374,16 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
       const testWidth = metrics.width;
       
       if (testWidth > maxWidth && n > 0) {
-        ctx.fillText(line, x, y);
+        ctx.fillText(line, x, currentY);
         line = words[n] + ' ';
-        y += lineHeight;
+        currentY += lineHeight;
         lines++;
       } else {
         line = testLine;
       }
     }
     
-    ctx.fillText(line, x, y);
+    ctx.fillText(line, x, currentY);
     return lines;
   };
 
@@ -748,8 +743,8 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
                     <h3 className="text-xl font-inter font-bold text-green-700 mb-2 flex items-center">
                       <span className="mr-2">✅</span> {textContent.encouragingRemarks}
                     </h3>
-                    <p className={`font-inter text-base text-gray-800`}>
-                      {localFeedback?.encouragingRemarks || 'No encouraging remarks available.'}
+                    <p className={`font-inter text-base text-gray-800 whitespace-pre-line`}>
+                      {localFeedback?.encouragingRemarks || getTemplateFeedback(selectedLanguage).encouragingRemarks}
                     </p>
                   </div>
                   
@@ -758,8 +753,8 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
                     <h3 className="text-xl font-inter font-bold text-orange-700 mb-2 flex items-center">
                       <span className="mr-2">⚠️</span> {textContent.errorSummary}
                     </h3>
-                    <p className={`font-inter text-base text-gray-800`}>
-                      {localFeedback?.errorSummary || 'No error summary available.'}
+                    <p className={`font-inter text-base text-gray-800 whitespace-pre-line`}>
+                      {localFeedback?.errorSummary || getTemplateFeedback(selectedLanguage).errorSummary}
                     </p>
                   </div>
                   
@@ -768,8 +763,8 @@ const ReviewPostcard = ({ imageId, conversationHistory, feedback, onSave, onBack
                     <h3 className="text-xl font-inter font-bold text-blue-700 mb-2 flex items-center">
                       <span className="mr-2">💡</span> {textContent.suggestions}
                     </h3>
-                    <p className={`font-inter text-base text-gray-800`}>
-                      {localFeedback?.suggestions || 'No suggestions available.'}
+                    <p className={`font-inter text-base text-gray-800 whitespace-pre-line`}>
+                      {localFeedback?.suggestions || getTemplateFeedback(selectedLanguage).suggestions}
                     </p>
                   </div>
                 </div>

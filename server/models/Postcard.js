@@ -86,20 +86,21 @@ class Postcard {
         
         const insertedPostcardId = this.lastID;
       
-      const postcard = {
-        postcard_id: insertedPostcardId,
-        image_path: relativePath,
-        postcard_url: imageUrl,
-        created_at: new Date(),
-        status: 'sent',
-        sender_token: senderToken,
-        receiver_token: null,
-        feedback_text: feedbackText,
-        postal_code: postalCode
-      };
-      
-      console.log('Postcard saved successfully with ID:', insertedPostcardId);
-      callback(null, postcard);
+        const postcard = {
+          postcard_id: insertedPostcardId,
+          image_path: relativePath,
+          postcard_url: imageUrl,
+          created_at: new Date(),
+          status: 'sent',
+          sender_token: senderToken,
+          receiver_token: null,
+          feedback_text: feedbackText,
+          postal_code: postalCode
+        };
+        
+        console.log('Postcard saved successfully with ID:', insertedPostcardId);
+        callback(null, postcard);
+      });
     } catch (error) {
       console.error('Error in Postcard.create:', error.message);
       console.error('Full error details:', error);
@@ -192,14 +193,14 @@ class Postcard {
   static async markAsSent(postcardId, receiverToken, callback) {
     console.log('Postcard.markAsSent called with postcardId:', postcardId, 'and receiverToken:', receiverToken);
     
-    // If database is not available, return mock success
-    if (!isDatabaseAvailable()) {
-      console.warn('Database connection not available. Skipping postcard status update.');
-      // Return a mock success for development without database
-      return callback(null, { changes: 1 });
-    }
-    
     try {
+      // If database is not available, return mock success
+      if (!isDatabaseAvailable()) {
+        console.warn('Database connection not available. Skipping postcard status update.');
+        // Return a mock success for development without database
+        return callback(null, { changes: 1 });
+      }
+      
       const sql = `
         UPDATE postcards 
         SET status = 'sent', receiver_token = ?
@@ -215,35 +216,6 @@ class Postcard {
         console.log('Postcard marked as sent. Rows affected:', this.changes);
         callback(null, { changes: this.changes });
       });
-    } catch (error) {
-      console.error('Database query error in Postcard.getRandomPending:', error.message);
-      console.error('Full error details:', error);
-      callback(error, null);
-    }
-  }
-  
-  // Update postcard status to 'sent' and assign it to a receiver
-  static async markAsSent(postcardId, receiverToken, callback) {
-    console.log('Postcard.markAsSent called with postcardId:', postcardId, 'and receiverToken:', receiverToken);
-    
-    // If database is not available, return mock success
-    if (!isDatabaseAvailable()) {
-      console.warn('Database connection not available. Skipping postcard status update.');
-      // Return a mock success for development without database
-      return callback(null, { affectedRows: 1 });
-    }
-    
-    try {
-      const sql = `
-        UPDATE postcards 
-        SET status = 'sent', receiver_token = ?
-        WHERE postcard_id = ?
-      `;
-      
-      const [result] = await db.execute(sql, [receiverToken, postcardId]);
-      
-      console.log('Postcard marked as sent. Rows affected:', result.affectedRows);
-      callback(null, result);
     } catch (error) {
       console.error('Database query error in Postcard.markAsSent:', error.message);
       console.error('Full error details:', error);
