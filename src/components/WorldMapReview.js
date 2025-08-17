@@ -186,6 +186,14 @@ const WorldMapReview = ({ onBack, onViewPostcard }) => {
         ))}
       </div>
 
+      {/* Legend */}
+      <div className="flex justify-center mt-4 mb-4">
+        <div className="flex items-center mr-6">
+          <div className="w-4 h-4 bg-red-500 rounded-full mr-2"></div>
+          <span className="font-inter text-xl">Completed Activities</span>
+        </div>
+      </div>
+
       {/* Saved Postcard Modal */}
       {showModal && selectedPostcard && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">

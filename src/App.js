@@ -118,7 +118,6 @@ const App = () => {
   };
 
   const handleBackToMap = () => {
-    setMap(true);
     setCurrentScreen('map');
   };
 
