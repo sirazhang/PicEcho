@@ -1,5 +1,19 @@
 import React, { useState, useEffect } from 'react';
 
+// 定义背景图片资源
+const BACKGROUND_IMAGES = [
+  '/design/background1.png',
+  '/design/background2.png',
+  '/design/background3.png',
+  '/design/background4.png'
+];
+
+// 获取随机背景图片路径
+const getRandomBackground = () => {
+  const randomIndex = Math.floor(Math.random() * BACKGROUND_IMAGES.length);
+  return BACKGROUND_IMAGES[randomIndex];
+};
+
 // 工具函数：生成图片路径
 const getImagePath = (level, imageId) => {
   return `/Level${level}/${imageId}.png`;
@@ -9,6 +23,7 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview, selectedLanguage, setSel
   const [selectedLevel, setSelectedLevel] = useState(1);
   const [availableImages, setAvailableImages] = useState([]);
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
+  const [backgroundImage, setBackgroundImage] = useState('/design/background1.png');
 
   // Load saved language preference from localStorage on component mount
   useEffect(() => {
@@ -17,6 +32,21 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview, selectedLanguage, setSel
       setSelectedLanguage(savedLanguage);
     }
   }, [setSelectedLanguage]);
+
+  // Set random background on component mount
+  useEffect(() => {
+    const randomBackground = getRandomBackground();
+    setBackgroundImage(randomBackground);
+    
+    // 创建一个Image对象预加载背景图
+    const img = new Image();
+    img.src = randomBackground;
+    
+    // 返回清理函数
+    return () => {
+      // 可以在这里添加清理逻辑，如取消未完成的请求等
+    };
+  }, []);
 
   // Check if an image exists in a specific level
   const checkImageExistsInLevel = (imageId, level) => {
@@ -157,10 +187,12 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview, selectedLanguage, setSel
     <div 
       className="min-h-screen flex flex-col relative"
       style={{ 
-        backgroundImage: 'url(/design/background_01.png)',
+        backgroundImage: `url(${backgroundImage})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat'
+        backgroundRepeat: 'no-repeat',
+        backgroundAttachment: 'fixed', // 防止滚动时背景移动
+        transition: 'background-image 0.5s ease-in-out' // 添加背景切换动画
       }}
     >
       <div className="absolute inset-0 flex flex-col items-center justify-center pt-0">

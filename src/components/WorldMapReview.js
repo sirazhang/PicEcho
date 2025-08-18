@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { receivePostcard } from '../utils/api';
 
-const WorldMapReview = ({ onBack, onViewPostcard }) => {
+const WorldMapReview = ({ onBack, onViewPostcard, onShow }) => {
   const [savedPostcards, setSavedPostcards] = useState([]);
   const [selectedPostcard, setSelectedPostcard] = useState(null);
   const [showModal, setShowModal] = useState(false);
@@ -10,10 +10,14 @@ const WorldMapReview = ({ onBack, onViewPostcard }) => {
   const [isFetching, setIsFetching] = useState(false);
   const [senderToken, setSenderToken] = useState(''); // Add sender token state
 
-  useEffect(() => {
+  const refreshPostcards = () => {
     // Load saved postcards from localStorage
     const postcards = JSON.parse(localStorage.getItem('savedPostcards') || '[]');
     setSavedPostcards(postcards);
+  };
+
+  useEffect(() => {
+    refreshPostcards();
     
     // Generate or load sender token
     let token = localStorage.getItem('senderToken');
@@ -22,6 +26,12 @@ const WorldMapReview = ({ onBack, onViewPostcard }) => {
       localStorage.setItem('senderToken', token);
     }
     setSenderToken(token);
+  }, []);
+
+  // Refresh postcards when component is shown
+  useEffect(() => {
+    const interval = setInterval(refreshPostcards, 1000); // Refresh every second
+    return () => clearInterval(interval);
   }, []);
 
   // Sample locations for demonstration

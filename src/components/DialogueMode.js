@@ -227,8 +227,12 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
       setIsLoading(false);
       lastCallTime.current = Date.now(); // 更新最后调用时间
       
-      // 检查是否达到问题数量限制
-      checkQuestionLimit([...messages, userMessage, aiMessage]);
+      // 检查对话是否完成（根据AI的结束消息判断）
+      if (aiResponse.includes("今天的对话就到这里吧") || aiResponse.includes("end our conversation here")) {
+        setTimeout(() => {
+          onConversationComplete([...messages, userMessage, aiMessage]);
+        }, 2000);
+      }
     } catch (error) {
       console.error('Error getting AI response:', error);
       setIsLoading(false);

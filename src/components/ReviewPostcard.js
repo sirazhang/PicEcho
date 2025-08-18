@@ -10,6 +10,7 @@ const getImagePath = (propsLevel, imageId) => {
 const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, selectedLanguage, conversationHistory, onSave, onBack, isLoading, error }) => {
   const [isSaved, setIsSaved] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
+  const [isSaving, setIsSaving] = useState(false); // 新增保存状态
   const [localFeedback, setLocalFeedback] = useState(feedback || {
     encouragingRemarks: selectedLanguage === 'zh' ? '做得很好！继续努力！' : 'Well done! Keep up the good work!',
     errorSummary: selectedLanguage === 'zh' ? '没有发现明显错误' : 'No significant errors found',
@@ -44,9 +45,9 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
 
   // Handle save postcard button click
   const handleSavePostcard = async () => {
-    if (isSaved) return;
-    
     try {
+      setIsSaving(true); // 设置保存状态
+      
       // Generate the postcard image using html2canvas
       const imageData = await generatePostcardImage();
       
@@ -76,6 +77,8 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
       setTimeout(() => {
         setSaveMessage('');
       }, 3000);
+    } finally {
+      setIsSaving(false); // 重置保存状态
     }
   };
 
@@ -100,7 +103,7 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
       setShowSendModal(false);
     } catch (error) {
       console.error('Error generating postcard image:', error);
-      setSendStatus('error');
+      setSendStatus(selectedLanguage === 'zh' ? '生成明信片失败，请重试' : 'Failed to generate postcard, please try again');
       setIsSending(false);
     }
   };
@@ -120,17 +123,32 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
       
       console.log('Postcard image length:', postcardImage.length);
       
-      // Send the postcard
-      const response = await sendPostcard({
-        senderId: 'user_' + Math.random().toString(36).substr(2, 9), // Generate a simple sender ID
+      // Generate a more robust sender ID with timestamp
+      const timestamp = new Date().getTime();
+      const randomString = Math.random().toString(36).substring(2, 11);
+      const senderId = `user_${timestamp}_${randomString}`;
+      
+      // Prepare postcard data
+      const postcardData = {
+        senderId,
         imageUrl: postcardImage, // This will be the base64 image data
         feedbackText: localFeedback,
-        postalCode
+        postalCode,
+        timestamp: new Date().toISOString()
+      };
+      
+      console.log('Sending postcard data:', {
+        ...postcardData,
+        imageUrl: postcardImage.substring(0, 50) + '...' // Log only first part of image data
       });
+      
+      // Send the postcard
+      const response = await sendPostcard(postcardData);
       
       console.log('Postcard send response:', response);
       
       if (response?.success) {
+        console.log('Postcard sent successfully');
         setSendStatus('success');
         setTimeout(() => {
           setShowSendModal(false);
@@ -138,20 +156,34 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
           setSendStatus('');
         }, 2000);
       } else {
-        throw new Error(response?.message || 'send_failed');
+        const errorMessage = response?.message || 'send_failed';
+        console.error('Server returned error:', errorMessage);
+        throw new Error(errorMessage);
       }
     } catch (error) {
-      console.error('Error sending postcard:', error);
+      // Handle different types of errors
+      let errorMessage;
       
-      if (error.message && error.message.includes('Network error')) {
-        setSendStatus(selectedLanguage === 'zh' ? '网络错误：请检查您的互联网连接' : 'Network error: Please check your internet connection');
-      } else if (error.message && error.message.includes('Server error')) {
-        setSendStatus(selectedLanguage === 'zh' ? '服务器错误：请稍后重试' : 'Server error: Please try again later');
+      if (error.message.includes('Network error')) {
+        errorMessage = selectedLanguage === 'zh' 
+          ? '网络错误：请检查您的互联网连接' 
+          : 'Network error: Please check your internet connection';
+      } else if (error.message.includes('Server error')) {
+        errorMessage = selectedLanguage === 'zh'
+          ? '服务器错误：请稍后重试'
+          : 'Server error: Please try again later';
+      } else if (error.message === 'send_failed') {
+        errorMessage = selectedLanguage === 'zh'
+          ? '发送明信片失败，请重试'
+          : 'Failed to send postcard, please try again';
       } else {
-        setSendStatus(selectedLanguage === 'zh' ? '未知错误：请稍后重试' : 'Unknown error: Please try again later');
+        errorMessage = selectedLanguage === 'zh'
+          ? '未知错误：请稍后重试'
+          : 'Unknown error: Please try again later';
+        console.error('Unexpected error:', error);
       }
       
-      // Keep modal open so user can try again
+      setSendStatus(errorMessage);
     } finally {
       setIsSending(false);
     }

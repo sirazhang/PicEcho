@@ -15,43 +15,40 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [selectedPostcard, setSelectedPostcard] = useState(null);
-  const [currentImageId, setCurrentImageId] = useState('img_01');
-  const [currentLevel, setCurrentLevel] = useState(1);
+  const [currentImageId, setCurrentImageId] = useState(null);
+  const [currentLevel, setCurrentLevel] = useState(null);
 
-  // Load saved preferences from localStorage on component mount
+  // Load saved state from localStorage on component mount
   useEffect(() => {
     const savedLanguage = localStorage.getItem('selectedLanguage');
     const savedLevel = localStorage.getItem('selectedLevel');
+    const savedImage = localStorage.getItem('selectedImage');
     
-    if (savedLanguage) {
-      setSelectedLanguage(savedLanguage);
-    }
+    if (savedLanguage) setSelectedLanguage(savedLanguage);
+    if (savedLevel) setSelectedLevel(parseInt(savedLevel));
+    if (savedImage) setSelectedImage(savedImage);
     
-    if (savedLevel) {
-      setSelectedLevel(parseInt(savedLevel, 10));
+    // Parse URL hash to determine initial screen
+    const hash = window.location.hash;
+    if (hash.startsWith('#/dialogue/')) {
+      const parts = hash.substring(11).split('/');
+      const imageId = parts[0];
+      const language = parts[1] || 'en';
+      const level = parseInt(parts[2]) || 1;
+      
+      setSelectedLanguage(language);
+      setSelectedLevel(level);
+      setCurrentImageId(imageId);
+      setCurrentLevel(level);
+      setCurrentScreen('dialogue');
+    } else if (hash === '#/map') {
+      setCurrentScreen('map');
     }
   }, []);
 
-  const handleNextPicture = (level) => {
-    // 根据 level 来确定有多少张图
-    let maxCount = level === 1 ? 16 : level === 2 ? 16 : 6;
-
-    let nextId = currentImageId;
-    while (nextId === currentImageId && maxCount > 1) {
-      const rand = Math.floor(Math.random() * maxCount) + 1;
-      nextId = `img_${String(rand).padStart(2, "0")}`;
-    }
-
-    setCurrentImageId(nextId);
-    setCurrentLevel(level);
-    setSelectedImage(nextId);
-    setSelectedLevel(level);
-    setCurrentScreen('dialogue');
-  };
-
+  // Handle starting a dialogue
   const handleStartDialogue = (imageId, language, level) => {
-    setSelectedImage(imageId);
-    setSelectedLanguage(language || 'en'); // Set language when starting dialogue
+    setSelectedLanguage(language || 'en');
     setSelectedLevel(level || 1); // Set level when starting dialogue
     
     // Save level to localStorage
@@ -65,19 +62,14 @@ function App() {
     setCurrentLevel(level || 1);
   };
 
-  const handleFinishDialogue = async (conversation) => {
-    setConversationHistory(conversation);
-    setCurrentScreen('loading');
+  // Handle finishing a dialogue
+  const handleFinishDialogue = async (conversation, imageDescription) => {
+    console.log('Finishing dialogue with conversation:', conversation);
     setIsLoading(true);
     setError('');
-
+    
     try {
-      // Get image description from the appropriate level file
-      const response = await fetch(`/Level${selectedLevel}/descriptions.json`);
-      const descriptions = await response.json();
-      const imageDescription = descriptions[selectedImage] || 'A beautiful image';
-
-      // Generate feedback using Kimi API with selected language
+      // Generate feedback using Kimi API
       const feedbackData = await generateKimiFeedback(conversation, imageDescription, selectedLanguage);
       
       setFeedback({
@@ -161,6 +153,57 @@ function App() {
     setSelectedImage('');
   };
 
+  // Handle next picture button click
+  const handleNextPicture = (currentLevel) => {
+    // 确保currentLevel是数字类型
+    const level = Number(currentLevel);
+    
+    // 获取对应关卡的图片列表
+    const images = getImagesForLevel(level);
+    
+    // 找到当前图片的索引
+    const currentIndex = images.findIndex(img => img.id === selectedImage);
+    
+    // 计算下一个图片的索引（循环）
+    const nextIndex = (currentIndex + 1) % images.length;
+    const nextImageId = images[nextIndex].id;
+    
+    // 更新状态
+    setSelectedImage(nextImageId);
+    setCurrentImageId(nextImageId);
+    
+    // 保存到localStorage
+    localStorage.setItem('selectedImage', nextImageId);
+    
+    // 更新URL hash
+    window.location.hash = `#/dialogue/${nextImageId}/${selectedLanguage}/${level}`;
+    
+    // 重置对话状态
+    setConversationHistory([]);
+    setFeedback(null);
+    setCurrentScreen('dialogue');
+  };
+
+  // 获取指定关卡的图片列表
+  const getImagesForLevel = (level) => {
+    // 这里应该根据实际的图片文件来动态生成
+    // 为简单起见，我们假设每个关卡都有相同的图片
+    const imageIds = [];
+    for (let i = 1; i <= 16; i++) {
+      const id = i < 10 ? `img_0${i}` : `img_${i}`;
+      imageIds.push({ id, name: `Image ${i}` });
+    }
+    return imageIds;
+  };
+
+  const refreshMapData = () => {
+    // 模拟刷新数据，例如从localStorage重新加载或调用API
+    console.log('Refreshing map data...');
+    // 实际刷新逻辑，比如重新获取数据
+    // const updatedPostcards = fetchUpdatedPostcards();
+    // setMapPostcards(updatedPostcards);
+  };
+
   return (
     <div className="App">
       {currentScreen === 'home' && (
@@ -235,6 +278,6 @@ function App() {
       )}
     </div>
   );
-};
+}
 
 export default App;

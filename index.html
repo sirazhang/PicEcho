@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Plane and Globe Animation</title>
+<style>
+  body {
+    background: #111;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* 地球 */
+  .globe {
+    width: 100px;
+    height: 100px;
+    background: url("https://upload.wikimedia.org/wikipedia/commons/9/97/The_Earth_seen_from_Apollo_17.jpg") no-repeat center/cover;
+    border-radius: 50%;
+    animation: spin 10s linear infinite;
+    position: absolute;
+    top: 250px;
+    left: 250px;
+  }
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  /* 飞机 */
+  .plane {
+    width: 40px;
+    height: 40px;
+    background: url("https://upload.wikimedia.org/wikipedia/commons/3/3c/Paper_plane_icon.svg") no-repeat center/contain;
+    position: absolute;
+    offset-path: path("M 299 547 A 1000 1000 0 0 1 346 607");
+    offset-rotate: auto;
+    animation: fly 5s linear infinite;
+  }
+
+  @keyframes fly {
+    to { offset-distance: 100%; }
+  }
+</style>
+</head>
+<body>
+  <div class="globe"></div>
+  <div class="plane"></div>
+</body>
+</html>
