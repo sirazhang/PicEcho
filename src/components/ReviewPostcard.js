@@ -9,20 +9,14 @@ const getImagePath = (propsLevel, imageId) => {
 
 const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, selectedLanguage, conversationHistory, onSave, onBack, isLoading, error }) => {
   const [isSaved, setIsSaved] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
-  const [isSaving, setIsSaving] = useState(false); // 新增保存状态
-  const [localFeedback, setLocalFeedback] = useState(feedback || {
-    encouragingRemarks: selectedLanguage === 'zh' ? '做得很好！继续努力！' : 'Well done! Keep up the good work!',
-    errorSummary: selectedLanguage === 'zh' ? '没有发现明显错误' : 'No significant errors found',
-    suggestions: selectedLanguage === 'zh' ? '保持当前水平，继续练习！' : 'Maintain your current level and keep practicing!'
-  });
+  const [localFeedback, setLocalFeedback] = useState(feedback);
   const [postalCode, setPostalCode] = useState('');
-  const [showSendModal, setShowSendModal] = useState(false);
-  const [isSending, setIsSending] = useState(false);
-  const [sendStatus, setSendStatus] = useState(''); // '' | 'success' | 'error'
-  const [showPreviewModal, setShowPreviewModal] = useState(false);
-  const [postcardImage, setPostcardImage] = useState('');
-  const postcardRef = useRef();
+  const [stampImage, setStampImage] = useState('');
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewImage, setPreviewImage] = useState('');
+  const postcardRef = useRef(null);
 
   // Generate random postal code
   useEffect(() => {
@@ -38,166 +32,79 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
     setPostalCode(generatePostalCode());
   }, [imageId]);
 
-  // Update local feedback when feedback prop changes
+  // Select random stamp image
   useEffect(() => {
-    setLocalFeedback(feedback);
-  }, [feedback]);
+    const stampImages = [
+      '/img_post/img_post_01.png',
+      '/img_post/img_post_02.png',
+      '/img_post/img_post_03.png',
+      '/img_post/img_post_04.png',
+      '/img_post/img_post_05.png',
+      '/img_post/img_post_06.png'
+    ];
+    
+    const randomIndex = Math.floor(Math.random() * stampImages.length);
+    setStampImage(stampImages[randomIndex]);
+  }, [imageId]);
 
   // Handle save postcard button click
   const handleSavePostcard = async () => {
     try {
       setIsSaving(true); // 设置保存状态
       
-      // Generate the postcard image using html2canvas
-      const imageData = await generatePostcardImage();
+      // Generate the postcard image as a Blob
+      const imageBlob = await generatePostcardImage();
       
+      // Create postcard data
       const postcardData = {
-        id: Date.now().toString(),
         imageId: imageId,
         level: level,
-        imageData, // Use the generated image data
+        feedback: localFeedback,
+        imageData: imageBlob,
         timestamp: new Date().toISOString(),
-        postalCode: postalCode,
-        conversationHistory: conversationHistory || [] // Include conversation history if available
+        postalCode: postalCode
       };
-      
+
+      // Call onSave callback
       onSave(postcardData);
+      
+      // Update state
       setIsSaved(true);
       setSaveMessage(selectedLanguage === 'zh' ? '明信片已保存！' : 'Postcard saved!');
       
-      // Clear save message after 3 seconds
+      // Reset message after 2 seconds
       setTimeout(() => {
         setSaveMessage('');
-      }, 3000);
-    } catch (error) {
-      console.error('Error saving postcard:', error);
+      }, 2000);
+    } catch (err) {
+      console.error('Error saving postcard:', err);
       setSaveMessage(selectedLanguage === 'zh' ? '保存失败，请重试' : 'Failed to save, please try again');
-      
-      // Clear save message after 3 seconds
-      setTimeout(() => {
-        setSaveMessage('');
-      }, 3000);
     } finally {
-      setIsSaving(false); // 重置保存状态
+      setIsSaving(false);
     }
   };
 
   // Handle send postcard button click
   const handleSendPostcard = async () => {
-    // Show confirmation modal first
-    setShowSendModal(true);
-  };
-
-  // Handle confirmation of send postcard
-  const handleConfirmSendCard = async () => {
-    setIsSending(true);
-    setSendStatus('');
-    
     try {
-      // Generate the postcard image using our canvas method
-      const imageData = await generatePostcardImage();
-      setPostcardImage(imageData);
+      // Generate the postcard image as a Blob
+      const imageBlob = await generatePostcardImage();
       
-      // Show preview modal
-      setShowPreviewModal(true);
-      setShowSendModal(false);
-    } catch (error) {
-      console.error('Error generating postcard image:', error);
-      setSendStatus(selectedLanguage === 'zh' ? '生成明信片失败，请重试' : 'Failed to generate postcard, please try again');
-      setIsSending(false);
+      // Set preview image and show preview modal
+      setPreviewImage(imageBlob);
+      setShowPreview(true);
+    } catch (err) {
+      console.error('Error generating postcard for sending:', err);
+      setSaveMessage(selectedLanguage === 'zh' ? '发送失败，请重试' : 'Failed to send postcard');
+      setTimeout(() => {
+        setSaveMessage('');
+      }, 2000);
     }
   };
 
-  // Send the postcard to backend
-  const sendPostcardToBackend = async () => {
-    setIsSending(true);
-    setSendStatus('');
-    
-    try {
-      console.log('Starting to send postcard...');
-      
-      // Make sure we have a postcard image
-      if (!postcardImage) {
-        throw new Error('No postcard image available');
-      }
-      
-      console.log('Postcard image length:', postcardImage.length);
-      
-      // Generate a more robust sender ID with timestamp
-      const timestamp = new Date().getTime();
-      const randomString = Math.random().toString(36).substring(2, 11);
-      const senderId = `user_${timestamp}_${randomString}`;
-      
-      // Prepare postcard data
-      const postcardData = {
-        senderId,
-        imageUrl: postcardImage, // This will be the base64 image data
-        feedbackText: localFeedback,
-        postalCode,
-        timestamp: new Date().toISOString()
-      };
-      
-      console.log('Sending postcard data:', {
-        ...postcardData,
-        imageUrl: postcardImage.substring(0, 50) + '...' // Log only first part of image data
-      });
-      
-      // Send the postcard
-      const response = await sendPostcard(postcardData);
-      
-      console.log('Postcard send response:', response);
-      
-      if (response?.success) {
-        console.log('Postcard sent successfully');
-        setSendStatus('success');
-        setTimeout(() => {
-          setShowSendModal(false);
-          setShowPreviewModal(false);
-          setSendStatus('');
-        }, 2000);
-      } else {
-        const errorMessage = response?.message || 'send_failed';
-        console.error('Server returned error:', errorMessage);
-        throw new Error(errorMessage);
-      }
-    } catch (error) {
-      // Handle different types of errors
-      let errorMessage;
-      
-      if (error.message.includes('Network error')) {
-        errorMessage = selectedLanguage === 'zh' 
-          ? '网络错误：请检查您的互联网连接' 
-          : 'Network error: Please check your internet connection';
-      } else if (error.message.includes('Server error')) {
-        errorMessage = selectedLanguage === 'zh'
-          ? '服务器错误：请稍后重试'
-          : 'Server error: Please try again later';
-      } else if (error.message === 'send_failed') {
-        errorMessage = selectedLanguage === 'zh'
-          ? '发送明信片失败，请重试'
-          : 'Failed to send postcard, please try again';
-      } else {
-        errorMessage = selectedLanguage === 'zh'
-          ? '未知错误：请稍后重试'
-          : 'Unknown error: Please try again later';
-        console.error('Unexpected error:', error);
-      }
-      
-      setSendStatus(errorMessage);
-    } finally {
-      setIsSending(false);
-    }
-  };
-
-  // Handle confirmed send postcard
-  const handleSendConfirmed = async () => {
-    await sendPostcardToBackend();
-  };
-
-  // Generate postcard image for preview
+  // Generate postcard image using html2canvas
   const generatePostcardImage = async () => {
     try {
-      // Use html2canvas to capture the postcard ref directly
       if (!postcardRef.current) {
         throw new Error('Postcard reference is not available');
       }
@@ -209,337 +116,283 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
         backgroundColor: '#ffffff' // Ensure white background
       });
       
-      // Convert canvas to data URL
-      const dataUrl = canvas.toDataURL('image/png');
-      setPostcardImage(dataUrl);
+      // Convert canvas to Blob instead of data URL
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png', 0.95));
       
-      return dataUrl;
+      return blob;
     } catch (error) {
       console.error('Error generating postcard image with html2canvas:', error);
       throw error; // Re-throw to be handled by caller
     }
   };
 
-
   // Handle next picture button click
   const handleNextPicture = () => {
     if (onNextPicture) {
-      onNextPicture(level);  // 只告诉父组件：用户点了"下一张"
+      onNextPicture(level);
     }
   };
 
-  // Define text content
-  const getTextContent = () => {
+  // Memoized text content based on selectedLanguage, isSaved, and isSaving
+  const textContent = React.useMemo(() => {
     if (selectedLanguage === 'zh') {
       return {
-        back: '返回',
-        save: isSaved ? '已保存' : '保存明信片',
+        home: '主页',
+        save: isSaved ? '已保存' : (isSaving ? '保存中...' : '保存明信片'),
+        saved: '已保存',
+        saving: '保存中...',
         send: '发送明信片',
         nextPicture: '下一张图片',
-        sendConfirm: '您想发送这张明信片与另一位学习者交换吗？',
-        sendPreviewConfirm: '这是您要发送的明信片，确认发送吗？',
-        sendYes: '是',
-        sendNo: '否',
-        sending: '发送中...',
-        sendSuccess: '明信片已发送！',
-        sendError: '发送失败，请重试',
-        feedback: '反馈',
-        encouragingRemarks: '鼓励评价',
-        errorSummary: '错误总结',
-        suggestions: '改进建议',
-        generatingFeedback: '正在生成反馈...',
-        errorGeneratingFeedback: '生成反馈时出错',
-        postalCode: '邮编',
+        encouragingRemarks: '鼓励评价 ✅',
+        errorSummary: '错误总结 ❗️',
+        suggestions: '改进建议 💡'
       };
     } else {
       return {
-        back: 'Home',
-        save: isSaved ? 'Saved' : 'Save Postcard',
+        home: 'Home',
+        save: isSaved ? 'Saved' : (isSaving ? 'Saving...' : 'Save Postcard'),
+        saved: 'Saved',
+        saving: 'Saving...',
         send: 'Send Postcard',
         nextPicture: 'Next Picture',
-        sendConfirm: 'Do you want to send this postcard and exchange with another learner?',
-        sendPreviewConfirm: 'This is the postcard you want to send. Confirm sending?',
-        sendYes: 'Yes',
-        sendNo: 'No',
-        sending: 'Sending...',
-        sendSuccess: 'Postcard sent!',
-        sendError: 'Failed to send, please try again',
-        feedback: 'Feedback',
-        encouragingRemarks: 'Encouraging Remarks',
-        errorSummary: 'Error Summary',
-        suggestions: 'Suggestions',
-        generatingFeedback: 'Generating feedback...',
-        errorGeneratingFeedback: 'Error generating feedback',
-        postalCode: 'Postal Code',
+        encouragingRemarks: 'Encouraging Remarks ✅',
+        errorSummary: 'Error Summary ❗️',
+        suggestions: 'Suggestions 💡'
       };
     }
-  };
+  }, [selectedLanguage, isSaved, isSaving]);
 
-  const textContent = getTextContent();
+  // 预加载图片并验证是否存在
+  const [imageLoading, setImageLoading] = useState(true);
+  const [imageError, setImageError] = useState(false);
+  const [currentImageSrc, setCurrentImageSrc] = useState('');
+
+  useEffect(() => {
+    if (!imageId || !level) return;
+    
+    const loadImage = async () => {
+      setImageLoading(true);
+      setImageError(false);
+      const imageSrc = getImagePath(level, imageId);
+      setCurrentImageSrc(imageSrc); // 确保设置currentImageSrc
+      
+      try {
+        // 创建图片加载的辅助函数
+        const loadImageWithFallback = (src) => {
+          return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.src = src;
+            
+            // 设置超时防止永久挂起
+            const timeoutId = setTimeout(() => {
+              reject(new Error('Image load timeout'));
+            }, 5000);
+            
+            img.onload = () => {
+              clearTimeout(timeoutId);
+              resolve(src);
+            };
+            
+            img.onerror = () => {
+              clearTimeout(timeoutId);
+              reject(new Error('Image load error'));
+            };
+          });
+        };
+        
+        // 尝试加载当前级别的图片
+        try {
+          await loadImageWithFallback(imageSrc);
+          console.log(`Successfully loaded image: ${imageSrc}`);
+          setImageLoading(false);
+          setImageError(false);
+        } catch (error) {
+          console.log(`Failed to load image: ${imageSrc}`, error);
+          // 如果当前级别的图片加载失败，尝试加载级别1的图片作为后备
+          const fallbackSrc = getImagePath(1, imageId);
+          try {
+            await loadImageWithFallback(fallbackSrc);
+            console.log(`Successfully loaded fallback image: ${fallbackSrc}`);
+            setCurrentImageSrc(fallbackSrc);
+            setImageLoading(false);
+            setImageError(false);
+          } catch (fallbackError) {
+            console.log(`Failed to load fallback image: ${fallbackSrc}`, fallbackError);
+            setImageLoading(false);
+            setImageError(true);
+          }
+        }
+      } catch (error) {
+        console.error('Error in image loading process:', error);
+        setImageLoading(false);
+        setImageError(true);
+      }
+    };
+
+    loadImage();
+  }, [imageId, level]);
 
   return (
-    <div className="flex flex-col items-center p-4" style={{ minHeight: '100vh', backgroundColor: '#e5f5fb' }}>
-      <div className="w-full max-w-8xl">
-        {/* Success/Error messages */}
-        {saveMessage && (
-          <div className="fixed top-4 right-4 bg-green-500 text-white py-2 px-4 rounded-lg shadow-lg z-50">
-            {saveMessage}
-          </div>
-        )}
-        {sendStatus === 'success' && (
-          <div className="fixed top-4 right-4 bg-green-500 text-white py-2 px-4 rounded-lg shadow-lg z-50">
-            {textContent.sendSuccess}
-          </div>
-        )}
-        {sendStatus === 'error' && (
-          <div className="fixed top-4 right-4 bg-red-500 text-white py-2 px-4 rounded-lg shadow-lg z-50">
-            {textContent.sendError}
-          </div>
-        )}
+    <div className="min-h-screen bg-[#e5f5fb] p-0">
+      {/* Header with action buttons */}
+      <div className="flex justify-center items-center p-6 gap-4">
+        <button 
+          onClick={() => {
+            // Clear URL hash to go back to home screen
+            window.location.hash = '';
+            onBack();
+          }}
+          className="px-4 py-2 text-base font-inter font-bold focus:outline-none rounded-lg flex items-center justify-center"
+          style={{ 
+            backgroundColor: '#003153',
+            color: 'white',
+            minWidth: '120px',
+            minHeight: '40px'
+          }}
+        >
+          {textContent.home}
+        </button>
+        
+        <button
+          onClick={handleSavePostcard}
+          disabled={isSaving}
+          className={`px-4 py-2 text-base font-inter font-bold focus:outline-none rounded-lg flex items-center justify-center ${
+            isSaved ? 'bg-green-500' : 'bg-[#66ab4b]'
+          }`}
+          style={{ 
+            color: 'white',
+            minWidth: '120px',
+            minHeight: '40px'
+          }}
+        >
+          {isSaving ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+              {textContent.saving}
+            </>
+          ) : isSaved ? (
+            <>
+              <span className="mr-2">✓</span> {textContent.saved}
+            </>
+          ) : (
+            textContent.save
+          )}
+        </button>
+        
+        <button
+          onClick={handleSendPostcard}
+          className="px-4 py-2 text-base font-inter font-bold focus:outline-none rounded-lg flex items-center justify-center"
+          style={{ 
+            backgroundColor: '#ff9800',
+            color: 'white',
+            minWidth: '120px',
+            minHeight: '40px'
+          }}
+        >
+          {textContent.send}
+        </button>
+        
+        <button
+          onClick={handleNextPicture}
+          className="px-4 py-2 text-base font-inter font-bold focus:outline-none rounded-lg flex items-center justify-center"
+          style={{ 
+            backgroundColor: '#3fbdc7',
+            color: 'white',
+            minWidth: '120px',
+            minHeight: '40px'
+          }}
+        >
+          {textContent.nextPicture}
+        </button>
+      </div>
 
-        {/* All buttons in one row at the top */}
-        <div className="flex flex-wrap justify-between items-center p-6 w-full gap-4">
-          {/* Home button */}
-          <button
-            onClick={onBack}
-            className="px-4 py-2 rounded-lg font-inter text-white font-bold text-base flex items-center justify-center"
-            style={{ backgroundColor: '#003153', minWidth: '120px', minHeight: '40px' }}
-          >
-            {textContent.back}
-          </button>
-          
-          {/* Save Postcard button */}
-          <button
-            onClick={handleSavePostcard}
-            disabled={isSaved}
-            className="px-4 py-2 rounded-lg font-inter text-white font-bold text-base flex items-center justify-center"
-            style={{ backgroundColor: '#3fbdc7', minWidth: '120px', minHeight: '40px' }}
-          >
-            {textContent.save}
-          </button>
-          
-          {/* Send Postcard button */}
-          <button
-            onClick={handleSendPostcard}
-            className="px-4 py-2 rounded-lg font-inter text-white font-bold text-base flex items-center justify-center"
-            style={{ backgroundColor: '#66ab4b', minWidth: '120px', minHeight: '40px' }}
-          >
-            {textContent.send}
-          </button>
-          
-          {/* Next Picture button */}
-          <button
-            onClick={handleNextPicture}
-            className="px-4 py-2 rounded-lg font-inter text-white font-bold text-base flex items-center justify-center"
-            style={{ backgroundColor: '#4bc1eb', minWidth: '120px', minHeight: '40px' }}
-          >
-            {textContent.nextPicture}
-          </button>
-        </div>
-
-        {/* Send confirmation modal */}
-        {showSendModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
-              <h3 className="text-xl font-semibold text-gray-800 mb-4">{textContent.send}</h3>
-              <p className="text-gray-600 mb-6">{textContent.sendConfirm}</p>
-              <div className="flex justify-end space-x-3">
-                <button
-                  onClick={() => setShowSendModal(false)}
-                  disabled={isSending}
-                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 disabled:opacity-50"
-                >
-                  {textContent.sendNo}
-                </button>
-                <button
-                  onClick={handleConfirmSendCard}
-                  disabled={isSending}
-                  className="px-4 py-2 bg-indigo-500 rounded-lg text-white hover:bg-indigo-600 disabled:opacity-50 flex items-center"
-                >
-                  {isSending ? (
-                    <>
-                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      {textContent.sending}
-                    </>
-                  ) : (
-                    <>
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                        <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                        <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
-                      </svg>
-                      {textContent.sendYes}
-                    </>
-                  )}
-                </button>
+      {/* Postcard Container */}
+      <div className="flex justify-center px-6 pb-6" style={{ minHeight: '75vh' }}>
+        <div 
+          ref={postcardRef}
+          className="w-full max-w-6xl bg-white border-4 border-gray-800 rounded-xl shadow-xl p-0 relative"
+          style={{ height: '75vh' }}
+        >
+          {/* Postal Code - each digit in separate box */}
+          <div className="absolute top-4 left-4 flex gap-1 z-10">
+            {postalCode.split('').map((digit, index) => (
+              <div key={index} className="bg-white border-2 border-black w-8 h-8 flex items-center justify-center font-gloria-hallelujah text-2xl">
+                {digit}
               </div>
-            </div>
+            ))}
           </div>
-        )}
 
-        {/* Preview modal */}
-        {showPreviewModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="p-6">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-xl font-semibold text-gray-800">{textContent.send}</h3>
-                  <button 
-                    onClick={() => setShowPreviewModal(false)}
-                    className="text-gray-500 hover:text-gray-700"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-                
-                <div className="flex flex-col items-center">
-                  {postcardImage ? (
-                    <img 
-                      src={postcardImage} 
-                      alt="Postcard preview" 
-                      className="max-w-full h-auto border border-gray-300 rounded-lg mb-4"
-                    />
-                  ) : (
-                    <div className="text-gray-500">No image available</div>
-                  )}
-                  <p className="text-gray-600 mb-6 text-center">{textContent.sendPreviewConfirm}</p>
-                </div>
-                
-                <div className="flex justify-end space-x-3">
-                  <button
-                    onClick={() => setShowPreviewModal(false)}
-                    className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100"
-                  >
-                    {textContent.sendNo}
-                  </button>
-                  <button
-                    onClick={handleSendConfirmed}
-                    disabled={isSending}
-                    className="px-4 py-2 bg-indigo-500 rounded-lg text-white hover:bg-indigo-600 disabled:opacity-50 flex items-center"
-                  >
-                    {isSending ? (
-                      <>
-                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        {textContent.sending}
-                      </>
-                    ) : (
-                      <>
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                          <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                          <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
-                        </svg>
-                        {textContent.sendYes}
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            </div>
+          {/* Stamp */}
+          <div className="absolute top-4 right-4 w-28 h-32">
+            <img 
+              src={stampImage} 
+              alt="Stamp" 
+              className="w-full h-full object-contain"
+            />
           </div>
-        )}
 
-        {/* Main content - Postcard display area */}
-        <div className="flex flex-col items-center mt-6">
-          <div 
-            ref={postcardRef}
-            className="border-4 border-black rounded-lg relative"  // 添加黑框和相对定位
-            style={{ 
-              width: '75vw', 
-              height: '75vh',
-              maxWidth: '1100px',
-              maxHeight: '850px',
-              backgroundColor: 'white'  // 确保背景为白色
-            }}
-          >
-            {/* Postal code - positioned at top left */}
-            <div className="absolute top-4 left-4 bg-white px-2 py-1 border-2 border-black z-10">
-              <span className="font-gloria-hallelujah text-2xl">{postalCode}</span>
-            </div>
-            
-            {/* Main content area - flex row with two columns */}
-            <div className="flex h-full">
-              {/* Left side - Image (50% width) */}
-              <div className="w-1/2 flex items-center justify-center p-4 relative border-r-4 border-gray-400">
-                <div className="flex items-center justify-center h-full w-full">
+          {/* Main Content - Flex row layout */}
+          <div className="flex h-full pt-16">
+            {/* Image Section - 1/2 width */}
+            <div className="w-1/2 flex flex-col border-r-4 border-gray-300 pr-4 pl-4">
+              <div className="flex-grow flex items-center justify-center">
+                {imageLoading ? (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mr-2"></div>
+                    <span className="text-gray-700">{selectedLanguage === 'zh' ? '加载图片中...' : 'Loading image...'}</span>
+                  </div>
+                ) : imageError ? (
+                  <div className="flex items-center justify-center h-full bg-gray-100">
+                    <div className="text-center">
+                      <p className="text-red-500 mb-2">{selectedLanguage === 'zh' ? '图片未找到' : 'Image not found'}</p>
+                      <button
+                        onClick={() => window.location.reload()}
+                        className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+                      >
+                        {selectedLanguage === 'zh' ? '重试' : 'Retry'}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
                   <img 
-                    src={getImagePath(level, imageId)}
-                    alt="Selected"
+                    src={currentImageSrc} 
+                    alt={selectedLanguage === 'zh' ? '对话图片' : 'Conversation image'} 
                     className="max-h-full max-w-full object-contain"
-                    onError={(e) => {
-                      // Fallback to Level 1 image if current level image doesn't exist
-                      e.target.src = getImagePath(1, imageId);
-                      // Remove the onError handler to prevent infinite loop
-                      e.target.onerror = null;
-                    }}
                   />
-                </div>
+                )}
               </div>
-            
-              {/* Right side - Feedback (50% width) */}
-              <div className="w-1/2 flex flex-col relative"> {/* 移除pr-32，使用相对定位 */}
-                {/* Stamp - moved to top right corner above feedback */}
-                <div className="absolute top-4 right-4 w-1/5"> {/* 调整邮票尺寸和位置 */}
-                  <img 
-                    src={`/img_post/img_post_0${Math.floor(Math.random() * 6) + 1}.png`} 
-                    alt="Stamp" 
-                    className="w-full h-full object-contain"
-                  />
+            </div>
+
+            {/* Feedback Section - 1/2 width */}
+            <div className="w-1/2 flex flex-col pl-4 pr-4">
+              <div className="flex-grow overflow-y-auto pr-2" style={{ maxHeight: 'calc(65vh - 120px)' }}>
+                {/* Encouraging Remarks */}
+                <div className="mb-4">
+                  <div className="font-inter font-semibold text-gray-700 mb-1">
+                    {textContent.encouragingRemarks}
+                  </div>
+                  <div className="font-inter text-base whitespace-pre-line bg-[#f0fdf4] p-3 rounded-lg">
+                    {localFeedback?.encouragingRemarks || (selectedLanguage === 'zh' ? '✅ 做得很好！继续努力！' : '✅ Well done! Keep up the good work!')}
+                  </div>
                 </div>
                 
-                {/* Feedback content - aligned to top right */}
-                <div className="flex-grow overflow-y-auto p-4 pt-16"> {/* 添加顶部内边距为邮票留空间 */}
-                  {/* Feedback title */}
-                  <div className="mb-4">
-                    <h2 className="font-inter font-bold text-xl">{textContent.feedback}</h2>
+                {/* Error Summary */}
+                <div className="mb-4">
+                  <div className="font-inter font-semibold text-gray-700 mb-1">
+                    {textContent.errorSummary}
                   </div>
-                  
-                  {/* Feedback content */}
-                  {/* Encouraging Remarks */}
-                  <div className="mb-3 p-2 rounded-lg" style={{ backgroundColor: '#e1fcc0', color: '#2c677b' }}>
-                    <div className="font-inter font-bold mb-1">
-                      {selectedLanguage === 'zh' ? '✅ 很棒的努力！🌟' : '✅ Excellent Effort! 🌟'}
-                    </div>
-                    <div className="font-inter whitespace-pre-line text-sm">
-                      {localFeedback?.encouragingRemarks}
-                    </div>
+                  <div className="font-inter text-base whitespace-pre-line bg-[#fef3c7] p-3 rounded-lg">
+                    {localFeedback?.errorSummary || (selectedLanguage === 'zh' ? '❗️ 没有发现明显错误' : '❗️ No significant errors found')}
                   </div>
+                </div>
                 
-                  {/* Error Summary */}
-                  <div className="mb-3 p-2 rounded-lg" style={{ backgroundColor: '#f5e7B2', color: '#973131' }}>
-                    <div className="font-inter font-bold mb-1">
-                      {selectedLanguage === 'zh' ? '❗ 小修正' : '❗️ Small Fixes'}
-                    </div>
-                    <div className="font-inter text-sm">
-                      {localFeedback?.errorSummary ? (
-                        <pre className="whitespace-pre-wrap font-sans m-0 p-0">
-                          {localFeedback.errorSummary}
-                        </pre>
-                      ) : (
-                        <pre className="whitespace-pre-wrap font-sans m-0 p-0">
-                          {selectedLanguage === 'zh' ? 
-                            "* ❌ \"小狗在跑步步。\" → ✅ \"小狗在跑。\"\n* ❌ \"他们在吃苹果子。\" → ✅ \"他们在吃苹果。\"" :
-                            "❌ \"I no know this word.\" → ✅ \"I don't know this word.\"\n❌ \"She is more higher than me.\" → ✅ \"She is higher than me.\""
-                          }
-                        </pre>
-                      )}
-                    </div>
+                {/* Suggestions */}
+                <div className="mb-4">
+                  <div className="font-inter font-semibold text-gray-700 mb-1">
+                    {textContent.suggestions}
                   </div>
-                
-                  {/* Suggestions */}
-                  <div className="mb-3 p-2 rounded-lg" style={{ backgroundColor: '#c0e0ff', color: '#253a82' }}>
-                    <div className="font-inter font-bold mb-1">
-                      {selectedLanguage === 'zh' ? '💡 可以试着这样说' : '💡 Try These Improvements'}
-                    </div>
-                    <div className="font-inter whitespace-pre-line text-sm">
-                      {localFeedback?.suggestions}
-                    </div>
+                  <div className="font-inter text-base whitespace-pre-line bg-[#dbeafe] p-3 rounded-lg">
+                    {localFeedback?.suggestions || (selectedLanguage === 'zh' ? '💡 保持当前水平，继续练习！' : '💡 Maintain your current level and keep practicing!')}
                   </div>
                 </div>
               </div>
@@ -547,8 +400,102 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
           </div>
         </div>
       </div>
+
+      {/* Preview Modal */}
+      {showPreview && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-semibold text-gray-800">
+                  {selectedLanguage === 'zh' ? '预览明信片' : 'Preview Postcard'}
+                </h3>
+                <button 
+                  onClick={() => setShowPreview(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              
+              <div className="flex flex-col items-center">
+                {previewImage && (
+                  <img 
+                    src={URL.createObjectURL(previewImage)} 
+                    alt="Postcard preview" 
+                    className="max-w-full h-auto border border-gray-300 rounded-lg mb-4"
+                    onLoad={(e) => {
+                      // Revoke the object URL after the image has loaded to free memory
+                      URL.revokeObjectURL(e.target.src);
+                    }}
+                  />
+                )}
+                <div className="flex gap-4">
+                  <button
+                    onClick={() => setShowPreview(false)}
+                    className="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg font-medium"
+                  >
+                    {selectedLanguage === 'zh' ? '取消' : 'Cancel'}
+                  </button>
+                  <button
+                    onClick={async () => {
+                      // 实际发送明信片的逻辑
+                      try {
+                        // 从localStorage获取发送者token，如果没有则生成一个
+                        let senderToken = localStorage.getItem('senderToken');
+                        if (!senderToken) {
+                          senderToken = 'user_' + Math.random().toString(36).substr(2, 9);
+                          localStorage.setItem('senderToken', senderToken);
+                        }
+                        
+                        // 准备明信片数据
+                        const postcardData = {
+                          imageData: previewImage,
+                          senderToken: senderToken,
+                          feedback: localFeedback,
+                          postalCode: postalCode
+                        };
+                        
+                        // 发送明信片
+                        await sendPostcard(postcardData);
+                        
+                        // 关闭预览窗口
+                        setShowPreview(false);
+                        
+                        // 显示发送成功消息
+                        setSaveMessage(selectedLanguage === 'zh' ? '明信片已发送！' : 'Postcard sent!');
+                        setTimeout(() => {
+                          setSaveMessage('');
+                        }, 2000);
+                      } catch (error) {
+                        console.error('Error sending postcard:', error);
+                        setSaveMessage(selectedLanguage === 'zh' ? '发送失败，请重试' : 'Failed to send, please try again');
+                        setTimeout(() => {
+                          setSaveMessage('');
+                        }, 2000);
+                      }
+                    }}
+                    className="px-4 py-2 bg-blue-500 text-white rounded-lg font-medium"
+                  >
+                    {selectedLanguage === 'zh' ? '发送' : 'Send'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Status Message */}
+      {saveMessage && (
+        <div className="fixed bottom-4 right-4 bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg">
+          {saveMessage}
+        </div>
+      )}
     </div>
   );
-}
+};
 
 export default ReviewPostcard;

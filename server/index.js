@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
+const multer = require('multer');
 
 // Load environment variables
 dotenv.config();
@@ -11,10 +12,23 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const HOST = process.env.HOST || 'localhost';
 
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, path.join(__dirname, 'static/uploads'));
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'postcard-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({ storage: storage });
+
 // Middleware
 app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Serve static files from the React app build directory
 // This assumes the React app is built into a 'build' directory
@@ -29,6 +43,127 @@ const { Postcard } = require('./models/Postcard');
 // Add a root route for testing
 app.get('/', (req, res) => {
   res.json({ message: 'Chatpic server is running!' });
+});
+
+// POST /postcards - Save a new postcard with image file upload
+app.post('/postcards', upload.single('image'), (req, res) => {
+  console.log('POST /postcards endpoint hit');
+  
+  const { senderToken, feedbackText, postalCode } = req.body;
+  const imageFile = req.file;
+
+  // Validate required fields
+  if (!senderToken || !imageFile || !feedbackText) {
+    const missingFields = [];
+    if (!senderToken) missingFields.push('senderToken');
+    if (!imageFile) missingFields.push('image');
+    if (!feedbackText) missingFields.push('feedbackText');
+    
+    console.log('Missing fields:', missingFields);
+    return res.status(400).json({ 
+      error: 'Missing required fields',
+      missingFields: missingFields
+    });
+  }
+  
+  // Save postcard data to database
+  const Postcard = require('./models/Postcard').Postcard;
+  
+  // Create postcard record with file path
+  const imagePath = path.relative(path.join(__dirname, 'static'), imageFile.path);
+  
+  const postData = {
+    image_path: imagePath,
+    postcard_url: `/static/${imagePath}`,
+    created_at: new Date(),
+    status: 'sent',
+    sender_token: senderToken,
+    receiver_token: null,
+    feedback_text: typeof feedbackText === 'object' ? JSON.stringify(feedbackText) : feedbackText,
+    postal_code: postalCode
+  };
+  
+  // Insert into database
+  const db = require('./config/db').db;
+  const insertSql = `
+    INSERT INTO postcards 
+    (image_path, postcard_url, status, sender_token, receiver_token, feedback_text, postal_code) 
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `;
+  
+  const insertValues = [
+    postData.image_path,
+    postData.postcard_url,
+    postData.status,
+    postData.sender_token,
+    postData.receiver_token,
+    postData.feedback_text,
+    postData.postal_code
+  ];
+  
+  db.run(insertSql, insertValues, function(err) {
+    if (err) {
+      console.error('Error inserting postcard:', err.message);
+      return res.status(500).json({ error: 'Failed to save postcard', details: err.message });
+    }
+    
+    postData.postcard_id = this.lastID;
+    console.log('Postcard saved successfully:', postData);
+    
+    res.status(200).json({ 
+      success: true,
+      message: 'Postcard saved successfully!',
+      postcard: postData
+    });
+  });
+});
+
+// GET /postcards/random - Get a random postcard
+app.get('/postcards/random', (req, res) => {
+  console.log('GET /postcards/random endpoint hit');
+  console.log('Query parameters:', req.query);
+  
+  const { senderToken } = req.query;
+
+  if (!senderToken) {
+    return res.status(400).json({ error: 'Missing required query parameter: senderToken' });
+  }
+  
+  const Postcard = require('./models/Postcard').Postcard;
+  Postcard.getRandomPending(senderToken, (err, postcard) => {
+    if (err) {
+      console.error('Error fetching postcard:', err);
+      return res.status(500).json({ error: 'Failed to receive postcard' });
+    }
+    
+    // If no postcard found, return appropriate message
+    if (!postcard) {
+      console.log('No postcards available for user with token:', senderToken);
+      return res.status(404).json({ message: 'No postcards available at the moment' });
+    }
+    
+    console.log('Postcard fetched successfully:', postcard);
+    
+    // If the postcard is not already assigned, mark it as sent and assign to the requester
+    if (!postcard.receiver_token) {
+      Postcard.markAsSent(postcard.postcard_id, senderToken, (err) => {
+        if (err) {
+          console.error('Error marking postcard as sent:', err);
+        }
+        // Regardless of whether we could mark it as sent, return the postcard
+        res.status(200).json({ 
+          success: true,
+          postcard: postcard
+        });
+      });
+    } else {
+      // Already assigned, just return it
+      res.status(200).json({ 
+        success: true,
+        postcard: postcard
+      });
+    }
+  });
 });
 
 // Routes

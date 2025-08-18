@@ -36,30 +36,53 @@ function App() {
       const language = parts[1] || 'en';
       const level = parseInt(parts[2]) || 1;
       
-      setSelectedLanguage(language);
-      setSelectedLevel(level);
-      setCurrentImageId(imageId);
-      setCurrentLevel(level);
-      setCurrentScreen('dialogue');
+      // 只有当状态不匹配时才更新状态
+      if (selectedLanguage !== language || selectedLevel !== level || currentImageId !== imageId) {
+        setSelectedLanguage(language);
+        setSelectedLevel(level);
+        setCurrentImageId(imageId);
+        setCurrentLevel(level);
+        setCurrentScreen('dialogue');
+      }
     } else if (hash === '#/map') {
       setCurrentScreen('map');
+    } else {
+      // Default to home screen if no hash or unrecognized hash
+      setCurrentScreen('home');
+      // Clear hash to ensure we start fresh
+      window.location.hash = '';
     }
   }, []);
 
-  // Handle starting a dialogue
   const handleStartDialogue = (imageId, language, level) => {
-    setSelectedLanguage(language || 'en');
-    setSelectedLevel(level || 1); // Set level when starting dialogue
+    // Save selections to localStorage
+    if (imageId) {
+      setSelectedImage(imageId);
+      localStorage.setItem('selectedImage', imageId);
+    }
     
-    // Save level to localStorage
-    localStorage.setItem('selectedLevel', level || 1);
+    if (language) {
+      setSelectedLanguage(language);
+      localStorage.setItem('selectedLanguage', language);
+    }
+    
+    if (level) {
+      setSelectedLevel(level);
+      localStorage.setItem('selectedLevel', level || 1);
+    }
     
     // Update URL hash with imageId, language, and level
     window.location.hash = `#/dialogue/${imageId}/${language || 'en'}/${level || 1}`;
     
     setCurrentScreen('dialogue');
-    setCurrentImageId(imageId);
-    setCurrentLevel(level || 1);
+    
+    if (currentImageId !== imageId) {
+      setCurrentImageId(imageId);
+    }
+    
+    if (currentLevel !== (level || 1)) {
+      setCurrentLevel(level || 1);
+    }
   };
 
   // Handle finishing a dialogue
@@ -129,8 +152,24 @@ function App() {
     
     // Save to localStorage for demo purposes
     const savedPostcards = JSON.parse(localStorage.getItem('savedPostcards') || '[]');
-    savedPostcards.push(postcardData);
-    localStorage.setItem('savedPostcards', JSON.stringify(savedPostcards));
+    
+    // For demo purposes, we'll convert the Blob to a data URL
+    if (postcardData.imageData instanceof Blob) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = reader.result;
+        const postcardWithUrl = {
+          ...postcardData,
+          imageData: dataUrl
+        };
+        savedPostcards.push(postcardWithUrl);
+        localStorage.setItem('savedPostcards', JSON.stringify(savedPostcards));
+      };
+      reader.readAsDataURL(postcardData.imageData);
+    } else {
+      savedPostcards.push(postcardData);
+      localStorage.setItem('savedPostcards', JSON.stringify(savedPostcards));
+    }
   };
 
   const handleViewMap = () => {
@@ -162,7 +201,7 @@ function App() {
     const images = getImagesForLevel(level);
     
     // 找到当前图片的索引
-    const currentIndex = images.findIndex(img => img.id === selectedImage);
+    const currentIndex = images.findIndex(img => img.id === (currentImageId || selectedImage));
     
     // 计算下一个图片的索引（循环）
     const nextIndex = (currentIndex + 1) % images.length;
@@ -235,45 +274,31 @@ function App() {
             onBack={handleBackToMap}
             onNextPicture={handleNextPicture}
             level={selectedPostcard.level}
-            isLoading={false}
-            error={null}
             selectedLanguage={selectedLanguage}
+            isLoading={isLoading}
+            error={error}
           />
         ) : (
           <ReviewPostcard
-            imageId={selectedImage}
-            conversationHistory={conversationHistory}
+            imageId={currentImageId || selectedImage}
+            conversationHistory={feedback?.conversationHistory || []}
             feedback={feedback}
             onSave={handleSavePostcard}
             onBack={handleBackToHome}
             onNextPicture={handleNextPicture}
-            level={selectedLevel}
-            isLoading={false}
-            error={error}
+            level={currentLevel || selectedLevel}
             selectedLanguage={selectedLanguage}
+            isLoading={isLoading}
+            error={error}
           />
         )
       )}
 
-      {currentScreen === 'loading' && (
-        <ReviewPostcard
-          imageId={selectedImage}
-          conversationHistory={conversationHistory}
-          feedback={feedback}
-          onSave={handleSavePostcard}
-          onBack={handleBackToHome}
-          onNextPicture={handleNextPicture}
-          level={selectedLevel}
-          isLoading={true}
-          error={error}
-          selectedLanguage={selectedLanguage}
-        />
-      )}
-
       {currentScreen === 'map' && (
         <WorldMapReview 
-          onBack={handleBackToHome}
           onViewPostcard={handleViewPostcard}
+          onBack={handleBackToHome}
+          refreshData={refreshMapData}
         />
       )}
     </div>

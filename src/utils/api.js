@@ -1,64 +1,62 @@
-import axios from 'axios';
-
-// Create an axios instance with default configuration
-const apiClient = axios.create({
-  baseURL: '/api', // Use relative path with proxy
-  timeout: 10000, // 10 second timeout
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
+// No axios import needed for fetch API
 
 /**
- * Send a postcard to the backend
- * @param {Object} postcardData - The postcard data to send
+ * Send a postcard to the backend (using Blob format)
+ * @param {Object} postcardData - The postcard data to send, including image Blob
  * @returns {Promise<Object>} - The response from the server
  */
 export const sendPostcard = async (postcardData) => {
   try {
-    const response = await apiClient.post('/postcards/send', postcardData);
-    return response.data;
-  } catch (error) {
-    console.error('Error sending postcard:', error.response?.data || error.message);
-    if (error.response) {
-      // Server responded with error status
-      throw new Error(`Server error: ${error.response.status} - ${error.response.data.error || 'Unknown error'}`);
-    } else if (error.request) {
-      // Request was made but no response received
-      throw new Error('Network error: Unable to reach the server. Please check your connection.');
-    } else {
-      // Something else happened
-      throw new Error(`Request error: ${error.message}`);
+    const formData = new FormData();
+    
+    // Add image Blob
+    formData.append('image', postcardData.imageData);
+    
+    // Add other data
+    formData.append('senderToken', postcardData.senderToken);
+    formData.append('feedbackText', JSON.stringify(postcardData.feedback));
+    formData.append('postalCode', postcardData.postalCode);
+    
+    const response = await fetch('/postcards', {
+      method: 'POST',
+      body: formData,
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
+    
+    const data = await response.json();
+    console.log('Postcard sent successfully:', data);
+    return data;
+  } catch (error) {
+    console.error('Error sending postcard:', error);
+    throw error;
   }
 };
 
 /**
  * Receive a random postcard from the backend
- * @param {string} userId - The ID of the current user
- * @returns {Promise<Object>} - The received postcard data
+ * @param {Object} params - The parameters for the request
+ * @returns {Promise<Object|null} - The received postcard data or null if none available
  */
-export const receivePostcard = async (userId) => {
+export const receivePostcard = async (params) => {
   try {
-    const response = await apiClient.get('/postcards/receive', {
-      params: { senderToken: userId }  // 后端期望的参数名是 senderToken
-    });
-    return response.data;
-  } catch (error) {
-    console.error('Error receiving postcard:', error.response?.data || error.message);
-    if (error.response) {
-      // Server responded with error status
-      if (error.response.status === 404) {
-        // No postcards available - this is not necessarily an error
-        return null;
+    const queryString = new URLSearchParams(params).toString();
+    const response = await fetch(`/postcards/random?${queryString}`);
+    
+    if (!response.ok) {
+      if (response.status === 404) {
+        return null; // No postcards available
       }
-      throw new Error(`Server error: ${error.response.status} - ${error.response.data.error || 'Unknown error'}`);
-    } else if (error.request) {
-      // Request was made but no response received
-      throw new Error('Network error: Unable to reach the server. Please check your connection.');
-    } else {
-      // Something else happened
-      throw new Error(`Request error: ${error.message}`);
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
+    
+    const data = await response.json();
+    console.log('Postcard received successfully:', data);
+    return data.postcard;
+  } catch (error) {
+    console.error('Error receiving postcard:', error);
+    throw error;
   }
 };

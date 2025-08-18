@@ -226,13 +226,31 @@ const WorldMapReview = ({ onBack, onViewPostcard, onShow }) => {
               <div className="flex flex-col items-center">
                 {(() => {
                   if (selectedPostcard.imageData) {
-                    return (
-                      <img 
-                        src={selectedPostcard.imageData} 
-                        alt="Saved postcard" 
-                        className="max-w-full h-auto border border-gray-300 rounded-lg mb-4"
-                      />
-                    );
+                    // Check if imageData is a data URL or needs to be converted from Blob
+                    if (typeof selectedPostcard.imageData === 'string' && selectedPostcard.imageData.startsWith('data:')) {
+                      // It's already a data URL
+                      return (
+                        <img 
+                          src={selectedPostcard.imageData} 
+                          alt="Saved postcard" 
+                          className="max-w-full h-auto border border-gray-300 rounded-lg mb-4"
+                        />
+                      );
+                    } else {
+                      // It's a Blob, convert it to URL
+                      const imageUrl = URL.createObjectURL(selectedPostcard.imageData);
+                      return (
+                        <img 
+                          src={imageUrl} 
+                          alt="Saved postcard" 
+                          className="max-w-full h-auto border border-gray-300 rounded-lg mb-4"
+                          onLoad={(e) => {
+                            // Revoke the object URL after the image has loaded to free memory
+                            URL.revokeObjectURL(e.target.src);
+                          }}
+                        />
+                      );
+                    }
                   } else if (selectedPostcard.image_path) {
                     return (
                       <img 
@@ -272,13 +290,31 @@ const WorldMapReview = ({ onBack, onViewPostcard, onShow }) => {
               <div className="flex flex-col items-center">
                 {(() => {
                   if (receivedPostcard.imageData) {
-                    return (
-                      <img 
-                        src={receivedPostcard.imageData} 
-                        alt="Saved postcard" 
-                        className="max-w-full h-auto border border-gray-300 rounded-lg mb-4"
-                      />
-                    );
+                    // Check if imageData is a data URL or needs to be converted from Blob
+                    if (typeof receivedPostcard.imageData === 'string' && receivedPostcard.imageData.startsWith('data:')) {
+                      // It's already a data URL
+                      return (
+                        <img 
+                          src={receivedPostcard.imageData} 
+                          alt="Received postcard" 
+                          className="max-w-full h-auto border border-gray-300 rounded-lg mb-4"
+                        />
+                      );
+                    } else {
+                      // It's a Blob, convert it to URL
+                      const imageUrl = URL.createObjectURL(receivedPostcard.imageData);
+                      return (
+                        <img 
+                          src={imageUrl} 
+                          alt="Received postcard" 
+                          className="max-w-full h-auto border border-gray-300 rounded-lg mb-4"
+                          onLoad={(e) => {
+                            // Revoke the object URL after the image has loaded to free memory
+                            URL.revokeObjectURL(e.target.src);
+                          }}
+                        />
+                      );
+                    }
                   } else if (receivedPostcard.image_path) {
                     return (
                       <img 

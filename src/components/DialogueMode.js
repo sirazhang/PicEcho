@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { startKimiDialogue, queueKimiRequest, getDefaultQuestion, sendToKimi } from '../utils/kimiApi';
 
 // 工具函数：生成图片路径
 const getImagePath = (level, imageId) => {
@@ -10,14 +9,14 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [imageDescription, setImageDescription] = useState('');
-  const [showImageAnalysisMessage, setShowImageAnalysisMessage] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [speechError, setSpeechError] = useState('');
+  const [questions, setQuestions] = useState([]);
   
   const recognitionRef = useRef(null);
   const textareaRef = useRef(null);
+  const isInitialized = useRef(false); // 用于标记是否已初始化
 
   // 添加useEffect来监听level和imageId的变化
   useEffect(() => {
@@ -30,45 +29,142 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
     console.info('[DialogueMode] Level or ImageID changed');
   }, [level, imageId]);
 
-  // Load image description and initialize AI conversation
+  // Load questions based on level, language and imageId
+  const loadQuestions = async () => {
+    try {
+      // Determine which question file to load based on language
+      const questionFile = language === 'zh' ? 'questions1.json' : 'questions2.json';
+      
+      // Load questions from the appropriate level file
+      const response = await fetch(`/Level${level}/${questionFile}`);
+      const questionsData = await response.text();
+      
+      // Parse the custom format with comments
+      const lines = questionsData.split('\n');
+      let currentImageId = null;
+      let imageData = {};
+      let currentQuestions = [];
+      
+      for (const line of lines) {
+        const trimmedLine = line.trim();
+        if (trimmedLine.startsWith('###')) {
+          // Save previous image data if exists
+          if (currentImageId && currentQuestions.length > 0) {
+            imageData[currentImageId] = currentQuestions;
+          }
+          
+          // Extract new image ID
+          currentImageId = trimmedLine.substring(3).trim();
+          currentQuestions = [];
+        } else if (trimmedLine.startsWith('"') && trimmedLine.endsWith('",')) {
+          // Extract question
+          const question = trimmedLine.substring(1, trimmedLine.length - 2);
+          currentQuestions.push(question);
+        } else if (trimmedLine.startsWith('"') && trimmedLine.endsWith('"')) {
+          // Extract last question (no comma)
+          const question = trimmedLine.substring(1, trimmedLine.length - 1);
+          currentQuestions.push(question);
+        }
+      }
+      
+      // Save the last image data
+      if (currentImageId && currentQuestions.length > 0) {
+        imageData[currentImageId] = currentQuestions;
+      }
+      
+      console.log('Loaded questions for level:', level, 'language:', language, 'imageId:', imageId, 'questions:', imageData);
+      
+      // Get questions for the specific image
+      let loadedQuestions = imageData[imageId] || [];
+      
+      // Limit questions based on level
+      // Level 1: 4 questions, Level 2: 6 questions, Level 3: 6 questions
+      let limitedQuestions = [];
+      switch (level) {
+        case 1:
+          limitedQuestions = loadedQuestions.slice(0, 4);
+          break;
+        case 2:
+          limitedQuestions = loadedQuestions.slice(0, 6);
+          break;
+        case 3:
+          limitedQuestions = loadedQuestions.slice(0, 6);
+          break;
+        default:
+          limitedQuestions = loadedQuestions.slice(0, 4);
+      }
+      
+      setQuestions(limitedQuestions);
+      return limitedQuestions;
+    } catch (error) {
+      console.error('Error loading questions:', error);
+      // Fallback questions
+      const fallbackQuestions = language === 'zh' ? [
+        "这是谁呀？如果给TA起个名字，你会叫什么？ 🤔",
+        "你觉得TA现在在想什么呢？ 💭",
+        "你觉得这个地方在哪里？现实中会有吗？ 🏞️",
+        "如果你能走进画里，你会做什么？ 🚪"
+      ] : [
+        "Who is this? If you could give them a name, what would it be?",
+        "What do you think they are thinking about right now?",
+        "Where do you think this place is? Could it exist in real life?",
+        "If you could step inside this picture, what would you do?"
+      ];
+      
+      // Apply level-based limits to fallback questions too
+      let limitedFallback = [];
+      switch (level) {
+        case 1:
+          limitedFallback = fallbackQuestions.slice(0, 4);
+          break;
+        case 2:
+          limitedFallback = fallbackQuestions.slice(0, 6);
+          break;
+        case 3:
+          limitedFallback = fallbackQuestions.slice(0, 6);
+          break;
+        default:
+          limitedFallback = fallbackQuestions.slice(0, 4);
+      }
+      
+      setQuestions(limitedFallback);
+      return limitedFallback;
+    }
+  };
+
+  // Initialize conversation with local questions
   const initializeConversation = async () => {
     console.log('initializeConversation called with level:', level, 'imageId:', imageId);
     
+    // 重置初始化标记
+    isInitialized.current = false;
+
     try {
-      // Load image descriptions from the appropriate level file
-      const response = await fetch(`/Level${level}/descriptions.json`);
-      const descriptions = await response.json();
-      const description = descriptions[imageId] || 'A beautiful image';
+      // Load questions
+      const loadedQuestions = await loadQuestions();
       
-      console.log('Loaded description for image:', imageId, 'in level:', level, 'description:', description);
+      // Set the initial AI message (first question)
+      if (loadedQuestions.length > 0) {
+        setMessages([{
+          id: 1,
+          sender: 'ai',
+          text: loadedQuestions[0],
+          timestamp: new Date()
+        }]);
+      }
       
-      setImageDescription(description);
-      
-      // Show image analysis message
-      setShowImageAnalysisMessage(true);
-      
-      // Call Kimi API to start the conversation with selected language and level
-      setIsLoading(true);
-      // 使用队列机制调用Kimi API
-      const firstQuestion = await queueKimiRequest(() => startKimiDialogue(description, language, level));
-      setIsLoading(false);
-      setShowImageAnalysisMessage(false);
-      
-      // Set the initial AI message
-      setMessages([{
-        id: 1,
-        sender: 'ai',
-        text: firstQuestion,
-        timestamp: new Date()
-      }]);
+      // 标记为已初始化
+      isInitialized.current = true;
     } catch (error) {
       console.error('Error initializing conversation:', error);
-      setIsLoading(false);
-      setShowImageAnalysisMessage(false);
-      setImageDescription('A beautiful image');
       
+      // 重置初始化标记
+      isInitialized.current = false;
+
       // Even if there's an error, we still need to start the conversation
-      const fallbackQuestion = getDefaultQuestion(language);
+      const fallbackQuestion = language === 'zh' ? 
+        "这是谁呀？如果给TA起个名字，你会叫什么？ 🤔" : 
+        "Who is this? If you could give them a name, what would it be?";
       
       setMessages([{
         id: 1,
@@ -81,9 +177,16 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
 
   useEffect(() => {
     console.log('useEffect for initializeConversation triggered. imageId:', imageId, 'language:', language, 'level:', level);
-    if (imageId) {
+    // 只有当imageId存在且尚未初始化时才初始化对话
+    if (imageId && !isInitialized.current) {
+      isInitialized.current = true; // 标记为已初始化
       initializeConversation();
     }
+    
+    // 组件卸载时重置初始化状态
+    return () => {
+      isInitialized.current = false;
+    };
   }, [imageId, language, level]);
 
   // Initialize speech recognition
@@ -155,8 +258,11 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
     if (imageId && level) {
       // Reset the conversation when level changes
       setMessages([]);
-      setImageDescription('');
-      initializeConversation();
+      // 只有当尚未初始化时才初始化对话
+      if (!isInitialized.current) {
+        isInitialized.current = true; // 标记为已初始化
+        initializeConversation();
+      }
     }
   }, [level, imageId]);
 
@@ -213,13 +319,37 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
     setIsLoading(true);
 
     try {
-      // Call Kimi API to get AI response with selected language and level
-      const aiResponse = await sendToKimi(userMessage.text, [...messages, userMessage], language, level);
+      // 模拟处理时间
+      await new Promise(resolve => setTimeout(resolve, 500));
       
+      // Get next question based on user response and current question count
+      const userMessagesCount = messages.filter(m => m.sender === 'user').length + 1; // +1 for current message
+      
+      let nextQuestion = "";
+      
+      // Check if we've reached the question limit
+      const questionLimit = level === 1 ? 4 : 6;
+      
+      if (userMessagesCount < questionLimit && userMessagesCount < questions.length) {
+        // Positive response before next question
+        const positiveResponse = language === 'zh' ? 
+          "很棒的回答！👍 " : 
+          "Great answer! 👍 ";
+        
+        nextQuestion = positiveResponse + questions[userMessagesCount];
+      } else {
+        // Final positive response
+        const finalResponse = language === 'zh' ? 
+          "谢谢你和我练习！🎉" : 
+          "Thanks for practicing with me! 🎉";
+        
+        nextQuestion = finalResponse;
+      }
+
       const aiMessage = {
         id: newUserMessageId + 1,
         sender: 'ai',
-        text: aiResponse,
+        text: nextQuestion,
         timestamp: new Date()
       };
 
@@ -227,22 +357,50 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
       setIsLoading(false);
       lastCallTime.current = Date.now(); // 更新最后调用时间
       
-      // 检查对话是否完成（根据AI的结束消息判断）
-      if (aiResponse.includes("今天的对话就到这里吧") || aiResponse.includes("end our conversation here")) {
+      // 检查对话是否完成
+      if (userMessagesCount >= questionLimit || userMessagesCount >= questions.length) {
         setTimeout(() => {
           onConversationComplete([...messages, userMessage, aiMessage]);
         }, 2000);
       }
     } catch (error) {
-      console.error('Error getting AI response:', error);
+      console.error('Error getting next question:', error);
       setIsLoading(false);
       
       // 使用统一的回退响应处理
-      const aiMessage = generateFallbackResponse(messages.filter(m => m.sender === 'user').length, language, newUserMessageId);
+      const userMessagesCount = messages.filter(m => m.sender === 'user').length + 1;
+      const questionLimit = level === 1 ? 4 : 6;
+      
+      let nextQuestion = "";
+      if (userMessagesCount < questionLimit) {
+        const positiveResponse = language === 'zh' ? 
+          "很棒的回答！👍 " : 
+          "Great answer! 👍 ";
+        
+        nextQuestion = positiveResponse + (language === 'zh' ? 
+          "你能告诉我更多吗？" : 
+          "Can you tell me more?");
+      } else {
+        nextQuestion = language === 'zh' ? 
+          "谢谢你和我练习！🎉" : 
+          "Thanks for practicing with me! 🎉";
+      }
+      
+      const aiMessage = {
+        id: newUserMessageId + 1,
+        sender: 'ai',
+        text: nextQuestion,
+        timestamp: new Date()
+      };
+      
       setMessages(prev => [...prev, aiMessage]);
       
-      // 检查是否达到问题数量限制（包括回退情况）
-      checkQuestionLimit([...messages, userMessage, aiMessage]);
+      // 检查是否达到问题数量限制
+      if (userMessagesCount >= questionLimit) {
+        setTimeout(() => {
+          onConversationComplete([...messages, userMessage, aiMessage]);
+        }, 1500);
+      }
     } finally {
       isProcessing.current = false;
     }
@@ -252,16 +410,32 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
   const generateFallbackResponse = (userMessageCount, language, newUserMessageId) => {
     const baseResponses = {
       zh: [
-        "很有趣！能告诉我更多吗？😊",
-        "观察得很好！这让你有什么感受？🌟",
-        "我明白了！你还注意到图片中的什么？🔍",
-        "很棒！让我们用一个有创意的问题来结束 - 如果你能进入这张图片，你会做什么？✨"
+        "这是谁呀？如果给TA起个名字，你会叫什么？ 🤔",
+        "你觉得TA现在在想什么呢？ 💭",
+        "你觉得这个地方在哪里？现实中会有吗？ 🏞️",
+        "如果你能走进画里，你会做什么？ 🚪",
+        "画面里最吸引你的一点是什么？ 👀",
+        "如果这张图是故事的开头，会发生什么？📖",
+        "你觉得角色们开心吗？为什么？ 😆",
+        "看到这张图，你有什么感觉？🤔",
+        "如果让你待在这个场景里，你会觉得放松还是兴奋？",
+        "如果你能给这幅画加一个细节，你会加什么？💡",
+        "如果可以和其中一个角色做朋友，你会选谁？🐹🐱🧚",
+        "你会想要去体验图片的场景吗？",
+        "如果你能和TA对话，你第一句话会说什么？ 🗨️"
       ],
       en: [
-        "That's interesting! Can you tell me more about it? 😊",
-        "Great observation! How does this make you feel? 🌟",
-        "I see! What else do you notice in the image? 🔍",
-        "Wonderful! Let's wrap up with a creative question - if you could step into this image, what would you do? ✨"
+        "Who is this? If you could give them a name, what would it be? 🧐",
+        "What do you think they are thinking about right now? 💡",
+        "If you could talk to them, what would be the first thing you say? 🎤",
+        "Where do you think this place is? Could it exist in real life? 🏝️",
+        "If you could step inside this picture, what would you do? 🚶",
+        "What's the most interesting detail in this picture for you? 🔍",
+        "How does this picture make you feel? 😊",
+        "Do you think the characters are happy? Why? 😺",
+        "If this were a story, what would happen in the next scene? 📖",
+        "What fun thing would you add to this picture? 🎨",
+        "Who would you most like to be friends with? 🐹🐱🧚"
       ]
     };
     
@@ -283,7 +457,7 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
       switch (level) {
         case 1: return 4;
         case 2: return 6;
-        case 3: return 8;
+        case 3: return 6;
         default: return 4;
       }
     };
@@ -534,18 +708,11 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
                         <div className="flex flex-col">
                           <div className="font-semibold mb-1">{textContent.aiTutor}</div>
                           <div className="bg-[#A6e2b1] p-6 rounded-lg">
-                            {showImageAnalysisMessage ? (
-                              <div className="flex items-center">
-                                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-500 mr-2"></div>
-                                {textContent.imageAnalysis}
-                              </div>
-                            ) : (
-                              <div className="flex space-x-2">
-                                <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></div>
-                                <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                                <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
-                              </div>
-                            )}
+                            <div className="flex space-x-2">
+                              <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></div>
+                              <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                              <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+                            </div>
                           </div>
                         </div>
                       </div>
