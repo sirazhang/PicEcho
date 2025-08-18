@@ -41,7 +41,7 @@ export const sendPostcard = async (postcardData) => {
 export const receivePostcard = async (userId) => {
   try {
     const response = await apiClient.get('/postcards/receive', {
-      params: { userId }
+      params: { senderToken: userId }  // 后端期望的参数名是 senderToken
     });
     return response.data;
   } catch (error) {

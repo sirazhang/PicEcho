@@ -1,10 +1,11 @@
-// src/utils/kimiApi.js
 import { loadEnv } from './envLoader';
 
 // Kimi API configuration
+let currentKeyIndex = 0;
+
+// Kimi API configuration (continued)
 let KIMI_API_KEYS = [];
 let KIMI_API_URL = 'https://api.moonshot.cn/v1/chat/completions';
-let currentKeyIndex = 0;
 
 // 请求队列，用于串行化API请求
 let pending = Promise.resolve();
@@ -55,6 +56,17 @@ const switchToNextApiKey = () => {
 };
 
 /**
+ * Get default question when Kimi API is not available
+ * @param {string} lang - The language for the question
+ * @returns {string} - The default question
+ */
+export const getDefaultQuestion = (lang) => {
+  return lang === 'zh' 
+    ? "你在这张图片中看到了什么？🤔" 
+    : "What do you see in this image? 🤔";
+};
+
+/**
  * Check if a text contains Chinese characters
  * @param {string} text - The text to check
  * @returns {boolean} - True if text contains Chinese characters
@@ -79,9 +91,7 @@ export const startKimiDialogue = async (imageDescription, lang = 'en', level = 1
   const apiKey = getCurrentApiKey();
   if (!apiKey) {
     console.error('KIMI_API_KEY is not set');
-    return lang === 'zh' 
-      ? "你在这张图片中看到了什么？🤔" 
-      : "What do you see in this image? 🤔";
+    return getDefaultQuestion(lang);
   }
   
   console.log('Calling Kimi API with image description:', imageDescription);
@@ -91,16 +101,12 @@ export const startKimiDialogue = async (imageDescription, lang = 'en', level = 1
     try {
       let prompt;
       let systemMessage;
-      
-      // Check if the image description contains keywords for special handling
-      const isFourPanel = imageDescription.includes('四张图') || imageDescription.includes('four panels') || imageDescription.includes('four images');
-      const isSpotTheDifference = imageDescription.includes('找不同') || imageDescription.includes('spot the difference') || imageDescription.includes('两张图') || imageDescription.includes('two images');
-      
+
       // Handle different levels
       if (level === 1) {
         // Level 1 (Kids - simple questions with emojis)
         if (lang === 'zh') {
-          prompt = `你是一个儿童互动老师，通过图片帮助孩子用简单句子描述和想象。你的语言应简单有趣并配合 emoji，一次只问一个问题，等孩子回答后再继续。Level 1 提问结构：
+          prompt = `你是一个儿童互动老师，通过图片帮助孩子用简单句子描述和想象。你的语言应简单有趣并配合 emoji，给出4个问题。参考提问结构：
 1. 观察趣味：'哇！那是什么呀？🧐'
 2. 简单细节：'它是什么颜色的？🎨'
 3. 趣味感受：'你想和它玩吗？😄'
@@ -109,69 +115,28 @@ export const startKimiDialogue = async (imageDescription, lang = 'en', level = 1
 图片描述：
 "${imageDescription}"
 
-请根据图片内容，按照以上结构提出4个适合儿童的问题，一次只问一个问题，使用中文并配合emoji。`;
+请根据图片内容，按照以上结构提出4个适合儿童的问题，使用中文并配合emoji。`;
           
-          systemMessage = "你是一个儿童互动老师，通过图片帮助孩子用简单句子描述和想象。你的语言应简单有趣并配合 emoji，一次只问一个问题，等孩子回答后再继续。请用中文提问并配合emoji。";
+          systemMessage = "你是一个儿童互动老师，通过图片帮助孩子用简单句子描述和想象。你的语言应简单有趣并配合 emoji，按照以上结构提出4个适合儿童的问题。请用中文提问并配合emoji。";
         } else {
-          prompt = `You always speak in simple English with friendly emojis, encourage curiosity, and adapt your questions based on the difficulty level chosen. Follow this structure for your questions:
+          prompt = `You are a kindergarden English teacher. You always speak in simple English with friendly emojis, encourage curiosity. 
+
+Image description:
+"${imageDescription}"
+-Questions structure:
 1. Fun observation: Example – 'Wow! What's that? 🧐'
 2. Simple detail: Example – 'What color is it? 🎨'
 3. Fun feeling: Example – 'Do you want to play with it? 😄'
 4. Simple imagination: Example – 'What sound does it make? 📣'
 
-Image description:
-"${imageDescription}"
-
-Based on the image description, ask 4 questions following the above structure, one at a time, in simple English with emojis.`;
+-Based on the image description, ask 4 questions following the above structure, in simple English with emojis.`;
           
-          systemMessage = "You always speak in simple English with friendly emojis, encourage curiosity, and adapt your questions based on the difficulty level chosen. Ask one question at a time and wait for the answer. If the child responds in Chinese, gently encourage them to try in English with a message like 'Let's try in English 😊'";
+          systemMessage = "You always speak in simple English with friendly emojis, encourage curiosity. If the child responds in Chinese, gently encourage them to try in English with a message like 'Let's try in English 😊'";
         }
       } else if (level === 2) {
         // Level 2 (Intermediate - encourage full sentences)
         if (lang === 'zh') {
-          if (isFourPanel) {
-            prompt = `你是一位友好且有鼓励性的英语导师。
-你的目标是帮助学习者根据给定的四格图片描述练习英语口语。
-
-图片描述：
-"${imageDescription}"
-
-指导说明：
-1. 总共向学习者提出6个问题，覆盖以下类别：
-   - 场景设定 (Setting the scene)
-   - 人物互动 (Character interactions)
-   - 环境细节 (Details of the environment)
-   - 事件顺序 (Sequence of events)
-   - 情绪反应 (Emotional responses)
-   - 预测性提问 (Predictive questions)
-2. 保持问题简短和友好。
-3. 一次只输出一个问题，并根据对话流程进行。
-4. 问题要具体涉及面板顺序（使用"第一张图"、"第二张图"等）。
-5. 适当使用emoji来让对话更生动有趣。
-
-从第一个问题开始。请用中文提问。`;
-          } else if (isSpotTheDifference) {
-            prompt = `你是一个互动对话AI，帮助学生通过图片练习描述、表达和思考。Level 2 提问结构：
-1. 整体观察：例如'这里发生了什么？👀'
-2. 细节：例如'他们手里拿的是什么？🛠'
-3. 背景：例如'你觉得他们在哪里？🌳'
-4. 动作：例如'你认为他们为什么在跑步？🤔'
-5. 关系：例如'他们之间是什么关系？👫'
-6. 情感：例如'他们现在的心情怎么样？😃'
-
-图片描述：
-"${imageDescription}"
-
-指导说明：
-1. 总共向学习者提出6个问题。
-2. 首先提出概览性问题（引导问题），然后提出具体定位差异的问题。
-3. 保持问题简短和友好。
-4. 一次只输出一个问题，并根据对话流程进行。
-5. 适当使用emoji来让对话更生动有趣。
-
-从第一个引导性问题开始。请用中文提问。`;
-          } else {
-            prompt = `你是一个互动对话AI，帮助学生通过图片练习描述、表达和思考。Level 2 提问结构：
+          prompt = `你是一个互动对话AI，帮助学生通过图片练习描述、表达和思考。Level 2 提问结构：
 1. 整体观察：例如'这里发生了什么？👀'
 2. 细节：例如'他们手里拿的是什么？🛠'
 3. 背景：例如'你觉得他们在哪里？🌳'
@@ -190,58 +155,10 @@ Based on the image description, ask 4 questions following the above structure, o
 5. 适当使用emoji来让对话更生动有趣。
 
 从第一个问题开始。请用中文提问。`;
-          }
           
           systemMessage = "你是一个互动对话AI，帮助学生通过图片练习描述、表达和思考。请用中文提问。适当使用emoji来让对话更生动有趣。";
         } else {
-          if (isFourPanel) {
-            prompt = `You are an interactive conversation AI helping students practice description, expression, and thinking through images. Follow this structure for your questions:
-1. Overall observation: Example – 'What's happening here? 👀'
-2. Detail: Example – 'What are they holding? 🛠'
-3. Background: Example – 'Where do you think they are? 🌳'
-4. Action: Example – 'Why do you think they are running? 🤔'
-5. Relationship: Example – 'How do they know each other? 👫'
-6. Feeling: Example – 'How do they feel now? 😃'
-
-Image description:
-"${imageDescription}"
-
-Instructions:
-1. Ask the learner exactly 6 questions in total, covering these categories:
-   - Setting the scene
-   - Character interactions
-   - Details of the environment
-   - Sequence of events
-   - Emotional responses
-   - Predictive questions
-2. Keep questions short and friendly.
-3. Output one question at a time, based on conversation flow.
-4. Make questions specific to panel order (use "first panel", "second panel" etc.).
-5. Use emojis appropriately to make the conversation more engaging.
-
-Start with the first question.`;
-          } else if (isSpotTheDifference) {
-            prompt = `You are an interactive conversation AI helping students practice description, expression, and thinking through images. Follow this structure for your questions:
-1. Overall observation: Example – 'What's happening here? 👀'
-2. Detail: Example – 'What are they holding? 🛠'
-3. Background: Example – 'Where do you think they are? 🌳'
-4. Action: Example – 'Why do you think they are running? 🤔'
-5. Relationship: Example – 'How do they know each other? 👫'
-6. Feeling: Example – 'How do they feel now? 😃'
-
-Image description:
-"${imageDescription}"
-
-Instructions:
-1. Ask the learner exactly 6 questions in total.
-2. Start with overview questions (guiding questions), then move to specific questions that locate differences.
-3. Keep questions short and friendly.
-4. Output one question at a time, based on conversation flow.
-5. Use emojis appropriately to make the conversation more engaging.
-
-Start with the first guiding question.`;
-          } else {
-            prompt = `You are an interactive conversation AI helping students practice description, expression, and thinking through images. Follow this structure for your questions:
+          prompt = `You are an interactive conversation AI helping students practice description, expression, and thinking through images. Follow this structure for your questions:
 1. Overall observation: Example – 'What's happening here? 👀'
 2. Detail: Example – 'What are they holding? 🛠'
 3. Background: Example – 'Where do you think they are? 🌳'
@@ -260,25 +177,26 @@ Instructions:
 5. Use emojis appropriately to make the conversation more engaging.
 
 Start with the first question.`;
-          }
           
           systemMessage = "You are an interactive conversation AI helping students practice description, expression, and thinking through images. Use emojis appropriately to make the conversation more engaging. If the learner responds in Chinese, gently encourage them to try in English with a message like 'Let's try in English 😊'";
         }
       } else if (level === 3) {
         // Level 3 (Advanced - storytelling and analytical thinking)
         if (lang === 'zh') {
-          prompt = `你是一位思辨与表达训练的引导者。Level 3 提问结构：
-1. 整体故事：例如'故事里发生了什么？📖'
-2. 按图细节：例如'每张图片里角色在做什么？🖼'（问题要具体涉及面板顺序，使用'第一张图'、'第二张图'等）
-3. 情感变化：例如'角色一开始的心情是什么？最后呢？😊➡️😮'
-4. 背景与推理：例如'你觉得他们为什么会处在这种情境中？🔍'
-5. 情节预测：例如'你觉得接下来会发生什么？🌟'
+          prompt = `你是一位初中语文老师。你的任务是通过图片，引导学生去观察、想象和表达，锻炼讲故事的能力。
 
 图片描述：
 "${imageDescription}"
 
 指导说明：
-1. 总共向学习者提出5个问题。
+1. 总共向学习者提出6个问题。提问结构如下:
+
+-整体故事：例如'故事里发生了什么？📖'
+-按图细节：例如'每张图片里角色在做什么？🖼'（问题要具体涉及面板顺序，使用'第一张图'、'第二张图'等）
+-情感变化：例如'角色一开始的心情是什么？最后呢？😊➡️😮'
+-背景与推理：例如'你觉得他们为什么会处在这种情境中？🔍'
+-情节预测：例如'你觉得接下来会发生什么？🌟'
+
 2. 问题应引导学习者进行深入思考和创造性表达。
 3. 保持问题简短和友好。
 4. 一次只输出一个问题，并根据对话流程进行。
@@ -286,20 +204,22 @@ Start with the first question.`;
 
 从第一个问题开始。请用中文提问。`;
           
-          systemMessage = "你是一位思辨与表达训练的引导者，通过图片帮助学习者进行故事讲述和深度思考。请用中文提问。适当使用emoji来让对话更生动有趣。";
+          systemMessage = "你是一位初中语文老师。你的任务是通过图片，引导学生去观察、想象和表达，锻炼讲故事的能力。请用中文提问。适当使用emoji来让对话更生动有趣。";
         } else {
-          prompt = `You are a guide for storytelling and analytical thinking based on images. Follow this structure for your questions:
-1. Overall story: Example – 'What is happening in the story? 📖'
-2. Detail by picture: Example – 'What are the characters doing in each picture? 🖼' (The questions should specifically refer to the panel sequence, using 'the first panel,' 'the second panel,' etc.)
-3. Feelings change: Example – 'How do the characters feel at the beginning? How about at the end? 😊➡️😮'
-4. Context & reasoning: Example – 'Why do you think they are in this situation? 🔍'
-5. Prediction: Example – 'What do you think will happen next? 🌟'
+          prompt = `You are a middle school Chinese language teacher. Your task is to guide students to observe, imagine and express themselves through pictures, and train their storytelling skills.
 
 Image description:
 "${imageDescription}"
 
 Instructions:
-1. Ask the learner exactly 5 questions in total.
+1. Ask the learner exactly 6 questions in total. Follow this structure:
+
+-Overall story: Example – 'What is happening in the story? 📖'
+-Detail by picture: Example – 'What are the characters doing in each picture? 🖼' (The questions should specifically refer to the panel sequence, using 'the first panel,' 'the second panel,' etc.)
+-Feelings change: Example – 'How do the characters feel at the beginning? How about at the end? 😊➡️😮'
+-Background & reasoning: Example – 'Why do you think they are in this situation? 🔍'
+-Prediction: Example – 'What do you think will happen next? 🌟'
+
 2. Questions should guide the learner toward deep thinking and creative expression.
 3. Keep questions short and friendly.
 4. Output one question at a time, based on conversation flow.
@@ -307,120 +227,7 @@ Instructions:
 
 Start with the first question.`;
           
-          systemMessage = "You are a guide for storytelling and analytical thinking based on images. Use emojis appropriately to make the conversation more engaging. If the learner responds in Chinese, gently encourage them to try in English with a message like 'Let's try in English 😊'";
-        }
-      } else {
-        // Default behavior (fallback)
-        if (lang === 'zh') {
-          if (isFourPanel) {
-            prompt = `你是一位友好且有鼓励性的英语导师。
-你的目标是帮助学习者根据给定的四格图片描述练习英语口语。
-
-图片描述：
-"${imageDescription}"
-
-指导说明：
-1. 总共向学习者提出4个问题，覆盖以下类别：
-   - 场景设定 (Setting the scene)
-   - 人物互动 (Character interactions)
-   - 环境细节 (Details of the environment)
-   - 事件顺序 (Sequence of events)
-   - 情绪反应 (Emotional responses)
-   - 预测性提问 (Predictive questions)
-2. 保持问题简短和友好。
-3. 一次只输出一个问题，并根据对话流程进行。
-4. 问题要具体涉及面板顺序（使用"第一张图"、"第二张图"等）。
-5. 适当使用emoji来让对话更生动有趣。
-
-从第一个问题开始。请用中文提问。`;
-          } else if (isSpotTheDifference) {
-            prompt = `你是一位友好且有鼓励性的英语导师。
-你的目标是帮助学习者根据给定的找不同图片描述练习英语口语。
-
-图片描述：
-"${imageDescription}"
-
-指导说明：
-1. 总共向学习者提出4个问题。
-2. 首先提出概览性问题（引导问题），然后提出具体定位差异的问题。
-3. 保持问题简短和友好。
-4. 一次只输出一个问题，并根据对话流程进行。
-5. 适当使用emoji来让对话更生动有趣。
-
-从第一个引导性问题开始。请用中文提问。`;
-          } else {
-            prompt = `你是一位友好且有鼓励性的英语导师。
-你的目标是帮助学习者根据给定的图片描述练习英语口语。
-
-图片描述：
-"${imageDescription}"
-
-指导说明：
-1. 总共向学习者提出4个问题。
-2. 从简单的观察开始，然后进入细节、感受和创意。
-3. 保持问题简短和友好。
-4. 一次只输出一个问题，并根据对话流程进行。
-5. 适当使用emoji来让对话更生动有趣。
-
-从第一个问题开始。请用中文提问。`;
-          }
-          
-          systemMessage = "你是一位友好且有鼓励性的英语导师，帮助学习者练习英语口语。请用中文提问。适当使用emoji来让对话更生动有趣。";
-        } else {
-          if (isFourPanel) {
-            prompt = `You are a friendly and encouraging English tutor. 
-Your goal is to help the learner practice descriptive speaking in English based on the given four-panel image description.
-
-Image description:
-"${imageDescription}"
-
-Instructions:
-1. Ask the learner exactly 4 questions in total, covering these categories:
-   - Setting the scene
-   - Character interactions
-   - Details of the environment
-   - Sequence of events
-   - Emotional responses
-   - Predictive questions
-2. Keep questions short and friendly.
-3. Output one question at a time, based on conversation flow.
-4. Make questions specific to panel order (use "first panel", "second panel" etc.).
-5. Use emojis appropriately to make the conversation more engaging.
-
-Start with the first question.`;
-          } else if (isSpotTheDifference) {
-            prompt = `You are a friendly and encouraging English tutor. 
-Your goal is to help the learner practice descriptive speaking in English based on the given spot-the-difference image description.
-
-Image description:
-"${imageDescription}"
-
-Instructions:
-1. Ask the learner exactly 4 questions in total.
-2. Start with overview questions (guiding questions), then move to specific questions that locate differences.
-3. Keep questions short and友好.
-4. Output one question at a time, based on conversation flow.
-5. Use emojis appropriately to make the conversation more engaging.
-
-Start with the first guiding question.`;
-          } else {
-            prompt = `You are a friendly and encouraging English tutor. 
-Your goal is to help the learner practice descriptive speaking in English based on the given image description.
-
-Image description:
-"${imageDescription}"
-
-Instructions:
-1. Ask the learner exactly 4 questions in total.
-2. Start with simple observation, then go into details, feelings, and creativity.
-3. Keep questions short and friendly.
-4. Output one question at a time, based on conversation flow.
-5. Use emojis appropriately to make the conversation more engaging.
-
-Start with the first question.`;
-          }
-          
-          systemMessage = "You are a friendly and encouraging English tutor helping learners practice descriptive speaking. Use emojis appropriately to make the conversation more engaging. If the learner responds in Chinese, gently encourage them to try in English with a message like 'Let's try in English 😊'";
+          systemMessage = "You are a middle school Chinese language teacher. Your task is to guide students to observe, imagine and express themselves through pictures, and train their storytelling skills. Use emojis appropriately to make the conversation more engaging. If the learner responds in Chinese, gently encourage them to try in English with a message like 'Let's try in English 😊'";
         }
       }
 
@@ -477,9 +284,7 @@ Start with the first question.`;
   // 切换到下一个API密钥
   switchToNextApiKey();
   // Fallback to simulated response
-  return lang === 'zh' 
-    ? "你在这张图片中看到了什么？🤔" 
-    : "What do you see in this image? 🤔";
+  return getDefaultQuestion(lang);
 };
 
 /**
@@ -535,23 +340,23 @@ export const sendToKimi = async (message, conversationHistory, lang = 'en', leve
         if (level === 1) {
           // Level 1 (Kids)
           if (lang === 'zh') {
-            systemMessage = "你是一个儿童互动老师，通过图片帮助孩子用简单句子描述和想象。你的语言应简单有趣并配合 emoji，一次只问一个问题，等孩子回答后再继续。请用中文提问并配合emoji。";
+            systemMessage = "你是一个儿童互动老师，通过图片帮助孩子用简单句子描述和想象。你的语言应简单有趣并配合 emoji，按照以上结构提出4个适合儿童的问题。请用中文提问并配合emoji";
           } else {
-            systemMessage = "You always speak in simple English with friendly emojis, encourage curiosity, and adapt your questions based on the difficulty level chosen. Ask one question at a time and wait for the answer. If the child responds in Chinese, gently encourage them to try in English with a message like 'Let's try in English 😊'";
+            systemMessage = "You always speak in simple English with friendly emojis, encourage curiosity. If the child responds in Chinese, gently encourage them to try in English with a message like 'Let's try in English 😊";
           }
         } else if (level === 2) {
           // Level 2 (Intermediate)
           if (lang === 'zh') {
-            systemMessage = "你是一个互动对话AI，帮助学生通过图片练习描述、表达和思考。总共问6个问题，一次一个。请用中文提问。适当使用emoji来让对话更生动有趣。";
+            systemMessage = "你是一位友好且有鼓励性的小学语文老师。你的任务是通过图片引导学生去观察、想象和表达。你需要根据图片描述给学生提出6个针对性的问题。请用中文提问。适当使用emoji来让对话更生动有趣";
           } else {
-            systemMessage = "You are an interactive conversation AI helping students practice description, expression, and thinking through images. Ask exactly 6 questions in total, one at a time. Use emojis appropriately to make the conversation more engaging. If the learner responds in Chinese, gently encourage them to try in English with a message like 'Let's try in English 😊'";
+            systemMessage = "You are an elementary Englishh teacher. You helps students practice description, expression, and thinking through images. You aim to enrich students' expression";
           }
         } else if (level === 3) {
           // Level 3 (Advanced)
           if (lang === 'zh') {
-            systemMessage = "你是一位思辨与表达训练的引导者，通过图片帮助学习者进行故事讲述和深度思考。请用中文提问。适当使用emoji来让对话更生动有趣。";
+            systemMessage = "你是一位初中语文老师。你的任务是通过图片，引导学生去观察、想象和表达，锻炼讲故事的能力。请用中文提问。适当使用emoji来让对话更生动有趣。";
           } else {
-            systemMessage = "You are a guide for storytelling and analytical thinking based on images. Use emojis appropriately to make the conversation more engaging. If the learner responds in Chinese, gently encourage them to try in English with a message like 'Let's try in English 😊'";
+            systemMessage = "You are an elementary Englishh teacher. You helps students practice description, expression, and thinking through images. You aim to enrich students' expression. Use emojis appropriately to make the conversation more engaging. If the learner responds in Chinese, gently encourage them to try in English with a message like 'Let's try in English 😊";
           }
         } else {
           // Default behavior (fallback)
@@ -691,15 +496,14 @@ export const generateKimiFeedback = async (conversation, imageDescription, lang 
 
         let prompt;
         if (lang === 'zh') {
-          prompt = `你是一位鼓励性的英语导师。🧑‍🏫
-你的任务：根据之前的对话，给出三个部分的针对性反馈：
+          prompt = `你是一位鼓励性的中文语言老师 你的任务：根据之前的对话，给出三个部分的针对性反馈：
 
 1. **带表情符号的鼓励评价**
    - 给出温暖、激励性的反馈。
    - 至少包含一个积极的表情符号。
 
 2. **错误总结**
-   - 对于每个错误，用下划线标出错误部分：\`_错误的文本_\`
+   - 对于表达语言每个错误，用下划线标出错误部分：\`_错误的文本_\`
    - 然后，紧接着显示正确版本。
    - 格式为：
      \`_错误的句子_ → 正确的句子\`

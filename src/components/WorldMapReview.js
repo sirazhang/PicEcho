@@ -63,7 +63,7 @@ const WorldMapReview = ({ onBack, onViewPostcard }) => {
     setIsFetching(true);
     try {
       // Use the sender token to receive a postcard
-      const postcardData = await receivePostcard(senderToken);
+      const postcardData = await receivePostcard({ senderToken });
       
       if (postcardData) {
         setReceivedPostcard(postcardData);
@@ -74,6 +74,7 @@ const WorldMapReview = ({ onBack, onViewPostcard }) => {
       }
     } catch (error) {
       console.error('Error receiving postcard:', error);
+      console.error('Error details:', error.response ? error.response.data : 'No additional details');
       alert('Failed to receive postcard. Please try again.');
     } finally {
       setIsFetching(false);
@@ -213,11 +214,27 @@ const WorldMapReview = ({ onBack, onViewPostcard }) => {
               </div>
               
               <div className="flex flex-col items-center">
-                <img 
-                  src={selectedPostcard.imageData} 
-                  alt="Saved postcard" 
-                  className="max-w-full h-auto border border-gray-300 rounded-lg mb-4"
-                />
+                {(() => {
+                  if (selectedPostcard.imageData) {
+                    return (
+                      <img 
+                        src={selectedPostcard.imageData} 
+                        alt="Saved postcard" 
+                        className="max-w-full h-auto border border-gray-300 rounded-lg mb-4"
+                      />
+                    );
+                  } else if (selectedPostcard.image_path) {
+                    return (
+                      <img 
+                        src={`/static/${selectedPostcard.image_path}`} 
+                        alt="Received postcard" 
+                        className="max-w-full h-auto border border-gray-300 rounded-lg mb-4"
+                      />
+                    );
+                  } else {
+                    return <div className="text-gray-500">No image available</div>;
+                  }
+                })()}
                 <p className="text-gray-600 text-center">{new Date(selectedPostcard.timestamp).toLocaleString()}</p>
               </div>
             </div>
@@ -243,27 +260,28 @@ const WorldMapReview = ({ onBack, onViewPostcard }) => {
               </div>
               
               <div className="flex flex-col items-center">
-                {/* Display received postcard image from local path */}
-                <img 
-                  src={`/static/${receivedPostcard.image_path}`} 
-                  alt="Received postcard" 
-                  className="max-w-full h-auto border border-gray-300 rounded-lg mb-4"
-                />
-                <p className="text-gray-600 text-center mb-4">
-                  Received at: {new Date(receivedPostcard.created_at).toLocaleString()}
-                </p>
-                {receivedPostcard.feedback_text && (
-                  <div className="w-full">
-                    <h4 className="font-semibold mb-2">Feedback:</h4>
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      {typeof receivedPostcard.feedback_text === 'string' ? (
-                        <pre className="whitespace-pre-wrap">{receivedPostcard.feedback_text}</pre>
-                      ) : (
-                        <pre className="whitespace-pre-wrap">{JSON.stringify(receivedPostcard.feedback_text, null, 2)}</pre>
-                      )}
-                    </div>
-                  </div>
-                )}
+                {(() => {
+                  if (receivedPostcard.imageData) {
+                    return (
+                      <img 
+                        src={receivedPostcard.imageData} 
+                        alt="Saved postcard" 
+                        className="max-w-full h-auto border border-gray-300 rounded-lg mb-4"
+                      />
+                    );
+                  } else if (receivedPostcard.image_path) {
+                    return (
+                      <img 
+                        src={`/static/${receivedPostcard.image_path}`} 
+                        alt="Received postcard" 
+                        className="max-w-full h-auto border border-gray-300 rounded-lg mb-4"
+                      />
+                    );
+                  } else {
+                    return <div className="text-gray-500">No image available</div>;
+                  }
+                })()}
+                <p className="text-gray-600 text-center">{new Date(receivedPostcard.created_at || receivedPostcard.timestamp).toLocaleString()}</p>
               </div>
             </div>
           </div>

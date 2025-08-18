@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { startKimiDialogue, sendToKimi } from '../utils/kimiApi';
-import { queueKimiRequest } from '../utils/kimiApi';
+import { startKimiDialogue, queueKimiRequest, getDefaultQuestion, sendToKimi } from '../utils/kimiApi';
 
 // 工具函数：生成图片路径
 const getImagePath = (level, imageId) => {
@@ -69,10 +68,7 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
       setImageDescription('A beautiful image');
       
       // Even if there's an error, we still need to start the conversation
-      let fallbackQuestion = "What do you see in this image? 🤔";
-      if (language === 'zh') {
-        fallbackQuestion = "你在这张图片中看到了什么？🤔";
-      }
+      const fallbackQuestion = getDefaultQuestion(language);
       
       setMessages([{
         id: 1,
@@ -238,7 +234,7 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
       setIsLoading(false);
       
       // 使用统一的回退响应处理
-      const aiMessage = generateFallbackResponse(userMessageCount, language, newUserMessageId);
+      const aiMessage = generateFallbackResponse(messages.filter(m => m.sender === 'user').length, language, newUserMessageId);
       setMessages(prev => [...prev, aiMessage]);
       
       // 检查是否达到问题数量限制（包括回退情况）
@@ -454,7 +450,7 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
         <div className="flex flex-row gap-6 px-6 pb-6" style={{ height: '90vh' }}>
           {/* Image Section */}
           <div className="w-1/2">
-            <div className="h-full flex items-center justify-center border-2 border-black p-0 m-0">
+            <div className="h-full flex items-center justify-center p-0 m-0">
               <div className="flex items-center justify-center h-full p-0 m-0">
                 {/* 根据难度级别加载对应的图片路径 */}
                 {imageLoading ? (
