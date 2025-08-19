@@ -21,17 +21,36 @@ export function queueKimiRequest(fn) {
   return pending;
 }
 
+/**
+ * Switch to the next API key in rotation
+ */
+export function switchToNextApiKey() {
+  if (KIMI_API_KEYS.length > 1) {
+    currentKeyIndex = (currentKeyIndex + 1) % KIMI_API_KEYS.length;
+    console.log(`Switched to API key index: ${currentKeyIndex}`);
+  }
+}
+
 // Initialize environment variables
 loadEnv().then(env => {
-  // 支持多个API密钥，用逗号分隔
+  // 支持多个API密钥，用逗号分隔或者使用KIMI_API_KEY_01, KIMI_API_KEY_02等格式
   if (env.KIMI_API_KEY) {
     KIMI_API_KEYS = env.KIMI_API_KEY.split(',').map(key => key.trim()).filter(key => key);
-    console.log(`Loaded ${KIMI_API_KEYS.length} Kimi API keys`);
+  } else {
+    // Check for individual API keys (KIMI_API_KEY_01, KIMI_API_KEY_02, etc.)
+    const apiKeyPattern = /^KIMI_API_KEY(_\d+)?$/;
+    const apiKeys = [];
+    
+    for (const [key, value] of Object.entries(env)) {
+      if (apiKeyPattern.test(key) && value) {
+        apiKeys.push(value);
+      }
+    }
+    
+    KIMI_API_KEYS = apiKeys;
   }
   
-  if (env.KIMI_API_URL) {
-    KIMI_API_URL = env.KIMI_API_URL;
-  }
+  console.log(`Loaded ${KIMI_API_KEYS.length} Kimi API keys`);
 });
 
 /**
@@ -91,59 +110,69 @@ export const generateKimiFeedback = async (conversation, imageDescription, lang 
 
         let prompt;
         if (lang === 'zh') {
-          prompt = `你是一位鼓励性的中文语言老师 你的任务：根据之前的对话，给出三个部分的针对性反馈：
+          prompt = `你是一位鼓励性的中文语言老师。学生刚完成了一项"看图说话"任务。
+你的任务：根据学生的回答，帮助他/她提升**图片描述、表达能力和思维逻辑**。
+
+请按照以下三个部分给出反馈：
 
 1. **带表情符号的鼓励评价**
-   - 给出温暖、激励性的反馈。
-   - 至少包含一个积极的表情符号。
+   - 针对学生描述中表现好的部分，进行具体的表扬。
+   - 语言要温暖、积极，至少包含一个正向表情符号。
 
 2. **错误总结**
-   - 对于表达语言每个错误，用下划线标出错误部分：\`_错误的文本_\`
-   - 然后，紧接着显示正确版本。
-   - 格式为：
+   - 包括语法/词汇错误，以及与图片内容不符的描述。
+   - 错误部分请用下划线标记：\`_错误的文本_\`
+   - 然后紧接着给出正确版本，格式为：
      \`_错误的句子_ → 正确的句子\`
 
 3. **改进建议**
-   - 给出至少2个自然流畅的替代表达。
-   - 使用清晰的项目符号。
+   - 针对表达和逻辑组织给出改进意见。
+   - 至少提供 2 个自然流畅的替代表达。
+   - 可以补充学生在图片描述中遗漏的细节。
+   - 使用清晰的项目符号列出。
 
-格式规则：
-- 保留章节编号（1, 2, 3）在输出中。
+**格式要求：**
+- 必须保留章节编号（1, 2, 3）。
 - 仅用中文回复。
-- 保持简洁但友好。
+- 保持简洁、友好、鼓励性。
 
 图片描述:
 ${imageDescription}
 
-对话:
+学生回答:
 ${conversationText}`;
         } else {
-          prompt = `You are an encouraging English tutor. 🧑‍🏫 
-Your task: Based on the previous conversation with the user, give targeted feedback in **three sections**:
+          prompt = `You are an encouraging English tutor. The student has just completed an "image description" task.
+Your task: Based on the student's responses, help them improve their **description, expression, and logical thinking**.
 
-1. **Encouraging Remarks with Emoji**  
-   - Give warm, motivating feedback.
+Provide feedback in **three sections**:
+
+1. **Encouraging Remarks with Emoji**
+   - Highlight the good aspects of the student's description.
+   - Use warm, motivating language.
    - Include at least one positive emoji.
 
-2. **Error Summary**  
-   - For each error, show the incorrect part with underscores: \`_incorrect text_\`
-   - Then, immediately after, show the corrected version.  
-   - Format each correction as:
+2. **Error Summary**
+   - Cover grammar/vocabulary errors as well as descriptions inconsistent with the image.
+   - Mark errors with underscores: \`_incorrect text_\`
+   - Immediately after, provide the corrected version in this format:
      \`_incorrect sentence_ → Correct sentence\`
 
-3. **Improvement Suggestions**  
+3. **Improvement Suggestions**
    - Give at least 2 natural and fluent alternative expressions.
+   - Suggest ways to add more descriptive details about the image.
+   - Provide ideas for improving logical flow and clarity.
    - Use clear bullet points.
 
-Formatting rules:  
-- Keep section numbers (1, 2, 3) in the output.  
-- Respond in English only.  
-- Keep it concise but friendly.
+**Formatting Rules:**
+- Keep the section numbers (1, 2, 3).
+- Respond in English only.
+- Keep it concise, friendly, and supportive.
 
 Image Description:
 ${imageDescription}
 
-Conversation:
+Student Responses:
 ${conversationText}`;
         }
 

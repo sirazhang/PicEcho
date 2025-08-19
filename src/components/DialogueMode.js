@@ -349,9 +349,10 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
       
       // 检查对话是否完成
       if (userMessagesCount >= questionLimit || userMessagesCount >= questions.length) {
+        // 延迟一点时间确保状态更新完成
         setTimeout(() => {
-          onConversationComplete([...messages, userMessage, aiMessage]);
-        }, 2000);
+          onConversationComplete(messages.concat(userMessage, aiMessage));
+        }, 1000);
       }
     } catch (error) {
       console.error('Error getting next question:', error);
@@ -388,8 +389,8 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
       // 检查是否达到问题数量限制
       if (userMessagesCount >= questionLimit) {
         setTimeout(() => {
-          onConversationComplete([...messages, userMessage, aiMessage]);
-        }, 1500);
+          onConversationComplete(messages.concat(userMessage, aiMessage));
+        }, 1000);
       }
     } finally {
       isProcessing.current = false;
@@ -665,7 +666,7 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
               <div className="absolute bottom-0 left-0 w-2/3 h-1/3">
                 <button 
                   onClick={() => setShowHint(false)}
-                  className="absolute top-0 right-0 w-8 h-8 z-10 focus:outline-none"
+                  className="absolute -top-8 right-0 w-8 h-8 z-10 focus:outline-none"
                 >
                   <img 
                     src="/design/close_01.png" 

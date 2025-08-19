@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import HomeScreen from './components/HomeScreen';
 import DialogueMode from './components/DialogueMode';
 import ReviewPostcard from './components/ReviewPostcard';
+import LoadingScreen from './components/LoadingScreen';
 import WorldMapReview from './components/WorldMapReview';
 import { generateKimiFeedback } from './utils/kimiApi';
 
@@ -86,12 +87,17 @@ function App() {
   };
 
   // Handle finishing a dialogue
-  const handleFinishDialogue = async (conversation, imageDescription) => {
+  const handleFinishDialogue = async (conversation) => {
     console.log('Finishing dialogue with conversation:', conversation);
-    setIsLoading(true);
+    setCurrentScreen('loading');
     setError('');
     
     try {
+      // Load image description
+      const response = await fetch(`/Level${selectedLevel}/descriptions.json`);
+      const descriptions = await response.json();
+      const imageDescription = descriptions[selectedImage] || 'No description available';
+      
       // Generate feedback using Kimi API
       const feedbackData = await generateKimiFeedback(conversation, imageDescription, selectedLanguage);
       
@@ -101,12 +107,10 @@ function App() {
         level: selectedLevel,
         conversationHistory: conversation
       });
-      setIsLoading(false);
       setCurrentScreen('review');
     } catch (err) {
       console.error('Error generating feedback:', err);
       setError('Failed to load description or generate feedback');
-      setIsLoading(false);
       // 即使出错也跳转到review页面，使用标准反馈模板
       const templateFeedback = getFallbackFeedback(selectedLanguage);
       setFeedback({
@@ -116,9 +120,6 @@ function App() {
         conversationHistory: conversation
       });
       setCurrentScreen('review');
-    } finally {
-      // 确保加载状态被清除
-      setIsLoading(false);
     }
   };
 
@@ -225,14 +226,29 @@ function App() {
 
   // 获取指定关卡的图片列表
   const getImagesForLevel = (level) => {
-    // 这里应该根据实际的图片文件来动态生成
-    // 为简单起见，我们假设每个关卡都有相同的图片
-    const imageIds = [];
-    for (let i = 1; i <= 16; i++) {
-      const id = i < 10 ? `img_0${i}` : `img_${i}`;
-      imageIds.push({ id, name: `Image ${i}` });
+    // 根据实际的图片文件来动态生成
+    switch(level) {
+      case 1:
+      case 2:
+      case 3:
+        // 对于关卡1、2、3，使用实际存在的图片
+        return [
+          { id: 'img_01', name: 'Image 1' },
+          { id: 'img_02', name: 'Image 2' },
+          { id: 'img_03', name: 'Image 3' },
+          { id: 'img_04', name: 'Image 4' },
+          { id: 'img_05', name: 'Image 5' }
+        ];
+      default:
+        // 默认情况下，使用关卡1的图片
+        return [
+          { id: 'img_01', name: 'Image 1' },
+          { id: 'img_02', name: 'Image 2' },
+          { id: 'img_03', name: 'Image 3' },
+          { id: 'img_04', name: 'Image 4' },
+          { id: 'img_05', name: 'Image 5' }
+        ];
     }
-    return imageIds;
   };
 
   const refreshMapData = () => {
@@ -292,6 +308,10 @@ function App() {
             error={error}
           />
         )
+      )}
+
+      {currentScreen === 'loading' && (
+        <LoadingScreen />
       )}
 
       {currentScreen === 'map' && (
