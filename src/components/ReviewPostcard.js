@@ -76,7 +76,7 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
       const postcardDataWithId = {
         ...postcardData,
         serverId: savedPostcard.id,
-        timestamp: savedPostcard.timestamp
+        timestamp: savedPostcard.timestamp || new Date().toISOString()
       };
       
       // Call onSave callback with complete data
