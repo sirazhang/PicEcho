@@ -3,6 +3,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
 const multer = require('multer');
+const fs = require('fs').promises;
 
 // Load environment variables
 dotenv.config();
@@ -12,10 +13,27 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const HOST = process.env.HOST || 'localhost';
 
+// Ensure uploads directory exists
+async function ensureUploadsDirectory() {
+  const uploadDir = path.join(__dirname, 'static/uploads');
+  try {
+    await fs.access(uploadDir);
+  } catch (error) {
+    // If directory doesn't exist, create it
+    await fs.mkdir(uploadDir, { recursive: true });
+  }
+}
+
 // Configure multer for file uploads
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, 'static/uploads'));
+  destination: async (req, file, cb) => {
+    const uploadDir = path.join(__dirname, 'static/uploads');
+    try {
+      await ensureUploadsDirectory();
+      cb(null, uploadDir);
+    } catch (error) {
+      cb(error, null);
+    }
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
@@ -23,7 +41,12 @@ const storage = multer.diskStorage({
   }
 });
 
-const upload = multer({ storage: storage });
+const upload = multer({ 
+  storage: storage,
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB limit
+  }
+});
 
 // Middleware
 app.use(cors());
@@ -46,7 +69,7 @@ app.get('/', (req, res) => {
 });
 
 // POST /postcards - Save a new postcard with image file upload
-app.post('/postcards', upload.single('image'), (req, res) => {
+app.post('/postcards', upload.single('image'), async (req, res) => {
   console.log('POST /postcards endpoint hit');
   
   const { senderToken, feedbackText, postalCode } = req.body;
@@ -66,56 +89,65 @@ app.post('/postcards', upload.single('image'), (req, res) => {
     });
   }
   
-  // Save postcard data to database
-  const Postcard = require('./models/Postcard').Postcard;
-  
-  // Create postcard record with file path
-  const imagePath = path.relative(path.join(__dirname, 'static'), imageFile.path);
-  
-  const postData = {
-    image_path: imagePath,
-    postcard_url: `/static/${imagePath}`,
-    created_at: new Date(),
-    status: 'sent',
-    sender_token: senderToken,
-    receiver_token: null,
-    feedback_text: typeof feedbackText === 'object' ? JSON.stringify(feedbackText) : feedbackText,
-    postal_code: postalCode
-  };
-  
-  // Insert into database
-  const db = require('./config/db').db;
-  const insertSql = `
-    INSERT INTO postcards 
-    (image_path, postcard_url, status, sender_token, receiver_token, feedback_text, postal_code) 
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-  `;
-  
-  const insertValues = [
-    postData.image_path,
-    postData.postcard_url,
-    postData.status,
-    postData.sender_token,
-    postData.receiver_token,
-    postData.feedback_text,
-    postData.postal_code
-  ];
-  
-  db.run(insertSql, insertValues, function(err) {
-    if (err) {
-      console.error('Error inserting postcard:', err.message);
-      return res.status(500).json({ error: 'Failed to save postcard', details: err.message });
-    }
+  try {
+    // Ensure uploads directory exists
+    await ensureUploadsDirectory();
     
-    postData.postcard_id = this.lastID;
-    console.log('Postcard saved successfully:', postData);
+    // Save postcard data to database
+    const Postcard = require('./models/Postcard').Postcard;
     
-    res.status(200).json({ 
-      success: true,
-      message: 'Postcard saved successfully!',
-      postcard: postData
+    // Create postcard record with file path
+    const imagePath = path.relative(path.join(__dirname, 'static'), imageFile.path);
+    
+    const postData = {
+      image_path: imagePath,
+      postcard_url: `/static/${imagePath}`,
+      created_at: new Date(),
+      status: 'sent',
+      sender_token: senderToken,
+      receiver_token: null,
+      feedback_text: typeof feedbackText === 'object' ? JSON.stringify(feedbackText) : feedbackText,
+      postal_code: postalCode
+    };
+    
+    // Insert into database
+    const db = require('./config/db').db;
+    const insertSql = `
+      INSERT INTO postcards 
+      (image_path, postcard_url, status, sender_token, receiver_token, feedback_text, postal_code) 
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `;
+    
+    const insertValues = [
+      postData.image_path,
+      postData.postcard_url,
+      postData.status,
+      postData.sender_token,
+      postData.receiver_token,
+      postData.feedback_text,
+      postData.postal_code
+    ];
+    
+    db.run(insertSql, insertValues, function(err) {
+      if (err) {
+        console.error('Error inserting postcard:', err.message);
+        return res.status(500).json({ error: 'Failed to save postcard', details: err.message });
+      }
+      
+      postData.postcard_id = this.lastID;
+      console.log('Postcard saved successfully:', postData);
+      
+      res.status(200).json({ 
+        success: true,
+        message: 'Postcard saved successfully!',
+        id: postData.postcard_id,
+        timestamp: postData.created_at
+      });
     });
-  });
+  } catch (error) {
+    console.error('Error processing postcard:', error);
+    return res.status(500).json({ error: 'Failed to process postcard', details: error.message });
+  }
 });
 
 // GET /postcards/random - Get a random postcard

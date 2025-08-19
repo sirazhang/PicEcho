@@ -9,8 +9,8 @@ export const sendPostcard = async (postcardData) => {
   try {
     const formData = new FormData();
     
-    // Add image Blob
-    formData.append('image', postcardData.imageData);
+    // Add image Blob with correct field name
+    formData.append('image', postcardData.imageData, 'postcard.png');
     
     // Add other data
     formData.append('senderToken', postcardData.senderToken);
@@ -23,7 +23,8 @@ export const sendPostcard = async (postcardData) => {
     });
     
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const errorText = await response.text();
+      throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
     }
     
     const data = await response.json();

@@ -51,6 +51,7 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
   const handleSavePostcard = async () => {
     try {
       setIsSaving(true); // 设置保存状态
+      setSaveMessage('');
       
       // Generate the postcard image as a Blob
       const imageBlob = await generatePostcardImage();
@@ -100,6 +101,8 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
   // Handle send postcard button click
   const handleSendPostcard = async () => {
     try {
+      setSaveMessage(''); // Clear any previous messages
+      
       // Generate the postcard image as a Blob
       const imageBlob = await generatePostcardImage();
       
@@ -158,9 +161,7 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
         nextPicture: '下一张图片',
         encouragingRemarks: '鼓励评价 ✅',
         errorSummary: '错误总结 ❗️',
-        suggestions: '改进建议 💡',
-        saveSuccess: '明信片已保存！',
-        saveError: '保存失败，请重试'
+        suggestions: '改进建议 💡'
       };
     } else {
       return {
@@ -172,9 +173,7 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
         nextPicture: 'Next Picture',
         encouragingRemarks: 'Encouraging Remarks ✅',
         errorSummary: 'Error Summary ❗️',
-        suggestions: 'Suggestions 💡',
-        saveSuccess: 'Postcard saved!',
-        saveError: 'Failed to save, please try again'
+        suggestions: 'Suggestions 💡'
       };
     }
   }, [selectedLanguage, isSaved, isSaving]);
@@ -248,48 +247,6 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
 
     loadImage();
   }, [imageId, level]);
-
-  const handleSave = async () => {
-    if (isSaving) return;
-    
-    setIsSaving(true);
-    setSaveMessage('');
-    
-    try {
-      // Capture the postcard as an image
-      const canvas = await html2canvas(postcardRef.current, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: '#f8f8f8'
-      });
-      
-      // Convert to Blob
-      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
-      
-      // Prepare postcard data
-      const postcardData = {
-        imageData: blob,
-        senderToken: localStorage.getItem('senderToken') || 'user_' + Math.random().toString(36).substr(2, 9),
-        feedback: localFeedback,
-        postalCode: postalCode
-      };
-      
-      // Send to backend
-      const response = await sendPostcard(postcardData);
-      
-      if (response.success) {
-        setIsSaved(true);
-        setSaveMessage(textContent.saveSuccess);
-      } else {
-        setSaveMessage(textContent.saveError);
-      }
-    } catch (error) {
-      console.error('Error saving postcard:', error);
-      setSaveMessage(textContent.saveError);
-    } finally {
-      setIsSaving(false);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-[#e5f5fb] p-0">

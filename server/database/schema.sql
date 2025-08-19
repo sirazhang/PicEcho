@@ -9,13 +9,13 @@ DROP TABLE IF EXISTS postcards;
 
 -- Create the postcards table with the new structure
 CREATE TABLE postcards (
-    postcard_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    postcard_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    image_path VARCHAR(500),
     postcard_url VARCHAR(500),
-    postcard_image MEDIUMBLOB,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    status ENUM('pending', 'sent') DEFAULT 'pending',
-    sender_token CHAR(36),
-    receiver_token CHAR(36),
+    status TEXT DEFAULT 'pending',
+    sender_token TEXT,
+    receiver_token TEXT,
     feedback_text TEXT,
     postal_code VARCHAR(20)
 );

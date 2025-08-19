@@ -9,33 +9,11 @@ const WorldMapReview = ({ onBack, onViewPostcard, onShow }) => {
   const [receivedPostcard, setReceivedPostcard] = useState(null);
   const [isFetching, setIsFetching] = useState(false);
   const [senderToken, setSenderToken] = useState(''); // Add sender token state
-  const [randomElements, setRandomElements] = useState([]); // State for random elements
 
   const refreshPostcards = () => {
     // Load saved postcards from localStorage
     const postcards = JSON.parse(localStorage.getItem('savedPostcards') || '[]');
     setSavedPostcards(postcards);
-    
-    // Generate random elements based on number of completed activities
-    generateRandomElements(postcards.length);
-  };
-
-  // Function to generate random elements
-  const generateRandomElements = (completedCount) => {
-    const elementCount = Math.floor(completedCount / 5);
-    const elements = [];
-    
-    // Generate positions for elements
-    for (let i = 0; i < elementCount; i++) {
-      elements.push({
-        id: i,
-        type: Math.floor(Math.random() * 6) + 1, // 1-6 for map_01 to map_06
-        x: Math.random() * 80 + 10, // Random position between 10% and 90%
-        y: Math.random() * 80 + 10
-      });
-    }
-    
-    setRandomElements(elements);
   };
 
   useEffect(() => {
@@ -199,21 +177,6 @@ const WorldMapReview = ({ onBack, onViewPostcard, onShow }) => {
           alt="World Map" 
           className="w-full h-full object-contain"
         />
-        
-        {/* Random elements */}
-        {randomElements.map((element) => (
-          <div
-            key={element.id}
-            className="absolute transform -translate-x-1/2 -translate-y-1/2"
-            style={{ left: `${element.x}%`, top: `${element.y}%` }}
-          >
-            <img 
-              src={`/map/map_0${element.type}.png`} 
-              alt={`Element ${element.type}`}
-              className="w-12 h-12 object-contain"
-            />
-          </div>
-        ))}
         
         {/* Saved postcard markers */}
         {postcardLocations.map((location) => (
