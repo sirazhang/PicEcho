@@ -49,7 +49,23 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
       console.log('Loaded questions for level:', level, 'language:', language, 'imageId:', imageId, 'questions:', questionsData);
       
       // Get questions for the specific image
-      let loadedQuestions = questionsData[imageId]?.questions || [];
+      let loadedQuestions = [];
+      
+      // Handle different data structures for different levels
+      if (level === 2) {
+        // Level 2 has a different structure - array of objects
+        const imageData = questionsData.find(item => 
+          item[`image_${imageId.split('_')[1]}`] !== undefined
+        );
+        
+        if (imageData) {
+          const imageKey = `image_${imageId.split('_')[1]}`;
+          loadedQuestions = imageData[imageKey].questions || [];
+        }
+      } else {
+        // Level 1 and 3 have simpler structure - direct object mapping
+        loadedQuestions = questionsData[imageId]?.questions || [];
+      }
       
       // Limit questions based on level
       // Level 1: 4 questions, Level 2: 6 questions, Level 3: 6 questions
