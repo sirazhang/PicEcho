@@ -151,26 +151,23 @@ function App() {
     // In a real app, you would send this to a backend
     console.log('Saving postcard:', postcardData);
     
-    // Save to localStorage for demo purposes
+    // Save to localStorage for demo purposes - but only metadata, not the full image
     const savedPostcards = JSON.parse(localStorage.getItem('savedPostcards') || '[]');
     
-    // For demo purposes, we'll convert the Blob to a data URL
-    if (postcardData.imageData instanceof Blob) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const dataUrl = reader.result;
-        const postcardWithUrl = {
-          ...postcardData,
-          imageData: dataUrl
-        };
-        savedPostcards.push(postcardWithUrl);
-        localStorage.setItem('savedPostcards', JSON.stringify(savedPostcards));
-      };
-      reader.readAsDataURL(postcardData.imageData);
-    } else {
-      savedPostcards.push(postcardData);
-      localStorage.setItem('savedPostcards', JSON.stringify(savedPostcards));
-    }
+    // Create a simplified postcard object with metadata only
+    const postcardMetadata = {
+      imageId: postcardData.imageId,
+      level: postcardData.level,
+      feedback: postcardData.feedback,
+      timestamp: postcardData.timestamp,
+      postalCode: postcardData.postalCode,
+      // Don't store the actual image data to avoid quota issues
+      // Instead, we'll generate a path to the image
+      imagePath: `/Level${postcardData.level}/${postcardData.imageId}.png`
+    };
+    
+    savedPostcards.push(postcardMetadata);
+    localStorage.setItem('savedPostcards', JSON.stringify(savedPostcards));
   };
 
   const handleViewMap = () => {

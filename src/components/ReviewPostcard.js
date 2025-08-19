@@ -2,6 +2,30 @@ import React, { useState, useEffect, useRef } from 'react';
 import html2canvas from 'html2canvas';
 import { sendPostcard } from '../utils/api';
 
+// Helper function to manage localStorage with quota protection
+const saveToLocalStorage = async (key, data) => {
+  try {
+    // Convert data to JSON
+    const jsonData = JSON.stringify(data);
+    
+    // Get current storage usage
+    const usedSize = new Blob([jsonData]).size;
+    const quota = navigator.storage?.estimate ? 
+      (await navigator.storage.estimate()).quota : 
+      5 * 1024 * 1024; // Fallback to 5MB
+    
+    // Check if we're under the quota (leave 10% buffer)
+    if (usedSize < quota * 0.9) {
+      localStorage.setItem(key, jsonData);
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.error('Error saving to localStorage:', error);
+    return false;
+  }
+};
+
 // 工具函数：生成图片路径
 const getImagePath = (propsLevel, imageId) => {
   return `/Level${propsLevel}/${imageId}.png`;
@@ -50,7 +74,7 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
   // Handle save postcard button click
   const handleSavePostcard = async () => {
     try {
-      setIsSaving(true); // 设置保存状态
+      setIsSaving(true);
       setSaveMessage('');
       
       // Generate the postcard image as a Blob
@@ -69,7 +93,8 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
       // Save to backend
       const savedPostcard = await sendPostcard({
         ...postcardData,
-        senderToken: localStorage.getItem('senderToken') || 'user_' + Math.random().toString(36).substr(2, 9)
+        senderToken: localStorage.getItem('senderToken') || 
+          'user_' + Math.random().toString(36).substr(2, 9)
       });
       
       // Update postcard data with backend response
@@ -82,14 +107,28 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
       // Call onSave callback with complete data
       onSave(postcardDataWithId);
       
+      // Try to save to localStorage with quota protection
+      const savedToStorage = await saveToLocalStorage(
+        `postcard_${savedPostcard.id}`,
+        postcardDataWithId
+      );
+      
       // Update state
       setIsSaved(true);
-      setSaveMessage(selectedLanguage === 'zh' ? '明信片已保存！' : 'Postcard saved!');
+      
+      // Set appropriate message based on storage success
+      if (savedToStorage) {
+        setSaveMessage(selectedLanguage === 'zh' ? '明信片已保存！' : 'Postcard saved!');
+      } else {
+        setSaveMessage(selectedLanguage === 'zh' ? 
+          '明信片已保存但未存储（存储空间不足）' : 
+          'Postcard saved but not stored (storage quota exceeded)');
+      }
       
       // Reset message after 2 seconds
       setTimeout(() => {
         setSaveMessage('');
-      }, 2000);
+      }, 3000);
     } catch (err) {
       console.error('Error saving postcard:', err);
       setSaveMessage(selectedLanguage === 'zh' ? '保存失败，请重试' : 'Failed to save, please try again');
@@ -182,70 +221,85 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
   const [imageLoading, setImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
   const [currentImageSrc, setCurrentImageSrc] = useState('');
+  
+  // Helper function to load images with fallback and timeout
+  const loadImageWithFallback = async (src) => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.src = src;
+      
+      // Set timeout to prevent hanging indefinitely
+      const timeoutId = setTimeout(() => {
+        reject(new Error('Image load timeout'));
+      }, 5000);
+      
+      img.onload = () => {
+        clearTimeout(timeoutId);
+        resolve(src);
+      };
+      
+      img.onerror = () => {
+        clearTimeout(timeoutId);
+        reject(new Error(`Image load error: ${src}`));
+      };
+    });
+  };
 
   useEffect(() => {
     if (!imageId || !level) return;
     
+    let isMounted = true; // Track mounted state
     const loadImage = async () => {
-      setImageLoading(true);
-      setImageError(false);
-      const imageSrc = getImagePath(level, imageId);
-      setCurrentImageSrc(imageSrc); // 确保设置currentImageSrc
-      
       try {
-        // 创建图片加载的辅助函数
-        const loadImageWithFallback = (src) => {
-          return new Promise((resolve, reject) => {
-            const img = new Image();
-            img.src = src;
-            
-            // 设置超时防止永久挂起
-            const timeoutId = setTimeout(() => {
-              reject(new Error('Image load timeout'));
-            }, 5000);
-            
-            img.onload = () => {
-              clearTimeout(timeoutId);
-              resolve(src);
-            };
-            
-            img.onerror = () => {
-              clearTimeout(timeoutId);
-              reject(new Error('Image load error'));
-            };
-          });
-        };
+        setImageLoading(true);
+        if (!isMounted) return;
         
-        // 尝试加载当前级别的图片
+        const imageSrc = getImagePath(level, imageId);
+        setCurrentImageSrc(imageSrc);
+        
         try {
           await loadImageWithFallback(imageSrc);
+          if (!isMounted) return;
+          
           console.log(`Successfully loaded image: ${imageSrc}`);
           setImageLoading(false);
           setImageError(false);
         } catch (error) {
           console.log(`Failed to load image: ${imageSrc}`, error);
-          // 如果当前级别的图片加载失败，尝试加载级别1的图片作为后备
+          
+          // Try fallback to level 1 image
           const fallbackSrc = getImagePath(1, imageId);
           try {
             await loadImageWithFallback(fallbackSrc);
+            if (!isMounted) return;
+            
             console.log(`Successfully loaded fallback image: ${fallbackSrc}`);
             setCurrentImageSrc(fallbackSrc);
             setImageLoading(false);
             setImageError(false);
           } catch (fallbackError) {
             console.log(`Failed to load fallback image: ${fallbackSrc}`, fallbackError);
+            if (!isMounted) return;
+            
             setImageLoading(false);
             setImageError(true);
           }
         }
       } catch (error) {
         console.error('Error in image loading process:', error);
+        if (!isMounted) return;
+        
         setImageLoading(false);
         setImageError(true);
       }
     };
 
     loadImage();
+    
+    // Cleanup function
+    return () => {
+      isMounted = false;
+    };
   }, [imageId, level]);
 
   return (
