@@ -1,57 +1,68 @@
-给我删除scenario，直接是img_01 的问题
 [
     {
-        "image_01": questions：
-            "Among these animal riders, which one do you think is cycling the fastest? And what makes you think so? 🚴‍♂️",
-            "The little animals on the side of the road are holding signs that say 'Sou hu!'. Who do you think they are cheering for? 🥳 ",
-            "Look at the crocodile rider in the leopard - print outfit. What color is its bicycle? Does the color match its outfit? 🤔 ",
-            "After the race ends, what do you imagine the winning animal will do to celebrate its victory? 🎉 ",
-            "There are referees here. How do you think they will judge which animal reaches the finish line first? 👀 ",
-            "If you were at the race scene, what cheering slogan would you shout for these cute animal riders? 📣 "
-        ]
+        "image_01": {
+            "questions": [
+                "What interesting 👀scene is presented in this picture?",
+                "Are there any special things that the characters in the picture are holding?",
+                "Among these animal riders🚴, which one do you think is cycling the fastest? And what makes you think so? 🚴‍♂️",
+                "The little animals on the side of the road are holding signs that say 'Sou hu!'. Who do you think they are cheering for? 🥳 ",
+                "Look at the crocodile 🐊rider in the leopard - print outfit. What color is its bicycle? Does the color match its outfit? 🤔 ",
+                "After the race ends, what do you imagine the winning animal will do to celebrate its victory? 🎉 ",
+                "There are referees here. How do you think they will judge which animal reaches the finish line first? 👀 ",
+                "If you were at the race scene, what cheering slogan would you shout for these cute animal riders? 📣 "
+            ]
+        }
     },
     {
-        "image_scenario": "Boat on the Sea",
-        "questions": [
-            "On this boat named 'Wild Waves', which sea animal do you think people would most like to make friends with? And why? 🐬 ",
-            "The little girl on the jet - ski next to the boat—do you think she will have an interesting interaction with the whale? 🐋 ",
-            "The people on the boat all look very happy. What interesting sights do you think they saw at sea to make them so joyful? 😄 ",
-            "If you were to board this boat, what interesting thing would you most want to do on it? Like watching dolphins or feeding seagulls. 🐦 ",
-            "The orange and white lifebuoys on the boat—when do you think they can be really useful? 🛟 ",
-            "There are many seagulls flying in the sky. Do you think they will follow the boat all the way and put on a show for everyone? 🦅 "
-        ]
+        "image_02": {
+            "questions": [
+                "On this boat 🚢named 'Wild Waves', which sea animal do you think people would most like to make friends with? And why? 🐬 ",
+                "The little girl on the jet - ski next to the boat—do you think she will have an interesting interaction with the whale? 🐋 ",
+                "The people on the boat 🚣 all look very happy. What interesting sights do you think they saw at sea to make them so joyful? 😄 ",
+                "If you were to board this boat, what interesting thing would you most want to do on it? Like watching dolphins or feeding seagulls. 🐦 ",
+                "The orange and white ⚪️lifebuoys on the boat—when do you think they can be really useful? 🛟 ",
+                "There are many seagulls 🐦flying in the sky. Do you think they will follow the boat all the way and put on a show for everyone? 🦅 "
+            ]
+        }
     },
     {
-        "image_scenario": "Beach Vacation",
-        "questions": [
-            "The people on the beach are all wearing nice sunglasses. What happy expressions do you guess are hidden behind their sunglasses? 😎 ",
-            "The uncle in the floral shirt is holding a drink. What delicious ingredients do you think might be in his drink? 🥤 ",
-            "The children building sandcastles—what interesting shapes do you think they can make the sandcastles into? Like castles or small animals. 🐚 ",
-            "The small boat on the sea—do you think it is going fishing in the sea or taking tourists for a sightseeing trip? 🚤 ",
-            "The child lying on the pink flamingo float—do you think he will have a 'water race' with the flamingo float? 🏊 ",
-            "If you were at this beach, which beach activity would you most want to take part in? Building sandcastles, swimming, or eating ice - cream? 🍦 "
-        ]
+        "image_03": {
+            "questions": [
+                "How much summer fun is hidden in this beach picture? Describe all the lively things you see, like people’s activities and beach elements.",
+                "The people on the beach 🏖️are all wearing nice sunglasses. What happy expressions do you guess are hidden behind their sunglasses? 😎 ",
+                "The uncle in the floral shirt is holding a drink. What delicious ingredients do you think might be in his drink? 🥤 ",
+                "The children building sandcastles—what interesting shapes do you think they can make the sandcastles into? Like castles or small animals. 🐚 ",
+                "The small boat on the sea—do you think it is going fishing in the sea or taking tourists for a sightseeing trip? 🚤 ",
+                "The child lying on the pink flamingo float—do you think he will have a 'water race' with the flamingo float? 🏊 ",
+                "If you were at this beach, which beach activity would you most want to take part in? Building sandcastles, swimming, or eating ice - cream? 🍦 "
+            ]
+        }
     },
     {
-        "image_scenario": "Family Dinner",
-        "questions": [
-            "The person wearing headphones is pouring something on the food. What delicious sauce do you think it could be? 🍳 ",
-            "The laptop on the table shows 'Backward'. What interesting thing do you think the person using the laptop is doing? 💻 ",
-            "The cat wearing VR glasses—what wonderful pictures do you think it seems to'see'? 🐱 ",
-            "The baby has food on his face. What delicious food do you guess he just ate to make himself like this? 👶 ",
-            "Everyone is sitting around the table for dinner. What dish do you think is the most delicious in this meal? 🥗 ",
-            "If you joined this family dinner, what interesting thing that happened to you recently would you share with your family? 👨‍👩‍👧‍👦 "
-        ]
+        "image_04": {
+            "questions": [
+                "In this family dinner, what special and warm things can you find? Describe the loving moments in the picture, like people’s interactions and the cozy setting.",
+                "The person wearing headphones🎧 is pouring something on the food. What delicious sauce do you think it could be? 🍳 ",
+                "The laptop on the table shows 'Backward'. What interesting thing do you think the person using the laptop is doing? 💻 ",
+                "The cat 🐱wearing VR glasses—what wonderful pictures do you think it seems to'see'?  ",
+                "The baby👶 has food on his face. What delicious food do you guess he just ate to make himself like this?  ",
+                "Everyone is sitting around the table for dinner. What dish do you think is the most delicious in this meal? 🥗 ",
+                "If you joined this family dinner, what interesting thing that happened to you recently would you share with your family? 👨‍👩‍👧‍👦 "
+            ]
+        }
     },
     {
-        "image_scenario": "Busy Street Market",
-        "questions": [
-            "At the strawberry stall in the market, do you think these strawberries are sweet? And how can you tell? 🍓 ",
-            "The big cat at the entrance of the bakery—do you think it will sneak into the store and eat the delicious bread? 🥐 ",
-            "The child pushing the cart—what interesting things do you think might be in his cart? 📦 ",
-            "The people in the second - floor windows—who do you think they are greeting warmly downstairs? 👋 ",
-            "There is a market and a bakery in the street. If you were to go shopping, would you first buy fresh fruits and vegetables at the market or buy bread at the bakery? 🥖 ",
-            "If you were a vendor in this street market, what special things would you sell to make people like to come to your stall? 🧺 "
-        ]
+        "image_05": {
+            "questions": [
+                "In this lively street scene, what interesting things can you find? Describe the whole picture, like the people, shops and little details.",
+                "What tool is the vegetable🥬 - selling uncle holding? Explain what it’s used for and how it works in this scene.",
+                "At the strawberry stall in the market, do you think these strawberries are sweet? And how can you tell? 🍓 ",
+                "The big cat at the entrance of the bakery—do you think it will sneak into the store and eat the delicious bread? 🥐 ",
+                "The child pushing the cart—what interesting things do you think might be in his cart? 📦 ",
+                "The people in the second - floor windows—who do you think they are greeting warmly downstairs? 👋 ",
+                "There is a market and a bakery in the street. If you were to go shopping, would you first buy fresh fruits and vegetables at the market or buy bread at the bakery? 🥖 ",
+                "If you were a vendor in this street market, what special things would you sell to make people like to come to your stall? 🧺 "
+            ]
+        }
     }
 ]

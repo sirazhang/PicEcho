@@ -1,54 +1,62 @@
-```json
 {
     "img_01": {
         "questions": [
-            "In the first picture, the little girl is passing vegetables to her mom in the kitchen. What kind of home-cooked dish do you think mom will teach her to make? 👩‍👧🥬",
-            "In the second picture, the little girl finds a small toy while sweeping the floor. What cute item do you imagine it could be? 🧸🧹",
-            "In the third picture, the clothes in the washing machine are dirty. Where do you think the little girl got them dirty? 👚🧴",
-            "In the fourth picture, dad and the child are hiding behind the curtain playing hide-and-seek. Who do you think will be found next? 👨‍👦🤫",
-            "In the fifth picture, ingredients in the kitchen are neatly arranged. Which ingredient do you think the little girl wants to use first for cooking? 🍅",
-            "In the sixth picture, after the family cleans up together, how tidy will the living room be? Describe it in one sentence. ✨🏠"
+            "What’s the family’s 'helpful home day🧑‍🧑‍🧒' story—from cooking to cleaning up? How do their tasks show teamwork? 🍅",
+            "First panel: What joyful cooking moment do the girl and woman share? Second panel: How does the girl make cleaning look fun? 🖼",
+            "At the start (kitchen), how lively is the mood? By the last panel (hide - and - seek), does the mood stay cheerful? What keeps the good vibes? 👩‍👧➡️👨‍👧",
+            "Why do you think the family does all these chores together? How do the scenes show 'family bonding through work'? 🔍",
+            "After the laundry panel, what silly dance or song might the girl👧 do while folding clothes to make it more fun? 🌟",
+            "Look at the home settings—kitchen, living room, laundry area, curtains. How do these spaces show a 'loving, lived - in' family home? Pick two! 🏠",
+            "Each chore (cooking🍳, sweeping, laundry, playing) has a 'family touch'. How does working (and playing) together make their bond stronger? 🧺",
+            "If there was a'messy surprise' (like a spilled toy box) during their day, how would the family fix it together? Add a panel where they laugh and clean it up! 🧸"
         ]
     },
     "img_02": {
         "questions": [
-            "In the first picture, the family is having a picnic. What surprise food do you think dad takes out from the basket? 🧺🍰",
-            "In the second picture, a puppy comes to disturb while sorting garbage. How will the child play with the puppy and sort garbage at the same time? 🐶♻️",
-            "In the third picture, after the child throws away the garbage, what encouraging words do you think dad says while giving a thumbs-up? 👨‍👦👍",
-            "In the fourth picture, the family is watching the sunset on the mountain. What interesting discovery does the child point out about the city? 🌇👧",
-            "In the fifth picture, there's a fruit platter on the picnic mat. Which fruit do you think the child will pick first to taste? 🍓🍇",
-            "In the sixth picture, there's a small sapling next to the environmental protection slogan. How will the child water and take care of it? 🌱💧"
+            "What’s the family’s whole 'green day♻️' story—from picnic to sunset? How do they show they care about the environment step by step? 🌿",
+            "First panel: What happy moment happens at the picnic? Second panel: Why are they sorting trash with big smiles? 🖼",
+            "At the start (picnic), how relaxed are they? By the last panel (sunset), does the mood feel more meaningful? What deepens it? 🍎➡️🌇",
+            "Why do you think they focus on 'loving the environment' so much? How do the scenes (picnic trash, sign, sunset view) tie to that? 🔍",
+            "After the 'love the environment🌍' sign panel, what eco - friendly game might the kids play in the park before heading to the sunset spot? 🌟",
+            "Look at their actions—picnic cleanup, recycling, following the sign. How do these small acts build a bigger 'green family' story? ♻️",
+            "In each panel, what nature details (flowers, sky, birds, sunset) highlight the 'environment love' theme? Name one per panel! 🌸",
+            "If there was a 'problem' in their green day (like litter on the path), how would the family solve it? Add a new panel description to fix the issue! 🗑"
         ]
     },
     "img_03": {
         "questions": [
-            "In the first picture, at the zoo entrance, the child points at the map. Which animal do you think they most want to see first? 🦒🗺️",
-            "In the second picture, a monkey in the monkey mountain is holding an apple. How will the child greet and interact with it? 🐒🍎",
-            "In the third picture, at the panda house, what question about pandas do you think the child asks mom curiously? 🐼👩‍👧",
-            "In the fourth picture, when taking photos of the koala, what cute pose do you think it will strike to make the photo more interesting? 🦥📷",
-            "In the fifth picture, the zoo train passes by. Which animal do you think the child will wave at through the window? 🚂🦓",
-            "In the sixth picture, at the animal feeding area, which animal do you think the child will prepare their favorite food for? 🥕🦜"
+            "What’s the whole fun day the family is having at the aquarium like? Can you list out the cool things they do step by step? 🐬",
+            "In the first panel, what brings the big smiles on their faces as they enter? In the second, what amazing underwater view makes them stop and point? 🖼",
+            "At the start (first panel), how excited do they look? By the last panel (gift shop), do they seem even happier? What makes the change (if any)? 😊➡️😆",
+            "Why do you think they picked the aquarium 🌊for this special day out? Any clues from their looks or the scenes? 🔍",
+            "After the dolphin 🐬show (third panel), what funny or sweet conversation might the family have next as they walk to the gift shop? 🌟",
+            "Look at the characters’ clothes. How do their outfits match the 'aquarium adventure' theme? Do the colors or styles tell a mini - story? 🌈",
+            "In each panel, what small details (like the bag, the rainbow, the jellyfish) add to the fun day? Pick one from each panel and explain! 🎒",
+            "If you were to add one more stop to their aquarium day, what would it be? Draw (in words) how the new panel would look with the family there! 🖌"
         ]
     },
     "img_04": {
         "questions": [
-            "In the first picture, mom is telling a bedtime story. What magical character do you think appears in the story? 🧚😴",
-            "In the second picture, the child is sleeping. What cute little action do you think the small animals beside the bed will do? 🐰👶",
-            "In the third picture, the child is passing a flower to Totoro. What gentle reaction do you think Totoro will have? 🌼🐱",
-            "In the fourth picture, Totoro is taking a nap. What do you think its soft snoring sounds like? 🛌💤",
-            "In the fifth picture, there are illustrations in the bedtime storybook. Which one do you think the child likes most? 📖🖼️",
-            "In the sixth picture, moonlight shines on the bedside. What magical scene do you think will appear in the child's dream? 🌙✨"
+            "What’s the magical bedtime 😴story here—from reading to dreaming with Totoro? How does the magic grow step by step? 🌙",
+            "First panel: What sweet moment do the woman and child share? Second panel: What makes the child’s sleep so peaceful and magical? 🖼",
+            "At the start (first panel), how calm and cozy is the mood? By the last panel (Totoro sleeping), does the magic feel fully alive? What fuels it? 📖➡️🌿",
+            "Why do you think Totoro and the animal friends appear at bedtime? What’s special about 'nighttime magic' in stories like this? 🔍",
+            "After the child 👧gets the rose (third panel), what funny dream adventure might Totoro take them on under the moonlight? 🌟",
+            "Look at the room details—lantern, sliding doors, Totoro book. How do these turn a normal bedroom into a magical space? Pick two details! 🏮",
+            "Each panel adds a bit of magic: fireflies, Totoro’s leaf, floating lights. How do these small magics build to a big, warm dream? ✨",
+            "If you could add one more magical creature to the last panel, what would it be? Describe how it snuggles in and joins the sleepy scene! 🐾"
         ]
     },
     "img_05": {
         "questions": [
-            "In the first picture, the pie by the window smells delicious. Which small animal do you think made it? 🥧🐾",
-            "In the second picture, the rabbit is humming a cheerful tune while cooking. What melody do you think it is? 🐰🎵",
-            "In the third picture, the squirrel is carrying pinecones. Which friend do you think it will share them with? 🌰🐿️",
-            "In the fourth picture, the cat is secretly eating milk. How do you think it will observe its surroundings? 🐱🥛",
-            "In the fifth picture, flour is spilled all over the kitchen floor. How will the rabbit clean it up cutely? 🍳🧹",
-            "In the sixth picture, at the small animals' food party, what special food do you think there will be? 🍖🍯"
+            "What’s the charming little story of these animals’ day in their cozy world? From the pie to the milk shop, how does their day connect? 🐿️",
+            "First panel: What story does the pie, footprints👣 and flowers tell? Second panel: Why does the rabbit have flour on its face? 🖼",
+            "At the start (first panel), how peaceful is the mood? By the last panel (milk shop cat), does the mood get livelier? What causes it? 🌼➡️🐱",
+            "Why do you think the squirrel 🐿️has acorns in its bag and a nut in its hand? What 'errand' might it be on in this animal village? 🔍",
+            "After the third panel (squirrel collecting), what silly thing could happen when the rabbit (second panel) meets the squirrel on the path? 🌟",
+            "Look at the backgrounds—stone walls, kitchen, garden, shop. How do these settings make the animal world feel real and cozy? Pick two details! 🏡",
+            "Each animal has a 'job' or activity. The rabbit bakes, squirrel collects, cat runs the shop. How do these roles make their tiny community work? 🥧",
+            "If a new animal (like a bird) joins their day, where would it fit in? Describe the new scene (which panel’s setting) and what the bird does! 🐦"
         ]
     }
 }
-```

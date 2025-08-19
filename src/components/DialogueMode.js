@@ -5,6 +5,12 @@ const getImagePath = (level, imageId) => {
   return `/Level${level}/${imageId}.png`;
 };
 
+// 工具函数：生成提示图片路径
+const getHintPath = (level, imageId) => {
+  const hintId = imageId.replace('img', 'hint');
+  return `/Level${level}/${hintId}.png`;
+};
+
 const DialogueMode = ({ imageId, language, level, onConversationComplete, onCancel }) => {
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState('');
@@ -13,6 +19,7 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
   const [transcript, setTranscript] = useState('');
   const [speechError, setSpeechError] = useState('');
   const [questions, setQuestions] = useState([]);
+  const [showHint, setShowHint] = useState(false);
   
   const recognitionRef = useRef(null);
   const textareaRef = useRef(null);
@@ -37,45 +44,12 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
       
       // Load questions from the appropriate level file
       const response = await fetch(`/Level${level}/${questionFile}`);
-      const questionsData = await response.text();
+      const questionsData = await response.json();
       
-      // Parse the custom format with comments
-      const lines = questionsData.split('\n');
-      let currentImageId = null;
-      let imageData = {};
-      let currentQuestions = [];
-      
-      for (const line of lines) {
-        const trimmedLine = line.trim();
-        if (trimmedLine.startsWith('###')) {
-          // Save previous image data if exists
-          if (currentImageId && currentQuestions.length > 0) {
-            imageData[currentImageId] = currentQuestions;
-          }
-          
-          // Extract new image ID
-          currentImageId = trimmedLine.substring(3).trim();
-          currentQuestions = [];
-        } else if (trimmedLine.startsWith('"') && trimmedLine.endsWith('",')) {
-          // Extract question
-          const question = trimmedLine.substring(1, trimmedLine.length - 2);
-          currentQuestions.push(question);
-        } else if (trimmedLine.startsWith('"') && trimmedLine.endsWith('"')) {
-          // Extract last question (no comma)
-          const question = trimmedLine.substring(1, trimmedLine.length - 1);
-          currentQuestions.push(question);
-        }
-      }
-      
-      // Save the last image data
-      if (currentImageId && currentQuestions.length > 0) {
-        imageData[currentImageId] = currentQuestions;
-      }
-      
-      console.log('Loaded questions for level:', level, 'language:', language, 'imageId:', imageId, 'questions:', imageData);
+      console.log('Loaded questions for level:', level, 'language:', language, 'imageId:', imageId, 'questions:', questionsData);
       
       // Get questions for the specific image
-      let loadedQuestions = imageData[imageId] || [];
+      let loadedQuestions = questionsData[imageId]?.questions || [];
       
       // Limit questions based on level
       // Level 1: 4 questions, Level 2: 6 questions, Level 3: 6 questions
@@ -627,7 +601,7 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
         
         <div className="flex flex-row gap-6 px-6 pb-6" style={{ height: '90vh' }}>
           {/* Image Section */}
-          <div className="w-1/2">
+          <div className="w-1/2 relative">
             <div className="h-full flex items-center justify-center p-0 m-0">
               <div className="flex items-center justify-center h-full p-0 m-0">
                 {/* 根据难度级别加载对应的图片路径 */}
@@ -657,6 +631,39 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
                 )}
               </div>
             </div>
+            
+            {/* Hint Button */}
+            <button 
+              onClick={() => setShowHint(true)}
+              className="absolute bottom-4 left-4 w-16 h-16 focus:outline-none"
+            >
+              <img 
+                src="/design/hint.png" 
+                alt="Hint" 
+                className="w-full h-full object-contain"
+              />
+            </button>
+            
+            {/* Hint Panel */}
+            {showHint && (
+              <div className="absolute bottom-0 left-0 w-2/3 h-1/3">
+                <button 
+                  onClick={() => setShowHint(false)}
+                  className="absolute top-0 right-0 w-8 h-8 z-10 focus:outline-none"
+                >
+                  <img 
+                    src="/design/close_01.png" 
+                    alt="Close" 
+                    className="w-full h-full object-contain"
+                  />
+                </button>
+                <img 
+                  src={getHintPath(level, imageId)} 
+                  alt="Hint" 
+                  className="w-full h-full object-contain"
+                />
+              </div>
+            )}
           </div>
           
           {/* Chat Section */}

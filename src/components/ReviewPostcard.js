@@ -310,8 +310,8 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
       <div className="flex justify-center px-6 pb-6" style={{ minHeight: '75vh' }}>
         <div 
           ref={postcardRef}
-          className="w-full max-w-6xl bg-white border-4 border-gray-800 rounded-xl shadow-xl p-0 relative"
-          style={{ height: '75vh' }}
+          className="w-full max-w-6xl bg-white rounded-3xl shadow-4xl p-0 relative"
+          style={{ height: '75vh', boxShadow: '0 8px 30px rgba(0,0,0,0.3)' }}
         >
           {/* Postal Code - each digit in separate box */}
           <div className="absolute top-4 left-4 flex gap-1 z-10">
@@ -323,7 +323,7 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
           </div>
 
           {/* Stamp */}
-          <div className="absolute top-4 right-4 w-28 h-32">
+          <div className="absolute top-4 right-4 w-28 h-32 flex items-start">
             <img 
               src={stampImage} 
               alt="Stamp" 
@@ -335,7 +335,7 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
           <div className="flex h-full pt-16">
             {/* Image Section - 1/2 width */}
             <div className="w-1/2 flex flex-col border-r-4 border-gray-300 pr-4 pl-4">
-              <div className="flex-grow flex items-center justify-center">
+              <div className="flex-grow h-full w-full overflow-hidden rounded-lg">
                 {imageLoading ? (
                   <div className="flex items-center justify-center h-full">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mr-2"></div>
@@ -357,14 +357,14 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
                   <img 
                     src={currentImageSrc} 
                     alt={selectedLanguage === 'zh' ? '对话图片' : 'Conversation image'} 
-                    className="max-h-full max-w-full object-contain"
+                    className="h-full w-full object-cover rounded-lg"
                   />
                 )}
               </div>
             </div>
 
             {/* Feedback Section - 1/2 width */}
-            <div className="w-1/2 flex flex-col pl-4 pr-4">
+            <div className="w-1/2 flex flex-col pl-4 pr-4 mt-20">
               <div className="flex-grow overflow-y-auto pr-2" style={{ maxHeight: 'calc(65vh - 120px)' }}>
                 {/* Encouraging Remarks */}
                 <div className="mb-4">
