@@ -39,7 +39,7 @@ export const sendPostcard = async (postcardData) => {
 /**
  * Receive a random postcard from the backend
  * @param {Object} params - The parameters for the request
- * @returns {Promise<Object|null} - The received postcard data or null if none available
+ * @returns {Promise<Object>} - The received postcard data
  */
 export const receivePostcard = async (params) => {
   try {
@@ -55,9 +55,41 @@ export const receivePostcard = async (params) => {
     
     const data = await response.json();
     console.log('Postcard received successfully:', data);
-    return data.postcard;
+    return data.postcard || data;
   } catch (error) {
     console.error('Error receiving postcard:', error);
+    throw error;
+  }
+};
+
+// Function to get questions for an image
+export const getQuestions = async (level, imageId, language) => {
+  try {
+    // Determine the questions file based on the level
+    const questionsFile = level <= 2 ? 'questions1.json' : 'questions2.json';
+    
+    // Load the questions data
+    const response = await fetch(`/Level${level}/${questionsFile}`);
+    
+    if (!response.ok) {
+      throw new Error(`Failed to load questions: ${response.status}`);
+    }
+    
+    const questionsData = await response.json();
+    
+    // Get questions for the specific image
+    const imageQuestions = questionsData[imageId]?.questions;
+    
+    if (!imageQuestions) {
+      throw new Error(`No questions found for image ${imageId} at level ${level}`);
+    }
+    
+    // Filter questions by language
+    const languageQuestions = imageQuestions.filter(q => q.language === language);
+    
+    return languageQuestions;
+  } catch (error) {
+    console.error('Error loading questions:', error);
     throw error;
   }
 };

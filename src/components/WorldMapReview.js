@@ -73,10 +73,10 @@ const WorldMapReview = ({ onBack, onViewPostcard, onShow }) => {
     setIsFetching(true);
     try {
       // Use the sender token to receive a postcard
-      const postcardData = await receivePostcard({ senderToken });
+      const response = await receivePostcard({ senderToken });
       
-      if (postcardData) {
-        setReceivedPostcard(postcardData);
+      if (response) {
+        setReceivedPostcard(response);
         setShowReceivedPostcard(true);
       } else {
         // Handle case where no postcard is available

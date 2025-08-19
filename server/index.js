@@ -118,8 +118,7 @@ app.post('/postcards', upload.single('image'), async (req, res) => {
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `;
     
-    const insertStmt = db.prepare(insertSql);
-    const insertResult = insertStmt.run(
+    const insertValues = [
       postData.image_path,
       postData.postcard_url,
       postData.status,
@@ -127,16 +126,23 @@ app.post('/postcards', upload.single('image'), async (req, res) => {
       postData.receiver_token,
       postData.feedback_text,
       postData.postal_code
-    );
+    ];
     
-    postData.postcard_id = insertResult.lastInsertRowid;
-    console.log('Postcard saved successfully:', postData);
-    
-    res.status(200).json({ 
-      success: true,
-      message: 'Postcard saved successfully!',
-      id: postData.postcard_id,
-      timestamp: postData.created_at
+    db.run(insertSql, insertValues, function(err) {
+      if (err) {
+        console.error('Error inserting postcard:', err.message);
+        return res.status(500).json({ error: 'Failed to save postcard', details: err.message });
+      }
+      
+      postData.postcard_id = this.lastID;
+      console.log('Postcard saved successfully:', postData);
+      
+      res.status(200).json({ 
+        success: true,
+        message: 'Postcard saved successfully!',
+        id: postData.postcard_id,
+        timestamp: postData.created_at
+      });
     });
   } catch (error) {
     console.error('Error processing postcard:', error);
@@ -192,7 +198,106 @@ app.get('/postcards/random', (req, res) => {
   });
 });
 
-// Start server
-app.listen(PORT, HOST, () => {
-  console.log(`Server running on http://${HOST}:${PORT}`);
+// Routes
+// POST /api/postcards/send - Send a postcard
+app.post('/api/postcards/send', (req, res) => {
+  console.log('POST /api/postcards/send endpoint hit');
+  console.log('Request body keys:', Object.keys(req.body));
+  console.log('imageUrl length:', req.body.imageUrl?.length);
+  console.log('imageUrl starts with:', req.body.imageUrl?.substring(0, 50));
+  
+  const { senderId, imageUrl, feedbackText, postalCode } = req.body;
+
+  // Validate required fields
+  if (!senderId || !imageUrl || !feedbackText) {
+    const missingFields = [];
+    if (!senderId) missingFields.push('senderId');
+    if (!imageUrl) missingFields.push('imageUrl');
+    if (!feedbackText) missingFields.push('feedbackText');
+    
+    console.log('Missing fields:', missingFields);
+    return res.status(400).json({ 
+      error: 'Missing required fields',
+      missingFields: missingFields
+    });
+  }
+  
+  Postcard.create(senderId, imageUrl, feedbackText, postalCode, (err, postcard) => {
+    if (err) {
+      console.error('Error saving postcard:', err);
+      return res.status(500).json({ error: 'Failed to send postcard', details: err.message });
+    }
+    
+    console.log('Postcard saved successfully:', postcard);
+    res.status(200).json({ 
+      success: true,
+      message: 'Postcard sent successfully!',
+      postcard: postcard
+    });
+  });
 });
+
+// GET /api/postcards/receive - Receive a random postcard
+app.get('/api/postcards/receive', (req, res) => {
+  console.log('GET /api/postcards/receive endpoint hit');
+  console.log('Query parameters:', req.query);
+  
+  const { senderToken } = req.query;
+
+  if (!senderToken) {
+    return res.status(400).json({ error: 'Missing required query parameter: senderToken' });
+  }
+  
+  Postcard.getRandomPending(senderToken, (err, postcard) => {
+    if (err) {
+      console.error('Error fetching postcard:', err);
+      return res.status(500).json({ error: 'Failed to receive postcard' });
+    }
+    
+    // If no postcard found, return appropriate message
+    if (!postcard) {
+      console.log('No postcards available for user with token:', senderToken);
+      return res.status(404).json({ message: 'No postcards available at the moment' });
+    }
+    
+    console.log('Postcard fetched successfully:', postcard);
+    
+    // If the postcard is not already assigned, mark it as sent and assign to the requester
+    if (!postcard.receiver_token) {
+      Postcard.markAsSent(postcard.postcard_id, senderToken, (err) => {
+        if (err) {
+          console.error('Error marking postcard as sent:', err);
+        }
+        // Regardless of whether we could mark it as sent, return the postcard
+        res.status(200).json({ 
+          success: true,
+          postcard: postcard
+        });
+      });
+    } else {
+      // Already assigned, just return it
+      res.status(200).json({ 
+        success: true,
+        postcard: postcard
+      });
+    }
+  });
+});
+
+// Handle graceful shutdown
+process.on('SIGINT', () => {
+  console.log('Shutting down server...');
+  process.exit(0);
+});
+
+process.on('SIGTERM', () => {
+  console.log('Shutting down server...');
+  process.exit(0);
+});
+
+// Start the server
+const server = app.listen(PORT, HOST, () => {
+  console.log(`Server is running on http://${HOST}:${PORT}`);
+});
+
+module.exports = server;
