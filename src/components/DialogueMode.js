@@ -666,7 +666,7 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
               <div className="absolute bottom-0 left-0 w-2/3 h-[55vh]">
                 <button 
                   onClick={() => setShowHint(false)}
-                  className="absolute top-4 right-12 w-8 h-8 z-10 focus:outline-none"
+                  className="absolute top-4 right-20 w-8 h-8 z-10 focus:outline-none"
                 >
                   <img 
                     src="/design/close_01.png" 
