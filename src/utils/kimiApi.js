@@ -81,11 +81,12 @@ export const generateKimiFeedback = async (conversation, imageDescription, lang 
           throw new Error('KIMI_API_KEY is not set');
         }
 
-        // Build the conversation text
+        // Build the conversation text - only include user responses
         let conversationText = "";
         conversation.forEach(msg => {
-          const sender = msg.sender === 'user' ? 'Student' : 'Tutor';
-          conversationText += `${sender}: ${msg.text}\n`;
+          if (msg.sender === 'user') {
+            conversationText += `Student: ${msg.text}\n`;
+          }
         });
 
         let prompt;
@@ -111,6 +112,9 @@ export const generateKimiFeedback = async (conversation, imageDescription, lang 
 - 仅用中文回复。
 - 保持简洁但友好。
 
+图片描述:
+${imageDescription}
+
 对话:
 ${conversationText}`;
         } else {
@@ -135,6 +139,9 @@ Formatting rules:
 - Keep section numbers (1, 2, 3) in the output.  
 - Respond in English only.  
 - Keep it concise but friendly.
+
+Image Description:
+${imageDescription}
 
 Conversation:
 ${conversationText}`;
