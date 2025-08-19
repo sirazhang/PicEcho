@@ -79,7 +79,8 @@ class Postcard {
         VALUES (?, ?, ?, ?, ?, ?, ?)
       `;
       
-      const insertValues = [
+      const insertStmt = db.prepare(insertSql);
+      const insertResult = insertStmt.run(
         relativePath,
         imageUrl,
         'sent',
@@ -87,32 +88,24 @@ class Postcard {
         null,
         typeof feedbackText === 'object' ? JSON.stringify(feedbackText) : feedbackText,
         postalCode
-      ];
+      );
       
-      console.log('Inserting postcard into database...');
-      db.run(insertSql, insertValues, function(err) {
-        if (err) {
-          console.error('Error inserting postcard:', err.message);
-          return callback(err, null);
-        }
-        
-        const insertedPostcardId = this.lastID;
+      const insertedPostcardId = insertResult.lastInsertRowid;
       
-        const postcard = {
-          postcard_id: insertedPostcardId,
-          image_path: relativePath,
-          postcard_url: imageUrl,
-          created_at: new Date(),
-          status: 'sent',
-          sender_token: senderToken,
-          receiver_token: null,
-          feedback_text: feedbackText,
-          postal_code: postalCode
-        };
-        
-        console.log('Postcard saved successfully with ID:', insertedPostcardId);
-        callback(null, postcard);
-      });
+      const postcard = {
+        postcard_id: insertedPostcardId,
+        image_path: relativePath,
+        postcard_url: imageUrl,
+        created_at: new Date(),
+        status: 'sent',
+        sender_token: senderToken,
+        receiver_token: null,
+        feedback_text: feedbackText,
+        postal_code: postalCode
+      };
+      
+      console.log('Postcard saved successfully with ID:', insertedPostcardId);
+      callback(null, postcard);
     } catch (error) {
       console.error('Error in Postcard.create:', error);
       callback(error, null);
@@ -151,48 +144,33 @@ class Postcard {
         LIMIT 1
       `;
       
-      db.get(sql, [currentSenderToken], (err, row) => {
-        if (err) {
-          console.error('Database query error:', err.message);
-          return callback(err, null);
-        }
-        
-        // If user already has a postcard assigned, return it
-        if (row) {
-          console.log('Found assigned postcard for user:', row);
-          return callback(null, row);
-        }
+      let stmt = db.prepare(sql);
+      let row = stmt.get(currentSenderToken);
       
       // If user already has a postcard assigned, return it
-      if (results.length > 0) {
-        console.log('Found assigned postcard for user:', results[0]);
-        callback(null, results[0]);
-        return;
+      if (row) {
+        console.log('Found assigned postcard for user:', row);
+        return callback(null, row);
       }
       
-        // Otherwise, look for a random pending postcard (excluding those sent by the current user)
-        sql = `
-          SELECT * FROM postcards 
-          WHERE sender_token != ? AND status = 'pending' 
-          ORDER BY created_at ASC 
-          LIMIT 1
-        `;
-        
-        db.get(sql, [currentSenderToken], (err, row) => {
-          if (err) {
-            console.error('Database query error:', err.message);
-            return callback(err, null);
-          }
-          
-          if (!row) {
-            console.log('No pending postcards found for users other than sender with token:', currentSenderToken);
-            return callback(null, null);
-          }
-          
-          console.log('Found pending postcard:', row);
-          callback(null, row);
-        });
-      });
+      // Otherwise, look for a random pending postcard (excluding those sent by the current user)
+      sql = `
+        SELECT * FROM postcards 
+        WHERE sender_token != ? AND status = 'pending' 
+        ORDER BY created_at ASC 
+        LIMIT 1
+      `;
+      
+      stmt = db.prepare(sql);
+      row = stmt.get(currentSenderToken);
+      
+      if (!row) {
+        console.log('No pending postcards found for users other than sender with token:', currentSenderToken);
+        return callback(null, null);
+      }
+      
+      console.log('Found pending postcard:', row);
+      callback(null, row);
     } catch (error) {
       console.error('Database query error in Postcard.getRandomPending:', error.message);
       console.error('Full error details:', error);
@@ -218,18 +196,13 @@ class Postcard {
         WHERE postcard_id = ?
       `;
       
-      db.run(sql, [receiverToken, postcardId], function(err) {
-        if (err) {
-          console.error('Database query error:', err.message);
-          return callback(err, null);
-        }
-        
-        console.log('Postcard marked as sent. Rows affected:', this.changes);
-        callback(null, { changes: this.changes });
-      });
+      const stmt = db.prepare(sql);
+      const result = stmt.run(receiverToken, postcardId);
+      
+      console.log('Postcard marked as sent. Rows affected:', result.changes);
+      callback(null, { changes: result.changes });
     } catch (error) {
-      console.error('Database query error in Postcard.markAsSent:', error.message);
-      console.error('Full error details:', error);
+      console.error('Database query error:', error.message);
       callback(error, null);
     }
   }
@@ -252,38 +225,30 @@ class Postcard {
         ORDER BY created_at ASC
       `;
       
-      db.all(sql, async (err, rows) => {
-        if (err) {
-          console.error('Database query error:', err.message);
-          return;
-        }
+      const stmt = db.prepare(sql);
+      const rows = stmt.all();
+      
+      for (const postcard of rows) {
+        // Find a random receiver (a user who has sent a postcard but hasn't received one yet)
+        const receiverSql = `
+          SELECT sender_token FROM postcards 
+          WHERE sender_token NOT IN (
+            SELECT COALESCE(receiver_token, '') FROM postcards WHERE receiver_token IS NOT NULL
+          )
+          AND sender_token != ?
+          LIMIT 1
+        `;
         
-        for (const postcard of rows) {
-          // Find a random receiver (a user who has sent a postcard but hasn't received one yet)
-          const receiverSql = `
-            SELECT sender_token FROM postcards 
-            WHERE sender_token NOT IN (
-              SELECT COALESCE(receiver_token, '') FROM postcards WHERE receiver_token IS NOT NULL
-            )
-            AND sender_token != ?
-            LIMIT 1
-          `;
-          
-          db.get(receiverSql, [postcard.sender_token], async (err, row) => {
-            if (err) {
-              console.error('Database query error:', err.message);
-              return;
-            }
-            
-            if (row) {
-              const receiverToken = row.sender_token;
-              // Assign the postcard to this receiver
-              await this.markAsSent(postcard.postcard_id, receiverToken, () => {});
-              console.log(`Assigned postcard ${postcard.postcard_id} to receiver ${receiverToken}`);
-            }
-          });
+        const receiverStmt = db.prepare(receiverSql);
+        const row = receiverStmt.get(postcard.sender_token);
+        
+        if (row) {
+          const receiverToken = row.sender_token;
+          // Assign the postcard to this receiver
+          await this.markAsSent(postcard.postcard_id, receiverToken, () => {});
+          console.log(`Assigned postcard ${postcard.postcard_id} to receiver ${receiverToken}`);
         }
-      });
+      }
     } catch (error) {
       console.error('Error in assignPostcardAfterDelay:', error.message);
       console.error('Full error details:', error);

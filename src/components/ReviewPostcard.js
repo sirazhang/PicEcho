@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import html2canvas from 'html2canvas';
 import { sendPostcard } from '../utils/api';
+import FeedbackSection from "./FeedbackSection";
+
 
 // 工具函数：生成图片路径
 const getImagePath = (propsLevel, imageId) => {
@@ -379,40 +381,12 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
               </div>
             </div>
 
-            {/* Feedback Section - 1/2 width */}
+            {/* Feedback Section - 1/2 width */} {/* Feedback Section - 1/2 width */}
             <div className="w-1/2 flex flex-col pl-4 pr-4 mt-20">
-              <div className="flex-grow overflow-y-auto pr-2" style={{ maxHeight: 'calc(65vh - 120px)' }}>
-                {/* Encouraging Remarks */}
-                <div className="mb-4">
-                  <div className="font-inter font-semibold text-gray-700 mb-1">
-                    {textContent.encouragingRemarks}
-                  </div>
-                  <div className="font-inter text-base whitespace-pre-line bg-[#f0fdf4] p-3 rounded-lg">
-                    {localFeedback?.encouragingRemarks || (selectedLanguage === 'zh' ? '✅ 做得很好！继续努力！' : '✅ Well done! Keep up the good work!')}
-                  </div>
-                </div>
-                
-                {/* Error Summary */}
-                <div className="mb-4">
-                  <div className="font-inter font-semibold text-gray-700 mb-1">
-                    {textContent.errorSummary}
-                  </div>
-                  <div className="font-inter text-base whitespace-pre-line bg-[#fef3c7] p-3 rounded-lg">
-                    {localFeedback?.errorSummary || (selectedLanguage === 'zh' ? '❗️ 没有发现明显错误' : '❗️ No significant errors found')}
-                  </div>
-                </div>
-                
-                {/* Suggestions */}
-                <div className="mb-4">
-                  <div className="font-inter font-semibold text-gray-700 mb-1">
-                    {textContent.suggestions}
-                  </div>
-                  <div className="font-inter text-base whitespace-pre-line bg-[#dbeafe] p-3 rounded-lg">
-                    {localFeedback?.suggestions || (selectedLanguage === 'zh' ? '💡 保持当前水平，继续练习！' : '💡 Maintain your current level and keep practicing!')}
-                  </div>
-                </div>
-              </div>
+              <FeedbackSection rawFeedback={feedback} />
             </div>
+
+
           </div>
         </div>
       </div>
