@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 
 const LoadingScreen = () => {
   return (
@@ -9,7 +9,7 @@ const LoadingScreen = () => {
       backgroundRepeat: 'no-repeat'
     }}>
       <div 
-        className="absolute bottom-10 left-10 w-16 h-16"
+        className="absolute bottom-0 left-0 w-48 h-48"
         style={{
           animation: 'fly 2s linear infinite'
         }}
@@ -24,10 +24,10 @@ const LoadingScreen = () => {
       <style jsx>{`
         @keyframes fly {
           0% {
-            transform: translate(0, 0) rotate(0deg);
+            transform: translate(0, 0);
           }
           100% {
-            transform: translate(calc(100vw - 150px), calc(-100vh + 150px)) rotate(360deg);
+            transform: translate(calc(100vw - 150px), calc(-100vh + 150px));
           }
         }
       `}</style>
