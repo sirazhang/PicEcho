@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { receivePostcard } from '../utils/api';
 
 const PostOffice = ({ onBack, onViewPostcard }) => {
   const [receivedPostcard, setReceivedPostcard] = useState(null);
   const [isFetching, setIsFetching] = useState(false);
   const [senderToken, setSenderToken] = useState('');
+  const audioContextRef = useRef(null);
 
   useEffect(() => {
     // Generate or load sender token
@@ -16,8 +17,59 @@ const PostOffice = ({ onBack, onViewPostcard }) => {
     setSenderToken(token);
   }, []);
 
+  // Create "ding" sound effect
+  const createDingSound = () => {
+    try {
+      // Check if browser supports AudioContext
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (!audioContextRef.current) {
+        audioContextRef.current = new AudioContext();
+      }
+      
+      const now = audioContextRef.current.currentTime;
+      
+      // Create sound
+      const oscillator = audioContextRef.current.createOscillator();
+      const gainNode = audioContextRef.current.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContextRef.current.destination);
+      
+      // Set sound parameters - ding sound
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(800, now);
+      oscillator.frequency.exponentialRampToValueAtTime(700, now + 0.2);
+      
+      // Set volume envelope
+      gainNode.gain.setValueAtTime(0, now);
+      gainNode.gain.linearRampToValueAtTime(0.3, now + 0.05);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+      
+      // Play and clean up
+      oscillator.start(now);
+      oscillator.stop(now + 0.3);
+      
+      // Clean up resources
+      oscillator.onended = () => {
+        gainNode.disconnect();
+      };
+    } catch (error) {
+      console.warn('Failed to create ding sound:', error);
+    }
+  };
+
+  // Handle user interaction to initialize AudioContext
+  const handleUserInteraction = () => {
+    if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
+      audioContextRef.current.resume();
+    }
+  };
+
   // Handle receiving a postcard
   const handleReceivePostcard = async () => {
+    // Play ding sound when receiving postcard
+    createDingSound();
+    
     setIsFetching(true);
     try {
       // Use the sender token to receive a postcard
@@ -52,27 +104,23 @@ const PostOffice = ({ onBack, onViewPostcard }) => {
     }
   };
 
-  // Define text content
-  const getTextContent = () => {
-    return {
-      title: 'Post Office',
-      homeButton: 'Home',
-      receiveButton: 'Receive Postcard',
-      close: 'Close',
-      receivedPostcards: 'Received Postcards'
-    };
+  // Close received postcard
+  const closeReceivedPostcard = () => {
+    setReceivedPostcard(null);
   };
 
-  const textContent = getTextContent();
-
   return (
-    <div className="min-h-screen bg-[#e5f5fb] p-0 relative"
-         style={{ 
-           backgroundImage: 'url(/design/postbakground.png)',
-           backgroundSize: 'cover',
-           backgroundPosition: 'center',
-           backgroundRepeat: 'no-repeat'
-         }}>
+    <div 
+      className="min-h-screen bg-[#e5f5fb] p-0 relative"
+      style={{ 
+        backgroundImage: 'url(/design/postbakground.png)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
+      }}
+      onClick={handleUserInteraction}
+      onTouchStart={handleUserInteraction}
+    >
       {/* Header with title and home button */}
       <div className="flex justify-between items-center p-6">
         <button
@@ -85,34 +133,42 @@ const PostOffice = ({ onBack, onViewPostcard }) => {
             minHeight: '40px'
           }}
         >
-          {textContent.homeButton}
+          Home
         </button>
-        <h1 className="text-2xl font-gloria-hallelujah absolute left-1/2 transform -translate-x-1/2">
-          {textContent.title}
-        </h1>
         <div className="w-32"></div> {/* Spacer to balance the header */}
       </div>
 
       {/* Receive box positioned at 1/5 from left and 50vh */}
       <div 
-        className="absolute cursor-pointer transform -translate-x-1/2"
+        className="absolute cursor-pointer transform -translate-x-1/2 hover:scale-110 transition-transform duration-200"
         style={{ 
-          left: '20%', 
-          top: '50vh'
+          left: '40%', 
+          top: '30vh' ,
+          height: '50vh'
         }}
         onClick={handleReceivePostcard}
       >
         <img 
           src="/design/receivebox.png" 
           alt="Receive Box" 
-          className="w-32 h-auto object-contain"
+          className="w-[35vw] h-auto object-contain"
         />
       </div>
 
       {/* Received Postcard Display Area */}
       <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 w-4/5 max-w-2xl">
         {receivedPostcard ? (
-          <div className="bg-white rounded-xl shadow-xl p-6">
+          <div className="bg-white rounded-xl shadow-xl p-6 relative">
+            {/* Close button */}
+            <button
+              onClick={closeReceivedPostcard}
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            
             <div className="flex flex-col items-center">
               <img 
                 src={receivedPostcard.image_path || receivedPostcard.postcard_url || '/sample/sample_01.png'} 
@@ -143,46 +199,7 @@ const PostOffice = ({ onBack, onViewPostcard }) => {
               )}
             </div>
           </div>
-        ) : (
-          <div className="bg-white bg-opacity-70 rounded-xl shadow-xl p-6 text-center">
-            <p className="text-gray-600 text-lg">
-              Click the receive box to get a postcard
-            </p>
-          </div>
-        )}
-      </div>
-
-      {/* Receive Postcard Button at bottom right */}
-      <div className="absolute bottom-6 right-6">
-        <button
-          onClick={handleReceivePostcard}
-          disabled={isFetching}
-          className="px-4 py-2 text-base font-inter font-bold focus:outline-none rounded-lg flex items-center"
-          style={{ 
-            backgroundColor: '#66ab4b',
-            color: 'white',
-            minWidth: '120px',
-            minHeight: '40px'
-          }}
-        >
-          {isFetching ? (
-            <>
-              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              Receiving...
-            </>
-          ) : (
-            <>
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
-              </svg>
-              {textContent.receiveButton}
-            </>
-          )}
-        </button>
+        ) : null}
       </div>
     </div>
   );

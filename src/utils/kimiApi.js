@@ -255,41 +255,115 @@ ${conversationText}`;
  */
 const parseFeedbackResponse = (content, language) => {
   try {
-    // Extract sections using regex
-    const encouragingMatch = content.match(/1\.\s*\**.*\**([\s\S]*?)(?=\d\.\s*\**|$)/i);
-    const errorMatch = content.match(/2\.\s*\**.*\**([\s\S]*?)(?=\d\.\s*\**|$)/i);
-    const suggestionMatch = content.match(/3\.\s*\**.*\**([\s\S]*?)(?=\d\.\s*\**|$)/i);
+    console.log('Parsing feedback content:', content);
     
-    if (language === 'zh') {
-      return {
-        encouragingRemarks: encouragingMatch ? encouragingMatch[1].trim() : "做得很好！👏 继续练习你的英语技能！",
-        errorSummary: errorMatch ? errorMatch[1].trim() : "未发现特定错误。你的英语正在进步！",
-        suggestions: suggestionMatch ? suggestionMatch[1].trim() : "• 尝试使用更多描述性形容词\n• 练习形成长而复杂的句子",
-        timestamp: new Date().toISOString()
-      };
-    } else {
-      return {
-        encouragingRemarks: encouragingMatch ? encouragingMatch[1].trim() : "Great job! 👏 Keep practicing your English skills!",
-        errorSummary: errorMatch ? errorMatch[1].trim() : "No specific errors found. Your English is improving!",
-        suggestions: suggestionMatch ? suggestionMatch[1].trim() : "• Try to use more descriptive adjectives\n• Practice forming longer, more complex sentences",
-        timestamp: new Date().toISOString()
-      };
+    // More robust section extraction
+    let encouragingRemarks = '';
+    let errorSummary = '';
+    let suggestions = '';
+    
+    // Extract sections using more precise regex patterns
+    // Look for section 1 (Encouraging Remarks)
+    const section1Match = content.match(/1\.\s*.*?[\r\n]+([\s\S]*?)(?=\d\.\s*.*?[\r\n]+|$)/i);
+    if (section1Match) {
+      encouragingRemarks = section1Match[1].trim();
     }
+    
+    // Look for section 2 (Error Summary)
+    const section2Match = content.match(/2\.\s*.*?[\r\n]+([\s\S]*?)(?=\d\.\s*.*?[\r\n]+|$)/i);
+    if (section2Match) {
+      errorSummary = section2Match[1].trim();
+    }
+    
+    // Look for section 3 (Suggestions)
+    const section3Match = content.match(/3\.\s*.*?[\r\n]+([\s\S]*?)(?=\d\.\s*.*?[\r\n]+|$)/i);
+    if (section3Match) {
+      suggestions = section3Match[1].trim();
+    }
+    
+    // If we couldn't parse properly, try alternative approaches
+    if (!encouragingRemarks && !errorSummary && !suggestions) {
+      // Try to split by line breaks and manually assign
+      const lines = content.split(/[\r\n]+/).filter(line => line.trim() !== '');
+      
+      // Try to find sections by looking for section headers
+      let currentSection = 0;
+      for (const line of lines) {
+        if (line.match(/1\.\s*.*鼓励评价|1\.\s*.*Encouraging Remarks/i)) {
+          currentSection = 1;
+          continue;
+        } else if (line.match(/2\.\s*.*错误总结|2\.\s*.*Error Summary/i)) {
+          currentSection = 2;
+          continue;
+        } else if (line.match(/3\.\s*.*改进建议|3\.\s*.*Improvement Suggestions/i)) {
+          currentSection = 3;
+          continue;
+        }
+        
+        // Add content to the appropriate section
+        if (currentSection === 1) {
+          encouragingRemarks += line + '\n';
+        } else if (currentSection === 2) {
+          errorSummary += line + '\n';
+        } else if (currentSection === 3) {
+          suggestions += line + '\n';
+        }
+      }
+      
+      // If still nothing, try to split the content into three parts
+      if (!encouragingRemarks && !errorSummary && !suggestions && lines.length > 0) {
+        const third = Math.ceil(lines.length / 3);
+        encouragingRemarks = lines.slice(0, third).join('\n');
+        errorSummary = lines.slice(third, third * 2).join('\n');
+        suggestions = lines.slice(third * 2).join('\n');
+      }
+    }
+    
+    // Clean up whitespace
+    encouragingRemarks = encouragingRemarks.trim();
+    errorSummary = errorSummary.trim();
+    suggestions = suggestions.trim();
+    
+    // If any section is empty, use defaults
+    if (!encouragingRemarks) {
+      encouragingRemarks = language === 'zh' 
+        ? "✅ 很棒的努力！🌟\n你的表达清晰而自然 👍，语气也很自信！继续保持，你的进步很明显！🚀" 
+        : "✅ Excellent Effort! 🌟\nYour speaking was clear and confident👍, which is really impressive! Keep it up, you're improving fast. 🚀";
+    }
+    
+    if (!errorSummary) {
+      errorSummary = language === 'zh'
+        ? "❗ 小修正\n未发现明显错误，继续保持！"
+        : "⚠️ Small Fixes\nNo significant errors found. Keep up the good work!";
+    }
+    
+    if (!suggestions) {
+      suggestions = language === 'zh'
+        ? "💡 改进建议\n* 尝试使用更丰富的形容词来描述图片\n* 练习用完整的句子表达想法"
+        : "💡 Improvement Suggestions\n* Try using more descriptive adjectives\n* Practice forming complete sentences to express your thoughts";
+    }
+    
+    return {
+      encouragingRemarks,
+      errorSummary,
+      suggestions,
+      timestamp: new Date().toISOString()
+    };
   } catch (error) {
     console.error("Error parsing feedback response:", error);
     // Return default structure based on language
     if (language === 'zh') {
       return {
-        encouragingRemarks: "做得很好！👏 你在描述图片和回答问题方面表现出色。你的英语技能正在提高！",
-        errorSummary: "_I seen a beautiful sunset_ → I saw a beautiful sunset\n_they was very happy_ → they were very happy",
-        suggestions: "• 不要使用 'I seen'，尝试使用 'I saw' 或 'I noticed'\n• 不要只用简单句，尝试合并想法: 'The sunset was beautiful and made me feel peaceful'",
+        encouragingRemarks: "✅ 很棒的努力！🌟\n你的中文表达清晰而自然 👍，语气也很自信！继续保持，你的进步很明显！🚀",
+        errorSummary: "❗ 小修正\n* ❌ \"小狗在跑步步。\" → ✅ \"小狗在跑。\"\n* ❌ \"他们在吃苹果子。\" → ✅ \"他们在吃苹果。\"",
+        suggestions: "💡 可以试着这样说\n在看图说话时，可以尝试用更完整的句子，比如：\n* \"小狗正在公园里跑来跑去。\"\n* \"他们一家人坐在桌子旁边，一起吃苹果。\"",
         timestamp: new Date().toISOString()
       };
     } else {
       return {
-        encouragingRemarks: "Great job! 👏 You did very well in describing the image and answering all questions. Your English skills are improving!",
-        errorSummary: "_I seen a beautiful sunset_ → I saw a beautiful sunset\n_they was very happy_ → they were very happy",
-        suggestions: "• Instead of 'I seen', try using 'I saw' or 'I noticed'\n• Instead of simple sentences, try combining ideas: 'The sunset was beautiful and made me feel peaceful'",
+        encouragingRemarks: "✅ Excellent Effort! 🌟\n* Your speaking was clear and confident👍, which is really impressive! Keep it up, you're improving fast. 🚀",
+        errorSummary: "⚠️ Small Fixes\n❌ \"I no know this word.\" → ✅ \"I don't know this word.\"\n❌ \"She is more higher than me.\" → ✅ \"She is higher than me.\"",
+        suggestions: "💡 Try These Improvements\nInstead of \"I don't know this word\", you can say:\n* \"I'm not familiar with this word.\"\n* \"I haven't heard this word before.\"",
         timestamp: new Date().toISOString()
       };
     }

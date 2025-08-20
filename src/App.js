@@ -156,14 +156,35 @@ function App() {
       // Generate a unique ID for this postcard
       const postcardId = `postcard_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       
+      // Extract the blob from imageData if it's an object with blob and url properties
+      let imageBlob = postcardData.imageData;
+      let imageDataUrl = postcardData.imageData;
+      
+      // Check if imageData is an object with blob and url properties
+      if (postcardData.imageData && typeof postcardData.imageData === 'object' && postcardData.imageData.blob) {
+        imageBlob = postcardData.imageData.blob;
+        imageDataUrl = postcardData.imageData.url;
+      } else if (postcardData.imageData instanceof Blob) {
+        // If it's just a Blob, convert it to data URL
+        imageDataUrl = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.readAsDataURL(postcardData.imageData);
+        });
+      }
+      
       // Store the blob image in IndexedDB
-      await saveImageToIndexedDB(postcardId, postcardData.imageData);
+      await saveImageToIndexedDB(postcardId, imageBlob);
       
       // Store only the essential metadata in localStorage
       const simplifiedPostcard = {
         id: postcardId,
         timestamp: new Date().toISOString(),
-        description: postcardData.description,
+        imageId: postcardData.imageId,
+        level: postcardData.level,
+        feedback: postcardData.feedback,
+        postalCode: postcardData.postalCode,
+        imageData: imageDataUrl // Store the data URL for direct display
         // Add other necessary metadata
       };
 

@@ -145,9 +145,20 @@ const WorldMapReview = ({ onBack, onViewPostcard, onShow, onOpenPostOffice }) =>
       // If the postcard contains blob data, ensure it's handled properly
       const postcard = { ...location.postcard };
       
-      // If image data is a blob, create an object URL for it
-      if (postcard.imageData instanceof Blob) {
-        postcard.imageDataUrl = URL.createObjectURL(postcard.imageData);
+      // Handle different imageData formats
+      if (postcard.imageData) {
+        // If imageData is a data URL string, use it directly
+        if (typeof postcard.imageData === 'string' && postcard.imageData.startsWith('data:')) {
+          postcard.imageDataUrl = postcard.imageData;
+        } 
+        // If imageData is a blob, create an object URL for it
+        else if (postcard.imageData instanceof Blob) {
+          postcard.imageDataUrl = URL.createObjectURL(postcard.imageData);
+        }
+        // If imageData is an object with url property, use that
+        else if (typeof postcard.imageData === 'object' && postcard.imageData.url) {
+          postcard.imageDataUrl = postcard.imageData.url;
+        }
       }
       
       setSelectedPostcard(postcard);
@@ -436,19 +447,50 @@ const WorldMapReview = ({ onBack, onViewPostcard, onShow, onOpenPostOffice }) =>
                     );
                   }
                   
-                  // Check if we have imageData (Blob) from the saved postcard
+                  // Check if we have imageDataUrl (created when handling location click)
+                  if (selectedPostcard.imageDataUrl) {
+                    return (
+                      <img 
+                        src={selectedPostcard.imageDataUrl} 
+                        alt="Saved postcard" 
+                        className="max-w-full h-auto border border-gray-300 rounded-lg mb-4"
+                      />
+                    );
+                  }
+                  
+                  // Check if we have imageData in various formats
                   if (selectedPostcard.imageData) {
-                    // Handle Blob data
-                    if (typeof selectedPostcard.imageData === 'string' && selectedPostcard.imageData.startsWith('data:')) {
-                      // It's already a data URL
-                      return (
-                        <img 
-                          src={selectedPostcard.imageData} 
-                          alt="Saved postcard" 
-                          className="max-w-full h-auto border border-gray-300 rounded-lg mb-4"
-                        />
-                      );
-                    } else {
+                    // Handle different imageData formats
+                    if (typeof selectedPostcard.imageData === 'string') {
+                      if (selectedPostcard.imageData.startsWith('data:')) {
+                        // It's already a data URL
+                        return (
+                          <img 
+                            src={selectedPostcard.imageData} 
+                            alt="Saved postcard" 
+                            className="max-w-full h-auto border border-gray-300 rounded-lg mb-4"
+                          />
+                        );
+                      } else {
+                        // It might be a path
+                        return (
+                          <img 
+                            src={selectedPostcard.imageData} 
+                            alt="Saved postcard" 
+                            className="max-w-full h-auto border border-gray-300 rounded-lg mb-4"
+                            onError={(e) => {
+                              // Fallback to sample image if the specified image fails to load
+                              const sampleImages = [
+                                '/sample/sample_01.png',
+                                '/sample/sample_02.png'
+                              ];
+                              const randomImage = sampleImages[Math.floor(Math.random() * sampleImages.length)];
+                              e.target.src = randomImage;
+                            }}
+                          />
+                        );
+                      }
+                    } else if (selectedPostcard.imageData instanceof Blob) {
                       // It's a Blob, convert it to URL
                       const imageUrl = URL.createObjectURL(selectedPostcard.imageData);
                       return (
@@ -462,6 +504,32 @@ const WorldMapReview = ({ onBack, onViewPostcard, onShow, onOpenPostOffice }) =>
                           }}
                         />
                       );
+                    } else if (typeof selectedPostcard.imageData === 'object') {
+                      // Check if it has a url property
+                      if (selectedPostcard.imageData.url) {
+                        return (
+                          <img 
+                            src={selectedPostcard.imageData.url} 
+                            alt="Saved postcard" 
+                            className="max-w-full h-auto border border-gray-300 rounded-lg mb-4"
+                          />
+                        );
+                      }
+                      // Check if it has a blob property
+                      else if (selectedPostcard.imageData.blob) {
+                        const imageUrl = URL.createObjectURL(selectedPostcard.imageData.blob);
+                        return (
+                          <img 
+                            src={imageUrl} 
+                            alt="Saved postcard" 
+                            className="max-w-full h-auto border border-gray-300 rounded-lg mb-4"
+                            onLoad={(e) => {
+                              // Revoke the object URL after the image has loaded to free memory
+                              URL.revokeObjectURL(e.target.src);
+                            }}
+                          />
+                        );
+                      }
                     }
                   } else if (selectedPostcard.id) {
                     // For IndexedDB images, display the loaded image or a loading indicator

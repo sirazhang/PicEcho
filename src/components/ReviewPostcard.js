@@ -31,7 +31,7 @@ const getImagePath = (propsLevel, imageId) => {
   return `/Level${propsLevel}/${imageId}.png`;
 };
 
-const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, selectedLanguage, conversationHistory, onSave, onBack, isLoading, error }) => {
+const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, selectedLanguage, conversationHistory, onSave, onBack, isLoading, error, onOpenPostOffice }) => {
   const [isSaved, setIsSaved] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
@@ -140,12 +140,21 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
       const postcardDataWithId = {
         ...postcardData,
         id: postcardId, // Add the IndexedDB ID
-        imageData: imageDataUrl, // Store as data URL for localStorage
-        serverId: postcardData.id // Keep original server ID if exists
+        // Store both Blob and data URL to facilitate different use cases
+        imageData: {
+          blob: imageBlob,      // Original Blob for direct display
+          url: imageDataUrl     // Data URL for localStorage and sharing
+        },
+        timestamp: new Date().toISOString(),
+        postalCode: postalCode,
+        level: level,
+        imageId: imageId
       };
       
       // Call onSave callback with complete data
-      onSave(postcardDataWithId);
+      onSave(postcardDataWithId); 
+      // The postcard data now contains both Blob and data URL, 
+      // making it flexible for different display scenarios in WorldMapReview
       
       // Update state
       setIsSaved(true);
@@ -181,8 +190,9 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
   
   // Handle opening the post office
   const handleOpenPostOffice = () => {
-    setShowSuccess(true);
-    setTimeout(() => setShowSuccess(false), 3000);
+    if (onOpenPostOffice) {
+      onOpenPostOffice();
+    }
   };
 
   // Define text content for different languages
