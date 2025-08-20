@@ -43,6 +43,7 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
   const [indexedDBImage, setIndexedDBImage] = useState(null); // For IndexedDB images
   const [showModal, setShowModal] = useState(false); // For showing the saved postcard modal
   const [selectedPostcard, setSelectedPostcard] = useState(null); // For the selected postcard in the modal
+  const [showSuccess, setShowSuccess] = useState(false); // For showing success message
   const postcardRef = useRef(null);
 
   // Generate random postal code
@@ -177,6 +178,12 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
     setShowModal(false);
     setSelectedPostcard(null);
   };
+  
+  // Handle opening the post office
+  const handleOpenPostOffice = () => {
+    setShowSuccess(true);
+    setTimeout(() => setShowSuccess(false), 3000);
+  };
 
   // Define text content for different languages
   const getTextContent = () => {
@@ -184,13 +191,17 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
       return {
         send: '发送明信片',
         sendPreviewConfirm: '这是您要发送的明信片，确认发送吗？',
-        step3: '点击发送按钮将明信片发送给其他学习者'
+        step3: '点击发送按钮将明信片发送给其他学习者',
+        postOfficeButton: '邮局',
+        successMessage: '操作成功！'
       };
     } else {
       return {
         send: 'Send Postcard',
         sendPreviewConfirm: 'This is the postcard you want to send. Confirm sending?',
-        step3: 'Click the send button to send the postcard to another learner'
+        step3: 'Click the send button to send the postcard to another learner',
+        postOfficeButton: 'Post Office',
+        successMessage: 'Operation successful!'
       };
     }
   };
@@ -558,6 +569,28 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
         </div>
       </div>
 
+      {/* PostOffice icon button in bottom right corner */}
+      <div 
+        className="fixed cursor-pointer transform -translate-x-1/2 -translate-y-1/2 hover:scale-110 transition-transform duration-200 z-40"
+        style={{ 
+          right: '20px', 
+          bottom: '20px',
+          width: '50px',
+          height: '50px'
+        }}
+        onClick={handleOpenPostOffice}
+      >
+        <img 
+          src="/design/postoffice.png" 
+          alt="Post Office" 
+          className="w-full h-full object-contain"
+          onError={(e) => {
+            // Fallback to sample image if the specified image fails to load
+            e.target.src = '/sample/sample_postoffice.png';
+          }}
+        />
+      </div>
+      
       {/* Preview Modal */}
       {showPreview && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -775,6 +808,20 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
       {saveMessage && (
         <div className="fixed bottom-4 right-4 bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg">
           {saveMessage}
+        </div>
+      )}
+      
+      {/* Success Message */}
+      {showSuccess && (
+        <div className="fixed bottom-4 left-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg animate-fade-in">
+          {textContent.successMessage}
+        </div>
+      )}
+      
+      {/* Success Message */}
+      {showSuccess && (
+        <div className="fixed bottom-4 left-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg animate-fade-in">
+          {textContent.successMessage}
         </div>
       )}
     </div>

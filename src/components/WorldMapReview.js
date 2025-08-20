@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { receivePostcard, getImageFromIndexedDB } from '../utils/api';
 
-const WorldMapReview = ({ onBack, onViewPostcard, onShow }) => {
+const WorldMapReview = ({ onBack, onViewPostcard, onShow, onOpenPostOffice }) => {
   const [savedPostcards, setSavedPostcards] = useState([]);
   const [selectedPostcard, setSelectedPostcard] = useState(null);
   const [showModal, setShowModal] = useState(false);
@@ -10,11 +10,55 @@ const WorldMapReview = ({ onBack, onViewPostcard, onShow }) => {
   const [isFetching, setIsFetching] = useState(false);
   const [senderToken, setSenderToken] = useState(''); // Add sender token state
   const [modalImage, setModalImage] = useState(null); // For handling blob images in modals
+  const [mapElements, setMapElements] = useState([]); // For special map elements
+
+  // Function to clear all saved data
+  const clearAllData = () => {
+    // Clear localStorage items
+    localStorage.removeItem('savedPostcards');
+    localStorage.removeItem('mapElements');
+    localStorage.removeItem('senderToken');
+    
+    // Clear IndexedDB images
+    clearIndexedDBImages();
+    
+    // Update state to reflect cleared data
+    setSavedPostcards([]);
+    setMapElements([]);
+    
+    // Generate new sender token
+    const newToken = 'user_' + Math.random().toString(36).substr(2, 9);
+    localStorage.setItem('senderToken', newToken);
+    setSenderToken(newToken);
+    
+    alert('All saved data has been cleared successfully!');
+  };
+
+  // Function to clear IndexedDB images
+  const clearIndexedDBImages = async () => {
+    try {
+      // Open IndexedDB
+      const request = indexedDB.open('PostcardDB', 1);
+      
+      request.onsuccess = function(event) {
+        const db = event.target.result;
+        const transaction = db.transaction(['images'], 'readwrite');
+        const store = transaction.objectStore('images');
+        store.clear();
+      };
+    } catch (error) {
+      console.error('Error clearing IndexedDB:', error);
+    }
+  };
 
   const refreshPostcards = () => {
     // Load saved postcards from localStorage
     const postcards = JSON.parse(localStorage.getItem('savedPostcards') || '[]');
     setSavedPostcards(postcards);
+    
+    // Load map elements from localStorage
+    const elements = JSON.parse(localStorage.getItem('mapElements') || '[]');
+    setMapElements(elements);
   };
 
   useEffect(() => {
@@ -34,6 +78,42 @@ const WorldMapReview = ({ onBack, onViewPostcard, onShow }) => {
     const interval = setInterval(refreshPostcards, 1000); // Refresh every second
     return () => clearInterval(interval);
   }, []);
+
+  // Check for new map elements when postcards count changes
+  useEffect(() => {
+    const postcardCount = savedPostcards.length;
+    const elementsCount = mapElements.length;
+    
+    // Calculate how many elements should be displayed (1 for every 5 postcards)
+    const expectedElements = Math.floor(postcardCount / 5);
+    
+    // If we need to add new elements
+    if (expectedElements > elementsCount) {
+      const newElements = [...mapElements];
+      
+      // Add new elements
+      for (let i = elementsCount; i < expectedElements; i++) {
+        // Generate random position on the map (within reasonable bounds)
+        const x = 10 + Math.random() * 80; // 10% to 90% of map width
+        const y = 10 + Math.random() * 80; // 10% to 90% of map height
+        
+        // Select random element from available map elements (map_01 to map_06)
+        const elementId = Math.floor(Math.random() * 6) + 1;
+        
+        newElements.push({
+          id: `element_${Date.now()}_${i}`,
+          x: x,
+          y: y,
+          elementId: elementId,
+          timestamp: new Date().toISOString()
+        });
+      }
+      
+      // Save to localStorage
+      localStorage.setItem('mapElements', JSON.stringify(newElements));
+      setMapElements(newElements);
+    }
+  }, [savedPostcards, mapElements]);
 
   // Sample locations for demonstration
   const sampleLocations = [
@@ -189,7 +269,8 @@ const WorldMapReview = ({ onBack, onViewPostcard, onShow }) => {
       completedText: 'You\'ve completed',
       activitiesText: 'activities so far.',
       homeButton: 'Home',
-      receiveButton: 'Receive Postcard', // Add receive button text
+      receiveButton: 'Receive Postcard',
+      clearDataButton: 'Clear All Data', // Add clear data button text
       close: 'Close',
       noPostcards: 'No postcards available at the moment.',
       view: 'View',
@@ -218,36 +299,21 @@ const WorldMapReview = ({ onBack, onViewPostcard, onShow }) => {
         <h1 className="text-2xl font-gloria-hallelujah absolute left-1/2 transform -translate-x-1/2">
           {textContent.title}
         </h1>
-        {/* Receive Postcard button */}
-        <button
-          onClick={handleReceivePostcard}
-          disabled={isFetching}
-          className="px-4 py-2 text-base font-inter font-bold focus:outline-none rounded-lg flex items-center"
-          style={{ 
-            backgroundColor: '#66ab4b',
-            color: 'white',
-            minWidth: '120px',
-            minHeight: '40px'
-          }}
-        >
-          {isFetching ? (
-            <>
-              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              Receiving...
-            </>
-          ) : (
-            <>
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
-              </svg>
-              {textContent.receiveButton}
-            </>
-          )}
-        </button>
+        <div className="flex space-x-2">
+          {/* Clear Data button */}
+          <button
+            onClick={clearAllData}
+            className="px-4 py-2 text-base font-inter font-bold focus:outline-none rounded-lg"
+            style={{ 
+              backgroundColor: '#ff6b6b',
+              color: 'white',
+              minWidth: '120px',
+              minHeight: '40px'
+            }}
+          >
+            {textContent.clearDataButton}
+          </button>
+        </div>
       </div>
 
       {/* Progress text */}
@@ -286,6 +352,26 @@ const WorldMapReview = ({ onBack, onViewPostcard, onShow }) => {
             </div>
           </div>
         ))}
+        
+        {/* Special map elements (one for every 5 completed activities) */}
+        {mapElements.map((element) => (
+          <div
+            key={element.id}
+            className="absolute transform -translate-x-1/2 -translate-y-1/2 cursor-pointer group"
+            style={{ 
+              left: `${element.x}%`, 
+              top: `${element.y}%`,
+              width: '30px',
+              height: '30px'
+            }}
+          >
+            <img 
+              src={`/map/map_0${element.elementId}.png`} 
+              alt={`Map element ${element.elementId}`}
+              className="w-full h-full object-contain"
+            />
+          </div>
+        ))}
       </div>
 
       {/* Legend section */}
@@ -294,6 +380,24 @@ const WorldMapReview = ({ onBack, onViewPostcard, onShow }) => {
           <div className="w-4 h-4 bg-red-500 rounded-full mr-2"></div>
           <span>{textContent.completedActivities}</span>
         </div>
+      </div>
+
+      {/* PostOffice icon button in bottom right corner, outside the map area */}
+      <div 
+        className="absolute cursor-pointer transform hover:scale-110 transition-transform duration-200"
+        style={{ 
+          right: '20px', 
+          bottom: '20px',
+          width: '50px',
+          height: '50px'
+        }}
+        onClick={onOpenPostOffice}
+      >
+        <img 
+          src="/design/postoffice.png" 
+          alt="Post Office" 
+          className="w-full h-full object-contain"
+        />
       </div>
 
       {/* Saved Postcard Modal */}

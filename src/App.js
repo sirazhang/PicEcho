@@ -4,11 +4,12 @@ import DialogueMode from './components/DialogueMode';
 import ReviewPostcard from './components/ReviewPostcard';
 import LoadingScreen from './components/LoadingScreen';
 import WorldMapReview from './components/WorldMapReview';
+import PostOffice from './components/PostOffice';
 import { generateKimiFeedback } from './utils/kimiApi';
 import { saveImageToIndexedDB } from './utils/api';
 
 function App() {
-  const [currentScreen, setCurrentScreen] = useState('home'); // 'home', 'dialogue', 'review', 'loading'
+  const [currentScreen, setCurrentScreen] = useState('home'); // 'home', 'dialogue', 'review', 'loading', 'map', 'postoffice'
   const [selectedImage, setSelectedImage] = useState('img_01');
   const [selectedLanguage, setSelectedLanguage] = useState('en');
   const [selectedLevel, setSelectedLevel] = useState(1);
@@ -48,6 +49,8 @@ function App() {
       }
     } else if (hash === '#/map') {
       setCurrentScreen('map');
+    } else if (hash === '#/postoffice') {
+      setCurrentScreen('postoffice');
     } else {
       // Default to home screen if no hash or unrecognized hash
       setCurrentScreen('home');
@@ -185,6 +188,12 @@ function App() {
 
   const handleViewMap = () => {
     setCurrentScreen('map');
+    window.location.hash = '#/map';
+  };
+
+  const handleViewPostOffice = () => {
+    setCurrentScreen('postoffice');
+    window.location.hash = '#/postoffice';
   };
 
   const handleViewPostcard = (postcard) => {
@@ -194,6 +203,7 @@ function App() {
 
   const handleBackToMap = () => {
     setCurrentScreen('map');
+    window.location.hash = '#/map';
   };
 
   const handleBackToHome = () => {
@@ -201,6 +211,7 @@ function App() {
     setFeedback(null);
     setConversationHistory([]);
     setSelectedImage('');
+    window.location.hash = '';
   };
 
   // Handle next picture button click
@@ -321,6 +332,7 @@ function App() {
             selectedLanguage={selectedLanguage}
             isLoading={isLoading}
             error={error}
+            onOpenPostOffice={handleViewPostOffice}
           />
         )
       )}
@@ -334,6 +346,14 @@ function App() {
           onViewPostcard={handleViewPostcard}
           onBack={handleBackToHome}
           refreshData={refreshMapData}
+          onOpenPostOffice={handleViewPostOffice}
+        />
+      )}
+
+      {currentScreen === 'postoffice' && (
+        <PostOffice 
+          onBack={handleBackToHome}
+          onViewPostcard={handleViewPostcard}
         />
       )}
     </div>
