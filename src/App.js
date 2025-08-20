@@ -152,57 +152,106 @@ function App() {
   };
 
   const handleSavePostcard = async (postcardData) => {
+    // Generate a unique ID for this postcard if not already provided
+    const postcardId = postcardData.id || `postcard_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    // Extract the blob from imageData if it's an object with blob and url properties
+    let imageBlob = postcardData.imageData;
+    
     try {
-      // Generate a unique ID for this postcard
-      const postcardId = `postcard_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
-      // Extract the blob from imageData if it's an object with blob and url properties
-      let imageBlob = postcardData.imageData;
-      let imageDataUrl = postcardData.imageData;
-      
       // Check if imageData is an object with blob and url properties
       if (postcardData.imageData && typeof postcardData.imageData === 'object' && postcardData.imageData.blob) {
         imageBlob = postcardData.imageData.blob;
-        imageDataUrl = postcardData.imageData.url;
       } else if (postcardData.imageData instanceof Blob) {
-        // If it's just a Blob, convert it to data URL
-        imageDataUrl = await new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result);
-          reader.readAsDataURL(postcardData.imageData);
-        });
+        imageBlob = postcardData.imageData;
       }
       
       // Store the blob image in IndexedDB
       await saveImageToIndexedDB(postcardId, imageBlob);
       
-      // Store only the essential metadata in localStorage
+      // Store only the essential metadata in localStorage (without image data)
       const simplifiedPostcard = {
         id: postcardId,
-        timestamp: new Date().toISOString(),
+        timestamp: postcardData.timestamp || new Date().toISOString(),
         imageId: postcardData.imageId,
         level: postcardData.level,
         feedback: postcardData.feedback,
-        postalCode: postcardData.postalCode,
-        imageData: imageDataUrl // Store the data URL for direct display
-        // Add other necessary metadata
+        postalCode: postcardData.postalCode
+        // Do NOT store imageData in localStorage to save space
       };
 
       // Retrieve existing postcards
-      const existingPostcards = JSON.parse(localStorage.getItem('savedPostcards')) || [];
+      let existingPostcards = [];
+      try {
+        existingPostcards = JSON.parse(localStorage.getItem('savedPostcards') || '[]');
+      } catch (parseError) {
+        console.error('Error parsing existing postcards:', parseError);
+        // If parsing fails, start with an empty array
+        existingPostcards = [];
+      }
 
       // Add the new postcard
-      existingPostcards.push(simplifiedPostcard);
+      const updatedPostcards = [...existingPostcards, simplifiedPostcard];
 
       // Save back to localStorage
-      localStorage.setItem('savedPostcards', JSON.stringify(existingPostcards));
+      localStorage.setItem('savedPostcards', JSON.stringify(updatedPostcards));
+      
+      // WorldMapReview will automatically refresh and pick up the new postcards
+      // from localStorage via its refreshPostcards function
     } catch (error) {
       console.error('Error saving postcard:', error);
       // Implement fallback mechanism
       if (error.name === 'QuotaExceededError') {
         console.log('Storage quota exceeded. Clearing cache and trying again...');
-        clearCache();
-        // Optionally, you could implement a server-side fallback here
+        // Try to free up space by removing old postcards
+        try {
+          let existingPostcards = JSON.parse(localStorage.getItem('savedPostcards') || '[]');
+          // Keep only the most recent postcards (limit to 20)
+          if (existingPostcards.length > 20) {
+            const recentPostcards = existingPostcards.slice(-20);
+            localStorage.setItem('savedPostcards', JSON.stringify(recentPostcards));
+            
+            // Create simplified postcard data for retry
+            const simplifiedPostcard = {
+              id: postcardId,
+              timestamp: postcardData.timestamp || new Date().toISOString(),
+              imageId: postcardData.imageId,
+              level: postcardData.level,
+              feedback: postcardData.feedback,
+              postalCode: postcardData.postalCode
+            };
+            
+            // Try saving again
+            const updatedPostcards = [...recentPostcards, simplifiedPostcard];
+            localStorage.setItem('savedPostcards', JSON.stringify(updatedPostcards));
+          } else {
+            // Create simplified postcard data for retry
+            const simplifiedPostcard = {
+              id: postcardId,
+              timestamp: postcardData.timestamp || new Date().toISOString(),
+              imageId: postcardData.imageId,
+              level: postcardData.level,
+              feedback: postcardData.feedback,
+              postalCode: postcardData.postalCode
+            };
+            
+            // If we still can't save, clear all postcards
+            localStorage.setItem('savedPostcards', JSON.stringify([simplifiedPostcard]));
+          }
+        } catch (retryError) {
+          console.error('Error during retry:', retryError);
+          // Last resort: clear all saved postcards
+          const simplifiedPostcard = {
+            id: postcardId,
+            timestamp: postcardData.timestamp || new Date().toISOString(),
+            imageId: postcardData.imageId,
+            level: postcardData.level,
+            feedback: postcardData.feedback,
+            postalCode: postcardData.postalCode
+          };
+          
+          localStorage.setItem('savedPostcards', JSON.stringify([simplifiedPostcard]));
+        }
       }
     }
   };

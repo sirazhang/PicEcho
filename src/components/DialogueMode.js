@@ -21,6 +21,9 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
   const [questions, setQuestions] = useState([]);
   const [showHint, setShowHint] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false); // For text-to-speech
+  const [imageLoading, setImageLoading] = useState(true); // For image loading state
+  const [imageError, setImageError] = useState(false); // For image error state
+  const [currentImageSrc, setCurrentImageSrc] = useState(''); // For current image source
   
   const recognitionRef = useRef(null);
   const textareaRef = useRef(null);
@@ -36,7 +39,75 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
     
     // 生产环境也记录基本事件，但不暴露敏感信息
     console.info('[DialogueMode] Level or ImageID changed');
+    
+    // 当level或imageId变化时，加载对应的图片
+    if (level && imageId) {
+      loadImage();
+    }
   }, [level, imageId]);
+
+  // 图片加载函数
+  const loadImage = async () => {
+    if (!level || !imageId) return;
+    
+    // 设置加载状态
+    setImageLoading(true);
+    setImageError(false);
+    
+    try {
+      // 构造图片路径
+      const imagePath = getImagePath(level, imageId);
+      
+      // 创建图片对象来测试加载
+      const img = new Image();
+      
+      // 设置超时处理
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Image load timeout')), 10000);
+      });
+      
+      // 图片加载Promise
+      const imagePromise = new Promise((resolve, reject) => {
+        img.onload = () => resolve(imagePath);
+        img.onerror = () => reject(new Error('Image failed to load'));
+        img.src = imagePath;
+      });
+      
+      // 等待图片加载或超时
+      await Promise.race([imagePromise, timeoutPromise]);
+      
+      // 更新状态
+      setCurrentImageSrc(imagePath);
+      setImageLoading(false);
+    } catch (error) {
+      console.error('Error loading image:', error);
+      setImageError(true);
+      setImageLoading(false);
+      
+      // 尝试加载默认图片作为后备
+      try {
+        const fallbackPath = getImagePath(1, imageId);
+        const fallbackImg = new Image();
+        
+        const fallbackTimeout = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Fallback image load timeout')), 5000);
+        });
+        
+        const fallbackPromise = new Promise((resolve, reject) => {
+          fallbackImg.onload = () => resolve(fallbackPath);
+          fallbackImg.onerror = () => reject(new Error('Fallback image failed to load'));
+          fallbackImg.src = fallbackPath;
+        });
+        
+        await Promise.race([fallbackPromise, fallbackTimeout]);
+        
+        setCurrentImageSrc(fallbackPath);
+        setImageError(false);
+      } catch (fallbackError) {
+        console.error('Fallback image also failed to load:', fallbackError);
+      }
+    }
+  };
 
   // Load questions based on level, language and imageId
   const loadQuestions = async () => {
@@ -563,75 +634,42 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
 
   const textContent = getTextContent();
 
-  // 预加载图片并验证是否存在
-  const [imageLoading, setImageLoading] = useState(true);
-  const [imageError, setImageError] = useState(false);
-  const [currentImageSrc, setCurrentImageSrc] = useState('');
-
-  useEffect(() => {
-    if (!imageId || !level) return;
-    
-    const loadImage = async () => {
-      setImageLoading(true);
-      setImageError(false);
-      const imageSrc = getImagePath(level, imageId);
-      setCurrentImageSrc(imageSrc); // 确保设置currentImageSrc
-      
-      try {
-        // 创建图片加载的辅助函数
-        const loadImageWithFallback = (src) => {
-          return new Promise((resolve, reject) => {
-            const img = new Image();
-            img.src = src;
-            
-            // 设置超时防止永久挂起
-            const timeoutId = setTimeout(() => {
-              reject(new Error('Image load timeout'));
-            }, 5000);
-            
-            img.onload = () => {
-              clearTimeout(timeoutId);
-              resolve(src);
-            };
-            
-            img.onerror = () => {
-              clearTimeout(timeoutId);
-              reject(new Error('Image load error'));
-            };
-          });
-        };
-        
-        // 尝试加载当前级别的图片
-        try {
-          await loadImageWithFallback(imageSrc);
-          console.log(`Successfully loaded image: ${imageSrc}`);
-          setImageLoading(false);
-          setImageError(false);
-        } catch (error) {
-          console.log(`Failed to load image: ${imageSrc}`, error);
-          // 如果当前级别的图片加载失败，尝试加载级别1的图片作为后备
-          const fallbackSrc = getImagePath(1, imageId);
-          try {
-            await loadImageWithFallback(fallbackSrc);
-            console.log(`Successfully loaded fallback image: ${fallbackSrc}`);
-            setCurrentImageSrc(fallbackSrc);
-            setImageLoading(false);
-            setImageError(false);
-          } catch (fallbackError) {
-            console.log(`Failed to load fallback image: ${fallbackSrc}`, fallbackError);
-            setImageLoading(false);
-            setImageError(true);
-          }
-        }
-      } catch (error) {
-        console.error('Error in image loading process:', error);
-        setImageLoading(false);
-        setImageError(true);
+  // Add custom CSS for the pulsing animation
+  const customStyles = `
+    @keyframes pulse-slow {
+      0%, 100% {
+        transform: scale(0.95);
       }
-    };
-
-    loadImage();
-  }, [imageId, level]);
+      50% {
+        transform: scale(1);
+      }
+    }
+    
+    .animate-pulse-slow {
+      animation: pulse-slow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    
+    @keyframes typing-bounce {
+      0%, 60%, 100% {
+        transform: translateY(0);
+      }
+      30% {
+        transform: translateY(-5px);
+      }
+    }
+    
+    .typing-dot {
+      animation: typing-bounce 1.5s infinite ease-in-out;
+    }
+    
+    .typing-dot-delay-1 {
+      animation-delay: 0.2s;
+    }
+    
+    .typing-dot-delay-2 {
+      animation-delay: 0.4s;
+    }
+  `;
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#e5f5fb' }}>
@@ -750,7 +788,7 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
                           <img 
                             src="/design/robot.png" 
                             alt="AI Tutor" 
-                            className="w-24 h-24 mr-4 object-contain align-start" // Reduced from 80 to 24 (8vh)
+                            className="w-24 h-24 mr-4 object-contain align-start animate-pulse-slow" // Reduced from 80 to 24 (8vh)
                           />
                         )}
                         <div className="flex flex-col">
@@ -789,15 +827,15 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
                         <img 
                           src="/design/robot.png" 
                           alt="AI Tutor" 
-                          className="w-24 h-24 mr-4 object-contain align-start" // Reduced from 80 to 24 (8vh)
+                          className="w-24 h-24 mr-4 object-contain align-start animate-pulse-slow" // Reduced from 80 to 24 (8vh)
                         />
                         <div className="flex flex-col">
                           <div className="font-semibold mb-1">{textContent.aiTutor}</div>
                           <div className="bg-[#A6e2b1] p-6 rounded-lg">
-                            <div className="flex space-x-2">
-                              <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></div>
-                              <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                              <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+                            <div className="flex space-x-1 items-center justify-center">
+                              <div className="w-2 h-2 bg-gray-600 rounded-full typing-dot"></div>
+                              <div className="w-2 h-2 bg-gray-600 rounded-full typing-dot typing-dot-delay-1"></div>
+                              <div className="w-2 h-2 bg-gray-600 rounded-full typing-dot typing-dot-delay-2"></div>
                             </div>
                           </div>
                         </div>
@@ -872,6 +910,8 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
           </div>
         </div>
       </div>
+      {/* Inject custom styles */}
+      <style>{customStyles}</style>
     </div>
   );
 }

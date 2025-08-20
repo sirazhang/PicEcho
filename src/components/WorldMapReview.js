@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { receivePostcard, getImageFromIndexedDB } from '../utils/api';
 
 const WorldMapReview = ({ onBack, onViewPostcard, onShow, onOpenPostOffice }) => {
@@ -11,28 +11,6 @@ const WorldMapReview = ({ onBack, onViewPostcard, onShow, onOpenPostOffice }) =>
   const [senderToken, setSenderToken] = useState(''); // Add sender token state
   const [modalImage, setModalImage] = useState(null); // For handling blob images in modals
   const [mapElements, setMapElements] = useState([]); // For special map elements
-
-  // Function to clear all saved data
-  const clearAllData = () => {
-    // Clear localStorage items
-    localStorage.removeItem('savedPostcards');
-    localStorage.removeItem('mapElements');
-    localStorage.removeItem('senderToken');
-    
-    // Clear IndexedDB images
-    clearIndexedDBImages();
-    
-    // Update state to reflect cleared data
-    setSavedPostcards([]);
-    setMapElements([]);
-    
-    // Generate new sender token
-    const newToken = 'user_' + Math.random().toString(36).substr(2, 9);
-    localStorage.setItem('senderToken', newToken);
-    setSenderToken(newToken);
-    
-    alert('All saved data has been cleared successfully!');
-  };
 
   // Function to clear IndexedDB images
   const clearIndexedDBImages = async () => {
@@ -52,29 +30,33 @@ const WorldMapReview = ({ onBack, onViewPostcard, onShow, onOpenPostOffice }) =>
   };
 
   const refreshPostcards = () => {
-    // Load saved postcards from localStorage
-    const postcards = JSON.parse(localStorage.getItem('savedPostcards') || '[]');
-    setSavedPostcards(postcards);
-    
-    // Load map elements from localStorage
-    const elements = JSON.parse(localStorage.getItem('mapElements') || '[]');
-    setMapElements(elements);
+    try {
+      // Load saved postcards from localStorage
+      const postcards = JSON.parse(localStorage.getItem('savedPostcards') || '[]');
+      setSavedPostcards(postcards);
+      
+      // Load map elements from localStorage
+      const elements = JSON.parse(localStorage.getItem('mapElements') || '[]');
+      setMapElements(elements);
+      
+      // Load sender token
+      const token = localStorage.getItem('senderToken');
+      if (token) {
+        setSenderToken(token);
+      }
+    } catch (error) {
+      console.error('Error refreshing postcards:', error);
+      // If there's an error parsing the data, clear it and start fresh
+      localStorage.setItem('savedPostcards', '[]');
+      localStorage.setItem('mapElements', '[]');
+      setSavedPostcards([]);
+      setMapElements([]);
+    }
   };
 
+  // Load saved postcards on component mount and periodically refresh
   useEffect(() => {
     refreshPostcards();
-    
-    // Generate or load sender token
-    let token = localStorage.getItem('senderToken');
-    if (!token) {
-      token = 'user_' + Math.random().toString(36).substr(2, 9);
-      localStorage.setItem('senderToken', token);
-    }
-    setSenderToken(token);
-  }, []);
-
-  // Refresh postcards when component is shown
-  useEffect(() => {
     const interval = setInterval(refreshPostcards, 1000); // Refresh every second
     return () => clearInterval(interval);
   }, []);
@@ -93,7 +75,6 @@ const WorldMapReview = ({ onBack, onViewPostcard, onShow, onOpenPostOffice }) =>
       
       // Add new elements
       for (let i = elementsCount; i < expectedElements; i++) {
-        // Generate random position on the map (within reasonable bounds)
         const x = 10 + Math.random() * 80; // 10% to 90% of map width
         const y = 10 + Math.random() * 80; // 10% to 90% of map height
         
@@ -109,9 +90,9 @@ const WorldMapReview = ({ onBack, onViewPostcard, onShow, onOpenPostOffice }) =>
         });
       }
       
-      // Save to localStorage
-      localStorage.setItem('mapElements', JSON.stringify(newElements));
+      // Update state and localStorage
       setMapElements(newElements);
+      localStorage.setItem('mapElements', JSON.stringify(newElements));
     }
   }, [savedPostcards, mapElements]);
 
@@ -128,16 +109,18 @@ const WorldMapReview = ({ onBack, onViewPostcard, onShow, onOpenPostOffice }) =>
   ];
 
   // Map saved postcards to locations
-  const postcardLocations = savedPostcards.map((postcard, index) => {
-    // Use sample locations cyclically for demonstration
-    const location = sampleLocations[index % sampleLocations.length];
-    return {
-      ...location,
-      id: index,
-      postcard: postcard,
-      timestamp: postcard.timestamp
-    };
-  });
+  const postcardLocations = useMemo(() => {
+    return savedPostcards.map((postcard, index) => {
+      // Use sample locations cyclically for demonstration
+      const location = sampleLocations[index % sampleLocations.length];
+      return {
+        ...location,
+        id: `postcard-${index}`, // Ensure unique ID
+        postcard: postcard,
+        timestamp: postcard.timestamp
+      };
+    });
+  }, [savedPostcards]);
 
   const handleLocationClick = (location) => {
     // Add a check to ensure location and location.postcard are not null
@@ -145,22 +128,8 @@ const WorldMapReview = ({ onBack, onViewPostcard, onShow, onOpenPostOffice }) =>
       // If the postcard contains blob data, ensure it's handled properly
       const postcard = { ...location.postcard };
       
-      // Handle different imageData formats
-      if (postcard.imageData) {
-        // If imageData is a data URL string, use it directly
-        if (typeof postcard.imageData === 'string' && postcard.imageData.startsWith('data:')) {
-          postcard.imageDataUrl = postcard.imageData;
-        } 
-        // If imageData is a blob, create an object URL for it
-        else if (postcard.imageData instanceof Blob) {
-          postcard.imageDataUrl = URL.createObjectURL(postcard.imageData);
-        }
-        // If imageData is an object with url property, use that
-        else if (typeof postcard.imageData === 'object' && postcard.imageData.url) {
-          postcard.imageDataUrl = postcard.imageData.url;
-        }
-      }
-      
+      // We no longer store imageData in localStorage to save space
+      // Instead, we'll load it from IndexedDB when needed
       setSelectedPostcard(postcard);
       setShowModal(true);
     } else {
@@ -231,7 +200,7 @@ const WorldMapReview = ({ onBack, onViewPostcard, onShow, onOpenPostOffice }) =>
   // Load image for selected postcard
   useEffect(() => {
     const loadPostcardImage = async () => {
-      if (selectedPostcard && selectedPostcard.id && !selectedPostcard.imageData) {
+      if (selectedPostcard && selectedPostcard.id) {
         try {
           // Try to get image from IndexedDB
           const imageBlob = await getImageFromIndexedDB(selectedPostcard.id);
@@ -242,15 +211,6 @@ const WorldMapReview = ({ onBack, onViewPostcard, onShow, onOpenPostOffice }) =>
           }
         } catch (error) {
           console.error('Error loading image from IndexedDB:', error);
-          setModalImage(null);
-        }
-      } else if (selectedPostcard && selectedPostcard.imageData) {
-        // If we already have imageData, set it as the modal image
-        if (typeof selectedPostcard.imageData === 'string' && selectedPostcard.imageData.startsWith('data:')) {
-          setModalImage(selectedPostcard.imageData);
-        } else if (selectedPostcard.imageData instanceof Blob || selectedPostcard.imageData instanceof File) {
-          setModalImage(URL.createObjectURL(selectedPostcard.imageData));
-        } else {
           setModalImage(null);
         }
       } else {
@@ -281,7 +241,6 @@ const WorldMapReview = ({ onBack, onViewPostcard, onShow, onOpenPostOffice }) =>
       activitiesText: 'activities so far.',
       homeButton: 'Home',
       receiveButton: 'Receive Postcard',
-      clearDataButton: 'Clear All Data', // Add clear data button text
       close: 'Close',
       noPostcards: 'No postcards available at the moment.',
       view: 'View',
@@ -311,19 +270,7 @@ const WorldMapReview = ({ onBack, onViewPostcard, onShow, onOpenPostOffice }) =>
           {textContent.title}
         </h1>
         <div className="flex space-x-2">
-          {/* Clear Data button */}
-          <button
-            onClick={clearAllData}
-            className="px-4 py-2 text-base font-inter font-bold focus:outline-none rounded-lg"
-            style={{ 
-              backgroundColor: '#ff6b6b',
-              color: 'white',
-              minWidth: '120px',
-              minHeight: '40px'
-            }}
-          >
-            {textContent.clearDataButton}
-          </button>
+          {/* Empty div to maintain layout balance */}
         </div>
       </div>
 
@@ -530,6 +477,22 @@ const WorldMapReview = ({ onBack, onViewPostcard, onShow, onOpenPostOffice }) =>
                           />
                         );
                       }
+                      // If it's an object but doesn't have url or blob properties, 
+                      // try to convert it to a string
+                      else {
+                        const imageUrl = URL.createObjectURL(new Blob([JSON.stringify(selectedPostcard.imageData)], {type: 'application/json'}));
+                        return (
+                          <img 
+                            src={imageUrl} 
+                            alt="Saved postcard" 
+                            className="max-w-full h-auto border border-gray-300 rounded-lg mb-4"
+                            onLoad={(e) => {
+                              // Revoke the object URL after the image has loaded to free memory
+                              URL.revokeObjectURL(e.target.src);
+                            }}
+                          />
+                        );
+                      }
                     }
                   } else if (selectedPostcard.id) {
                     // For IndexedDB images, display the loaded image or a loading indicator
@@ -541,8 +504,22 @@ const WorldMapReview = ({ onBack, onViewPostcard, onShow, onOpenPostOffice }) =>
                           className="max-w-full h-auto border border-gray-300 rounded-lg mb-4"
                         />
                       );
+                    } else if (selectedPostcard && selectedPostcard.id) {
+                      // Show loading indicator while fetching from IndexedDB
+                      const sampleImages = [
+                        '/sample/sample_01.png',
+                        '/sample/sample_02.png'
+                      ];
+                      const randomImage = sampleImages[Math.floor(Math.random() * sampleImages.length)];
+                      return (
+                        <img 
+                          src={randomImage} 
+                          alt="Sample postcard" 
+                          className="max-w-full h-auto border border-gray-300 rounded-lg mb-4"
+                        />
+                      );
                     } else {
-                      // Show loading indicator while fetching from IndexedDB or fallback image
+                      // Fallback image
                       const sampleImages = [
                         '/sample/sample_01.png',
                         '/sample/sample_02.png'

@@ -295,7 +295,7 @@ const parseFeedbackResponse = (content, language) => {
         } else if (line.match(/2\.\s*.*错误总结|2\.\s*.*Error Summary/i)) {
           currentSection = 2;
           continue;
-        } else if (line.match(/3\.\s*.*改进建议|3\.\s*.*Improvement Suggestions/i)) {
+        } else if (line.match(/3\.\s*.*改进建议|3\.\s*.*Improvement Suggestions|3\.\s*.*Suggestions/i)) {
           currentSection = 3;
           continue;
         }
@@ -316,6 +316,49 @@ const parseFeedbackResponse = (content, language) => {
         encouragingRemarks = lines.slice(0, third).join('\n');
         errorSummary = lines.slice(third, third * 2).join('\n');
         suggestions = lines.slice(third * 2).join('\n');
+      }
+    }
+    
+    // Additional parsing for cases where sections are not clearly separated
+    if (!suggestions && content.includes('3.')) {
+      // Try to extract everything after section 3
+      const suggestionsMatch = content.match(/3\.[\s\S]*?(?=\d\.|$)/i);
+      if (suggestionsMatch) {
+        // Remove the section header and clean up
+        suggestions = suggestionsMatch[0].replace(/3\.\s*.*?[\r\n]+/i, '').trim();
+      }
+    }
+    
+    // Even more robust parsing - try to extract suggestions when other methods fail
+    if (!suggestions) {
+      // Look for common suggestion section headers
+      const suggestionHeaders = [
+        /3\.\s*改进建议/i,
+        /3\.\s*Improvement Suggestions/i,
+        /3\.\s*Suggestions/i,
+        /3\.\s*.*改进建议/i,
+        /3\.\s*.*Suggestions/i
+      ];
+      
+      for (const headerRegex of suggestionHeaders) {
+        const match = content.match(new RegExp(`${headerRegex.source}[\\s\\S]*?(?=\\d\\.|$)`, headerRegex.flags));
+        if (match) {
+          // Extract content after the header
+          const headerMatch = match[0].match(headerRegex);
+          if (headerMatch) {
+            suggestions = match[0].substring(headerMatch[0].length).trim();
+            break;
+          }
+        }
+      }
+      
+      // If still no suggestions, try to find bullet points or numbered lists that might be suggestions
+      if (!suggestions) {
+        // Look for bullet points or numbered lists that come after common suggestion headers
+        const suggestionContentMatch = content.match(/(改进建议|Improvement Suggestions|Suggestions)[\s\S]*?(?=\d\.|$)/i);
+        if (suggestionContentMatch) {
+          suggestions = suggestionContentMatch[0].replace(/(改进建议|Improvement Suggestions|Suggestions)/i, '').trim();
+        }
       }
     }
     
