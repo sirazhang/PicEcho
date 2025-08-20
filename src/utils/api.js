@@ -145,3 +145,97 @@ export const getQuestions = async (level, imageId, language) => {
     throw error;
   }
 };
+
+// IndexedDB utility for image storage
+const DB_NAME = 'PostcardDB';
+const DB_VERSION = 1;
+const STORE_NAME = 'images';
+
+let db;
+
+// Open IndexedDB
+const openDB = () => {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+    request.onupgradeneeded = (event) => {
+      db = event.target.result;
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+      }
+    };
+
+    request.onsuccess = (event) => {
+      db = event.target.result;
+      resolve();
+    };
+
+    request.onerror = (event) => {
+      reject(`Database error: ${event.target.error}`);
+    };
+  });
+};
+
+// Save image to IndexedDB
+export const saveImageToIndexedDB = async (id, blob) => {
+  await openDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([STORE_NAME], 'readwrite');
+    const store = transaction.objectStore(STORE_NAME);
+    
+    const imageData = {
+      id: id,
+      blob: blob,
+      timestamp: new Date().getTime()
+    };
+    
+    const request = store.put(imageData);
+    
+    request.onsuccess = () => {
+      resolve();
+    };
+    
+    request.onerror = (event) => {
+      reject(`Save error: ${event.target.error}`);
+    };
+  });
+};
+
+// Get image from IndexedDB
+export const getImageFromIndexedDB = async (id) => {
+  await openDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([STORE_NAME], 'readonly');
+    const store = transaction.objectStore(STORE_NAME);
+    
+    const request = store.get(id);
+    
+    request.onsuccess = (event) => {
+      const result = event.target.result;
+      resolve(result ? result.blob : null);
+    };
+    
+    request.onerror = (event) => {
+      reject(`Get error: ${event.target.error}`);
+    };
+  });
+};
+
+// Clear all images from IndexedDB
+export const clearIndexedDBImages = async () => {
+  await openDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([STORE_NAME], 'readwrite');
+    const store = transaction.objectStore(STORE_NAME);
+    
+    const request = store.clear();
+    
+    request.onsuccess = () => {
+      resolve();
+    };
+    
+    request.onerror = (event) => {
+      reject(`Clear error: ${event.target.error}`);
+    };
+  });
+};

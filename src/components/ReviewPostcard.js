@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import html2canvas from 'html2canvas';
-import { sendPostcard } from '../utils/api';
+import { sendPostcard, getImageFromIndexedDB } from '../utils/api';
 
 // Helper function to manage localStorage with quota protection
 const saveToLocalStorage = async (key, data) => {
@@ -40,6 +40,7 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
   const [stampImage, setStampImage] = useState('');
   const [showPreview, setShowPreview] = useState(false);
   const [previewImage, setPreviewImage] = useState('');
+  const [indexedDBImage, setIndexedDBImage] = useState(null); // For IndexedDB images
   const postcardRef = useRef(null);
 
   // Generate random postal code
@@ -71,6 +72,37 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
     setStampImage(stampImages[randomIndex]);
   }, [imageId]);
 
+  // Load image from IndexedDB when selectedPostcard changes
+  useEffect(() => {
+    const loadImageFromIndexedDB = async () => {
+      if (showModal && selectedPostcard && selectedPostcard.id && !selectedPostcard.imageData) {
+        try {
+          const imageBlob = await getImageFromIndexedDB(selectedPostcard.id);
+          if (imageBlob) {
+            setIndexedDBImage(URL.createObjectURL(imageBlob));
+          }
+        } catch (error) {
+          console.error('Error loading image from IndexedDB:', error);
+        }
+      } else {
+        // Clear the image when modal is closed or postcard changes
+        if (indexedDBImage) {
+          URL.revokeObjectURL(indexedDBImage);
+          setIndexedDBImage(null);
+        }
+      }
+    };
+
+    loadImageFromIndexedDB();
+
+    // Cleanup function to revoke object URL
+    return () => {
+      if (indexedDBImage) {
+        URL.revokeObjectURL(indexedDBImage);
+      }
+    };
+  }, [showModal, selectedPostcard, indexedDBImage]);
+
   // Handle save postcard button click
   const handleSavePostcard = async () => {
     try {
@@ -84,19 +116,17 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
       const postcardData = {
         imageId: imageId,
         level: level,
-        feedback: localFeedback, // Fixed: was incorrectly using postcardData
+        feedback: localFeedback,
         imageData: imageBlob, // Pass the Blob directly
         timestamp: new Date().toISOString(),
         postalCode: postalCode
       };
-
-      // Save to backend
-      const savedPostcard = await sendPostcard({
-        ...postcardData,
-        senderToken: localStorage.getItem('senderToken') || 'user_' + Math.random().toString(36).substr(2, 9)
-      });
       
-      // Convert Blob to data URL for storage
+      // Save to IndexedDB
+      const postcardId = `postcard_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      await saveImageToIndexedDB(postcardId, imageBlob);
+      
+      // Convert Blob to data URL for localStorage
       const imageDataUrl = await new Promise((resolve) => {
         const reader = new FileReader();
         reader.onload = () => resolve(reader.result);
@@ -106,9 +136,9 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
       // Update postcard data with backend response and data URL for localStorage
       const postcardDataWithId = {
         ...postcardData,
+        id: postcardId, // Add the IndexedDB ID
         imageData: imageDataUrl, // Store as data URL for localStorage
-        serverId: savedPostcard.id,
-        timestamp: savedPostcard.timestamp || new Date().toISOString()
+        serverId: postcardData.id // Keep original server ID if exists
       };
       
       // Call onSave callback with complete data
@@ -125,6 +155,9 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
     } catch (err) {
       console.error('Error saving postcard:', err);
       setSaveMessage(selectedLanguage === 'zh' ? '保存失败，请重试' : 'Failed to save, please try again');
+      setTimeout(() => {
+        setSaveMessage('');
+      }, 2000);
     } finally {
       setIsSaving(false);
     }
@@ -133,24 +166,53 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
   // Handle send postcard button click
   const handleSendPostcard = async () => {
     try {
-      setSaveMessage(''); // Clear any previous messages
+      // 获取文本内容
+      const textContent = getTextContent();
       
-      // Generate the postcard image as a Blob
+      // 创建一个canvas元素来渲染明信片
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      // 设置canvas尺寸，匹配ReviewPostcard界面比例
+      canvas.width = 1200;
+      canvas.height = 800;
+      
+      // 绘制背景
+      const backgroundColor = '#F5F5F5';
+      ctx.fillStyle = backgroundColor;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // 生成明信片图像
       const imageBlob = await generatePostcardImage();
       
-      // Convert Blob to data URL for preview
-      const imageDataUrl = await new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.readAsDataURL(imageBlob);
-      });
+      // 将Blob转换为URL
+      const imageUrl = URL.createObjectURL(imageBlob);
       
-      // Set preview image and show preview modal
-      setPreviewImage(imageBlob);
-      setShowPreview(true);
-    } catch (err) {
-      console.error('Error generating postcard for sending:', err);
-      setSaveMessage(selectedLanguage === 'zh' ? '发送失败，请重试' : 'Failed to send postcard');
+      // 准备发送数据
+      const postcardData = {
+        imageData: imageBlob,
+        senderToken: localStorage.getItem('senderToken') || 'user_' + Math.random().toString(36).substr(2, 9),
+        feedback: localFeedback,
+        postalCode: postalCode
+      };
+      
+      // 发送明信片
+      const savedPostcard = await sendPostcard(postcardData);
+      
+      // 释放对象URL
+      URL.revokeObjectURL(imageUrl);
+      
+      // 关闭预览窗口
+      setShowPreview(false);
+      
+      // 显示发送成功消息
+      setSaveMessage(selectedLanguage === 'zh' ? '明信片已发送！' : 'Postcard sent!');
+      setTimeout(() => {
+        setSaveMessage('');
+      }, 2000);
+    } catch (error) {
+      console.error('Error sending postcard:', error);
+      setSaveMessage(selectedLanguage === 'zh' ? '发送失败，请重试' : 'Failed to send, please try again');
       setTimeout(() => {
         setSaveMessage('');
       }, 2000);
@@ -266,7 +328,6 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
           setImageError(false);
         } catch (error) {
           console.log(`Failed to load image: ${imageSrc}`, error);
-          
           // Try fallback to level 1 image
           const fallbackSrc = getImagePath(1, imageId);
           try {
@@ -554,6 +615,132 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
                   </button>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Saved Postcard Modal */}
+      {showModal && selectedPostcard && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-semibold text-gray-800">Saved Postcard</h3>
+                <button 
+                  onClick={closeModal}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              
+              <div className="flex flex-col items-center">
+                {(() => {
+                  // Add safety check for selectedPostcard
+                  if (!selectedPostcard) {
+                    // Fallback to sample images when no postcard data is available
+                    const sampleImages = [
+                      '/sample/sample_01.png',
+                      '/sample/sample_02.png'
+                    ];
+                    const randomImage = sampleImages[Math.floor(Math.random() * sampleImages.length)];
+                    return (
+                      <img 
+                        src={randomImage} 
+                        alt="Sample postcard" 
+                        className="max-w-full h-auto border border-gray-300 rounded-lg mb-4"
+                      />
+                    );
+                  }
+                  
+                  // Check if we have imageData (Blob) from the saved postcard
+                  if (selectedPostcard.imageData) {
+                    // Handle Blob data
+                    if (typeof selectedPostcard.imageData === 'string' && selectedPostcard.imageData.startsWith('data:')) {
+                      // It's already a data URL
+                      return (
+                        <img 
+                          src={selectedPostcard.imageData} 
+                          alt="Saved postcard" 
+                          className="max-w-full h-auto border border-gray-300 rounded-lg mb-4"
+                        />
+                      );
+                    } else {
+                      // It's a Blob, convert it to URL
+                      const imageUrl = URL.createObjectURL(selectedPostcard.imageData);
+                      return (
+                        <img 
+                          src={imageUrl} 
+                          alt="Saved postcard" 
+                          className="max-w-full h-auto border border-gray-300 rounded-lg mb-4"
+                          onLoad={(e) => {
+                            // Revoke the object URL after the image has loaded to free memory
+                            URL.revokeObjectURL(e.target.src);
+                          }}
+                        />
+                      );
+                    }
+                  } else if (selectedPostcard.id) {
+                    // For IndexedDB images, display the loaded image or a loading indicator
+                    if (indexedDBImage) {
+                      return (
+                        <img 
+                          src={indexedDBImage} 
+                          alt="Saved postcard" 
+                          className="max-w-full h-auto border border-gray-300 rounded-lg mb-4"
+                        />
+                      );
+                    } else {
+                      // Show loading indicator while fetching from IndexedDB
+                      return (
+                        <div className="flex items-center justify-center w-full h-64">
+                          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+                        </div>
+                      );
+                    }
+                  } else if (selectedPostcard.image_path) {
+                    return (
+                      <img 
+                        src={selectedPostcard.image_path} 
+                        alt="Saved postcard" 
+                        className="max-w-full h-auto border border-gray-300 rounded-lg mb-4"
+                        onError={(e) => {
+                          // Fallback to sample image if the specified image fails to load
+                          const sampleImages = [
+                            '/sample/sample_01.png',
+                            '/sample/sample_02.png'
+                          ];
+                          const randomImage = sampleImages[Math.floor(Math.random() * sampleImages.length)];
+                          e.target.src = randomImage;
+                        }}
+                      />
+                    );
+                  } else {
+                    // Fallback to sample images when no image is available
+                    const sampleImages = [
+                      '/sample/sample_01.png',
+                      '/sample/sample_02.png'
+                    ];
+                    const randomImage = sampleImages[Math.floor(Math.random() * sampleImages.length)];
+                    return (
+                      <img 
+                        src={randomImage} 
+                        alt="Sample postcard" 
+                        className="max-w-full h-auto border border-gray-300 rounded-lg mb-4"
+                      />
+                    );
+                  }
+                })()}
+                <p className="text-gray-600 text-center">
+                  {selectedPostcard && selectedPostcard.timestamp ? 
+                    new Date(selectedPostcard.timestamp).toLocaleString() : 
+                    new Date().toLocaleString()}
+                </p>
+              </div>
+
             </div>
           </div>
         </div>

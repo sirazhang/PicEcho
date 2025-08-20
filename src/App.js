@@ -5,6 +5,7 @@ import ReviewPostcard from './components/ReviewPostcard';
 import LoadingScreen from './components/LoadingScreen';
 import WorldMapReview from './components/WorldMapReview';
 import { generateKimiFeedback } from './utils/kimiApi';
+import { saveImageToIndexedDB } from './utils/api';
 
 function App() {
   const [currentScreen, setCurrentScreen] = useState('home'); // 'home', 'dialogue', 'review', 'loading'
@@ -147,25 +148,39 @@ function App() {
     setSelectedImage('');
   };
 
-  const handleSavePostcard = (postcardData) => {
-    // In a real app, you would send this to a backend
-    console.log('Saving postcard:', postcardData);
-    
-    // Save to localStorage for demo purposes - store the data URL
-    const savedPostcards = JSON.parse(localStorage.getItem('savedPostcards') || '[]');
-    
-    // Create a simplified postcard object with metadata and image data
-    const postcardMetadata = {
-      imageId: postcardData.imageId,
-      level: postcardData.level,
-      feedback: postcardData.feedback,
-      timestamp: postcardData.timestamp,
-      postalCode: postcardData.postalCode,
-      imageData: postcardData.imageData // Include the image data URL
-    };
-    
-    savedPostcards.push(postcardMetadata);
-    localStorage.setItem('savedPostcards', JSON.stringify(savedPostcards));
+  const handleSavePostcard = async (postcardData) => {
+    try {
+      // Generate a unique ID for this postcard
+      const postcardId = `postcard_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      // Store the blob image in IndexedDB
+      await saveImageToIndexedDB(postcardId, postcardData.imageData);
+      
+      // Store only the essential metadata in localStorage
+      const simplifiedPostcard = {
+        id: postcardId,
+        timestamp: new Date().toISOString(),
+        description: postcardData.description,
+        // Add other necessary metadata
+      };
+
+      // Retrieve existing postcards
+      const existingPostcards = JSON.parse(localStorage.getItem('savedPostcards')) || [];
+
+      // Add the new postcard
+      existingPostcards.push(simplifiedPostcard);
+
+      // Save back to localStorage
+      localStorage.setItem('savedPostcards', JSON.stringify(existingPostcards));
+    } catch (error) {
+      console.error('Error saving postcard:', error);
+      // Implement fallback mechanism
+      if (error.name === 'QuotaExceededError') {
+        console.log('Storage quota exceeded. Clearing cache and trying again...');
+        clearCache();
+        // Optionally, you could implement a server-side fallback here
+      }
+    }
   };
 
   const handleViewMap = () => {
@@ -252,6 +267,11 @@ function App() {
     // 实际刷新逻辑，比如重新获取数据
     // const updatedPostcards = fetchUpdatedPostcards();
     // setMapPostcards(updatedPostcards);
+  };
+
+  const clearCache = () => {
+    localStorage.clear();
+    console.log('Cache cleared');
   };
 
   return (
