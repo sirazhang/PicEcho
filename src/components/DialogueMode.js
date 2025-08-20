@@ -20,10 +20,12 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
   const [speechError, setSpeechError] = useState('');
   const [questions, setQuestions] = useState([]);
   const [showHint, setShowHint] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false); // For text-to-speech
   
   const recognitionRef = useRef(null);
   const textareaRef = useRef(null);
   const isInitialized = useRef(false); // 用于标记是否已初始化
+  const synthRef = useRef(window.speechSynthesis); // For text-to-speech
 
   // 添加useEffect来监听level和imageId的变化
   useEffect(() => {
@@ -236,6 +238,16 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
     };
   }, []);
 
+  // Initialize speech synthesis
+  useEffect(() => {
+    // Cleanup function to cancel any ongoing speech when component unmounts
+    return () => {
+      if (synthRef.current) {
+        synthRef.current.cancel();
+      }
+    };
+  }, []);
+
   // Update speech recognition language when language changes
   useEffect(() => {
     if (recognitionRef.current) {
@@ -274,6 +286,42 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
   const stopListening = () => {
     if (recognitionRef.current) {
       recognitionRef.current.stop();
+    }
+  };
+
+  // Text-to-speech function
+  const speakText = (text) => {
+    // Cancel any ongoing speech
+    if (synthRef.current.speaking) {
+      synthRef.current.cancel();
+      setIsSpeaking(false);
+      return;
+    }
+
+    if (text !== '') {
+      // Set speaking state
+      setIsSpeaking(true);
+      
+      // Create utterance
+      const utterThis = new SpeechSynthesisUtterance(text);
+      
+      // Set utterance properties
+      utterThis.lang = language === 'zh' ? 'zh-CN' : 'en-US';
+      utterThis.pitch = 1;
+      utterThis.rate = 1;
+      
+      // Event handlers
+      utterThis.onend = () => {
+        setIsSpeaking(false);
+      };
+      
+      utterThis.onerror = (event) => {
+        console.error('SpeechSynthesisUtterance.onerror', event);
+        setIsSpeaking(false);
+      };
+      
+      // Speak the utterance
+      synthRef.current.speak(utterThis);
     }
   };
 
@@ -715,6 +763,20 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
                           </div>
                           <div className={`p-6 rounded-lg ${message.sender === 'ai' ? 'bg-[#A6e2b1]' : ''}`}>
                             {message.text}
+                            {/* Play button for AI messages */}
+                            {message.sender === 'ai' && (
+                              <button 
+                                onClick={() => speakText(message.text)}
+                                className="ml-2 focus:outline-none"
+                                aria-label={isSpeaking ? "Stop speaking" : "Play audio"}
+                              >
+                                <img 
+                                  src="/design/play.png" 
+                                  alt="Play" 
+                                  className="w-6 h-6 object-contain inline-block"
+                                />
+                              </button>
+                            )}
                           </div>
                         </div>
                       </div>

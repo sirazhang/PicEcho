@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import html2canvas from 'html2canvas';
-import { sendPostcard, getImageFromIndexedDB } from '../utils/api';
+import { sendPostcard, getImageFromIndexedDB, saveImageToIndexedDB } from '../utils/api';
 
 // Helper function to manage localStorage with quota protection
 const saveToLocalStorage = async (key, data) => {
@@ -41,6 +41,8 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
   const [showPreview, setShowPreview] = useState(false);
   const [previewImage, setPreviewImage] = useState('');
   const [indexedDBImage, setIndexedDBImage] = useState(null); // For IndexedDB images
+  const [showModal, setShowModal] = useState(false); // For showing the saved postcard modal
+  const [selectedPostcard, setSelectedPostcard] = useState(null); // For the selected postcard in the modal
   const postcardRef = useRef(null);
 
   // Generate random postal code
@@ -163,7 +165,37 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
     }
   };
 
-  // Handle send postcard button click
+  // Handle next picture button click
+  const handleNextPicture = () => {
+    if (onNextPicture) {
+      onNextPicture(level);
+    }
+  };
+
+  // Close modal function
+  const closeModal = () => {
+    setShowModal(false);
+    setSelectedPostcard(null);
+  };
+
+  // Define text content for different languages
+  const getTextContent = () => {
+    if (selectedLanguage === 'zh') {
+      return {
+        send: '发送明信片',
+        sendPreviewConfirm: '这是您要发送的明信片，确认发送吗？',
+        step3: '点击发送按钮将明信片发送给其他学习者'
+      };
+    } else {
+      return {
+        send: 'Send Postcard',
+        sendPreviewConfirm: 'This is the postcard you want to send. Confirm sending?',
+        step3: 'Click the send button to send the postcard to another learner'
+      };
+    }
+  };
+
+  // 新的处理发送明信片函数
   const handleSendPostcard = async () => {
     try {
       // 获取文本内容
@@ -240,13 +272,6 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
     } catch (error) {
       console.error('Error generating postcard image with html2canvas:', error);
       throw error; // Re-throw to be handled by caller
-    }
-  };
-
-  // Handle next picture button click
-  const handleNextPicture = () => {
-    if (onNextPicture) {
-      onNextPicture(level);
     }
   };
 
