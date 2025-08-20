@@ -9,8 +9,28 @@ export const sendPostcard = async (postcardData) => {
   try {
     const formData = new FormData();
     
+    // Handle image data properly
+    let imageBlob;
+    if (postcardData.imageData instanceof Blob) {
+      // If it's already a Blob, use it directly
+      imageBlob = postcardData.imageData;
+    } else if (typeof postcardData.imageData === 'string' && postcardData.imageData.startsWith('data:')) {
+      // If it's a data URL, convert it to a Blob
+      const byteString = atob(postcardData.imageData.split(',')[1]);
+      const mimeString = postcardData.imageData.split(',')[0].split(':')[1].split(';')[0];
+      const ab = new ArrayBuffer(byteString.length);
+      const ia = new Uint8Array(ab);
+      for (let i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
+      }
+      imageBlob = new Blob([ab], { type: mimeString });
+    } else {
+      // If we can't handle the image data, throw an error
+      throw new Error('Invalid image data format');
+    }
+    
     // Add image Blob with correct field name
-    formData.append('image', postcardData.imageData, 'postcard.png');
+    formData.append('image', imageBlob, 'postcard.png');
     
     // Add other data
     formData.append('senderToken', postcardData.senderToken);

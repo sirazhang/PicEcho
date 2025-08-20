@@ -119,17 +119,17 @@ export const generateKimiFeedback = async (conversation, imageDescription, lang 
    - 针对学生描述中表现好的部分，进行具体的表扬。
    - 语言要温暖、积极，至少包含一个正向表情符号。
 
-2. **错误总结**
+2. **错误总结带表情符号**
    - 包括语法/词汇错误，以及与图片内容不符的描述。
-   - 错误部分请用下划线标记：\`_错误的文本_\`
-   - 然后紧接着给出正确版本，格式为：
+   - 错误部分请用下划线和双引号标记：\`_错误的文本_\`
+   - 然后紧接着给出正确版本粗体，格式为：
      \`_错误的句子_ → 正确的句子\`
 
 3. **改进建议**
    - 针对表达和逻辑组织给出改进意见。
    - 至少提供 2 个自然流畅的替代表达。
    - 可以补充学生在图片描述中遗漏的细节。
-   - 使用清晰的项目符号列出。
+   - 使用清晰的项目符号和数字列出。
 
 **格式要求：**
 - 必须保留章节编号（1, 2, 3）。
@@ -154,15 +154,15 @@ Provide feedback in three sections:
 
 2. Error Summary with Emoji
    - Cover grammar/vocabulary errors as well as descriptions inconsistent with the image.
-   - Mark errors with underscores: \`_incorrect text_\`
+   - Mark errors with underscores and double quotation marks: \`_incorrect text_\`
    - Immediately after, provide the corrected version with bold text in this format:
-     \`_incorrect sentence_ → Correct sentence\`
+     \`❌_incorrect sentence_ → ✅Correct sentence\`
 
-3. Improvement Suggestions
+3. Improvement Suggestions with Emoji
    - Give at least 2 natural and fluent alternative expressions.
    - Suggest ways to add more descriptive details about the image.
    - Provide ideas for improving logical flow and clarity.
-   - Use clear bullet points.
+   - Use clear bullet points and Number.
 
 Formatting Rules:
 - Keep the section numbers (1, 2, 3).

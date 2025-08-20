@@ -59,8 +59,15 @@ const WorldMapReview = ({ onBack, onViewPostcard, onShow }) => {
   });
 
   const handleLocationClick = (location) => {
-    setSelectedPostcard(location.postcard);
-    setShowModal(true);
+    // Add a check to ensure location and location.postcard are not null
+    if (location && location.postcard) {
+      setSelectedPostcard(location.postcard);
+      setShowModal(true);
+    } else {
+      // Handle case where postcard data is missing
+      console.warn('Postcard data is missing for location:', location);
+      alert('Postcard data is not available.');
+    }
   };
 
   const closeModal = () => {
@@ -240,8 +247,26 @@ const WorldMapReview = ({ onBack, onViewPostcard, onShow }) => {
               
               <div className="flex flex-col items-center">
                 {(() => {
+                  // Add safety check for selectedPostcard
+                  if (!selectedPostcard) {
+                    // Fallback to sample images when no postcard data is available
+                    const sampleImages = [
+                      '/sample/sample_01.png',
+                      '/sample/sample_02.png'
+                    ];
+                    const randomImage = sampleImages[Math.floor(Math.random() * sampleImages.length)];
+                    return (
+                      <img 
+                        src={randomImage} 
+                        alt="Sample postcard" 
+                        className="max-w-full h-auto border border-gray-300 rounded-lg mb-4"
+                      />
+                    );
+                  }
+                  
+                  // Check if we have imageData (Blob) from the saved postcard
                   if (selectedPostcard.imageData) {
-                    // Check if imageData is a data URL or needs to be converted from Blob
+                    // Handle Blob data
                     if (typeof selectedPostcard.imageData === 'string' && selectedPostcard.imageData.startsWith('data:')) {
                       // It's already a data URL
                       return (
@@ -269,17 +294,62 @@ const WorldMapReview = ({ onBack, onViewPostcard, onShow }) => {
                   } else if (selectedPostcard.image_path) {
                     return (
                       <img 
-                        src={`/static/${selectedPostcard.image_path}`} 
-                        alt="Received postcard" 
+                        src={selectedPostcard.image_path} 
+                        alt="Saved postcard" 
                         className="max-w-full h-auto border border-gray-300 rounded-lg mb-4"
+                        onError={(e) => {
+                          // Fallback to sample image if the specified image fails to load
+                          const sampleImages = [
+                            '/sample/sample_01.png',
+                            '/sample/sample_02.png'
+                          ];
+                          const randomImage = sampleImages[Math.floor(Math.random() * sampleImages.length)];
+                          e.target.src = randomImage;
+                        }}
+                      />
+                    );
+                  } else if (selectedPostcard.imageId && selectedPostcard.level) {
+                    // Generate image path from imageId and level
+                    const imagePath = `/Level${selectedPostcard.level}/${selectedPostcard.imageId}.png`;
+                    return (
+                      <img 
+                        src={imagePath} 
+                        alt="Saved postcard" 
+                        className="max-w-full h-auto border border-gray-300 rounded-lg mb-4"
+                        onError={(e) => {
+                          // Fallback to sample image if the specified image fails to load
+                          const sampleImages = [
+                            '/sample/sample_01.png',
+                            '/sample/sample_02.png'
+                          ];
+                          const randomImage = sampleImages[Math.floor(Math.random() * sampleImages.length)];
+                          e.target.src = randomImage;
+                        }}
                       />
                     );
                   } else {
-                    return <div className="text-gray-500">No image available</div>;
+                    // Fallback to sample images when no image is available
+                    const sampleImages = [
+                      '/sample/sample_01.png',
+                      '/sample/sample_02.png'
+                    ];
+                    const randomImage = sampleImages[Math.floor(Math.random() * sampleImages.length)];
+                    return (
+                      <img 
+                        src={randomImage} 
+                        alt="Sample postcard" 
+                        className="max-w-full h-auto border border-gray-300 rounded-lg mb-4"
+                      />
+                    );
                   }
                 })()}
-                <p className="text-gray-600 text-center">{new Date(selectedPostcard.timestamp).toLocaleString()}</p>
+                <p className="text-gray-600 text-center">
+                  {selectedPostcard && selectedPostcard.timestamp ? 
+                    new Date(selectedPostcard.timestamp).toLocaleString() : 
+                    new Date().toLocaleString()}
+                </p>
               </div>
+
             </div>
           </div>
         </div>
@@ -304,79 +374,87 @@ const WorldMapReview = ({ onBack, onViewPostcard, onShow }) => {
               
               <div className="flex flex-col items-center">
                 {(() => {
-                  // Handle both stringified and object feedback
-                  let feedbackText = selectedPostcard.feedback_text || selectedPostcard.feedback;
-                  if (typeof feedbackText === 'string') {
-                    try {
-                      feedbackText = JSON.parse(feedbackText);
-                    } catch (e) {
-                      // If parsing fails, keep as string
+                  // Handle image display for received postcards
+                  if (receivedPostcard.imageData) {
+                    // Check if imageData is a data URL or needs to be converted from Blob
+                    if (typeof receivedPostcard.imageData === 'string' && receivedPostcard.imageData.startsWith('data:')) {
+                      // It's already a data URL
+                      return (
+                        <img 
+                          src={receivedPostcard.imageData} 
+                          alt="Received postcard" 
+                          className="max-w-full h-auto border border-gray-300 rounded-lg mb-4"
+                        />
+                      );
+                    } else {
+                      // It's a Blob, convert it to URL
+                      const imageUrl = URL.createObjectURL(receivedPostcard.imageData);
+                      return (
+                        <img 
+                          src={imageUrl} 
+                          alt="Received postcard" 
+                          className="max-w-full h-auto border border-gray-300 rounded-lg mb-4"
+                          onLoad={(e) => {
+                            // Revoke the object URL after the image has loaded to free memory
+                            URL.revokeObjectURL(e.target.src);
+                          }}
+                        />
+                      );
                     }
-                  }
-                  
-                  // Handle image display for saved postcards
-                  if (selectedPostcard.imagePath) {
+                  } else if (receivedPostcard.image_path) {
                     return (
                       <img 
-                        src={selectedPostcard.imagePath} 
-                        alt="Saved postcard" 
+                        src={receivedPostcard.image_path} 
+                        alt="Received postcard" 
                         className="max-w-full h-auto border border-gray-300 rounded-lg mb-4"
+                        onError={(e) => {
+                          // Fallback to sample image if the specified image fails to load
+                          const sampleImages = [
+                            '/sample/sample_01.png',
+                            '/sample/sample_02.png'
+                          ];
+                          const randomImage = sampleImages[Math.floor(Math.random() * sampleImages.length)];
+                          e.target.src = randomImage;
+                        }}
                       />
                     );
-                  } else if (selectedPostcard.image_path) {
+                  } else if (receivedPostcard.postcard_url) {
                     return (
                       <img 
-                        src={selectedPostcard.image_path} 
-                        alt="Saved postcard" 
+                        src={receivedPostcard.postcard_url} 
+                        alt="Received postcard" 
                         className="max-w-full h-auto border border-gray-300 rounded-lg mb-4"
-                      />
-                    );
-                  } else if (selectedPostcard.imageId && selectedPostcard.level) {
-                    // Generate image path from imageId and level
-                    const imagePath = `/Level${selectedPostcard.level}/${selectedPostcard.imageId}.png`;
-                    return (
-                      <img 
-                        src={imagePath} 
-                        alt="Saved postcard" 
-                        className="max-w-full h-auto border border-gray-300 rounded-lg mb-4"
+                        onError={(e) => {
+                          // Fallback to sample image if the specified image fails to load
+                          const sampleImages = [
+                            '/sample/sample_01.png',
+                            '/sample/sample_02.png'
+                          ];
+                          const randomImage = sampleImages[Math.floor(Math.random() * sampleImages.length)];
+                          e.target.src = randomImage;
+                        }}
                       />
                     );
                   } else {
-                    return <div className="text-gray-500">No image available</div>;
+                    // Fallback to sample images when no image is available
+                    const sampleImages = [
+                      '/sample/sample_01.png',
+                      '/sample/sample_02.png'
+                    ];
+                    const randomImage = sampleImages[Math.floor(Math.random() * sampleImages.length)];
+                    return (
+                      <img 
+                        src={randomImage} 
+                        alt="Sample postcard" 
+                        className="max-w-full h-auto border border-gray-300 rounded-lg mb-4"
+                      />
+                    );
                   }
                 })()}
-                <div className="w-full max-w-md">
-                  <h4 className="font-bold mb-2">Feedback:</h4>
-                  <div className="bg-gray-100 p-3 rounded">
-                    {(() => {
-                      if (typeof feedbackText === 'object' && feedbackText !== null) {
-                        return (
-                          <div>
-                            <div className="mb-2">
-                              <strong>Encouraging Remarks:</strong>
-                              <div className="ml-2">{feedbackText.encouragingRemarks}</div>
-                            </div>
-                            <div className="mb-2">
-                              <strong>Error Summary:</strong>
-                              <div className="ml-2">{feedbackText.errorSummary}</div>
-                            </div>
-                            <div className="mb-2">
-                              <strong>Suggestions:</strong>
-                              <div className="ml-2">{feedbackText.suggestions}</div>
-                            </div>
-                          </div>
-                        );
-                      } else {
-                        return <div>{feedbackText || "No feedback available"}</div>;
-                      }
-                    })()}
-                  </div>
-                </div>
                 <p className="text-gray-600 text-center mt-2">
-                  Saved: {new Date(selectedPostcard.timestamp).toLocaleString()}
+                  Received: {new Date(receivedPostcard.created_at || receivedPostcard.timestamp).toLocaleString()}
                 </p>
               </div>
-
             </div>
           </div>
         </div>

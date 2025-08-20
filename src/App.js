@@ -151,19 +151,17 @@ function App() {
     // In a real app, you would send this to a backend
     console.log('Saving postcard:', postcardData);
     
-    // Save to localStorage for demo purposes - but only metadata, not the full image
+    // Save to localStorage for demo purposes - store the data URL
     const savedPostcards = JSON.parse(localStorage.getItem('savedPostcards') || '[]');
     
-    // Create a simplified postcard object with metadata only
+    // Create a simplified postcard object with metadata and image data
     const postcardMetadata = {
       imageId: postcardData.imageId,
       level: postcardData.level,
       feedback: postcardData.feedback,
       timestamp: postcardData.timestamp,
       postalCode: postcardData.postalCode,
-      // Don't store the actual image data to avoid quota issues
-      // Instead, we'll generate a path to the image
-      imagePath: `/Level${postcardData.level}/${postcardData.imageId}.png`
+      imageData: postcardData.imageData // Include the image data URL
     };
     
     savedPostcards.push(postcardMetadata);

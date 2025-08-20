@@ -74,7 +74,7 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
   // Handle save postcard button click
   const handleSavePostcard = async () => {
     try {
-      setIsSaving(true);
+      setIsSaving(true); // 设置保存状态
       setSaveMessage('');
       
       // Generate the postcard image as a Blob
@@ -84,8 +84,8 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
       const postcardData = {
         imageId: imageId,
         level: level,
-        feedback: localFeedback,
-        imageData: imageBlob,
+        feedback: localFeedback, // Fixed: was incorrectly using postcardData
+        imageData: imageBlob, // Pass the Blob directly
         timestamp: new Date().toISOString(),
         postalCode: postalCode
       };
@@ -93,13 +93,20 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
       // Save to backend
       const savedPostcard = await sendPostcard({
         ...postcardData,
-        senderToken: localStorage.getItem('senderToken') || 
-          'user_' + Math.random().toString(36).substr(2, 9)
+        senderToken: localStorage.getItem('senderToken') || 'user_' + Math.random().toString(36).substr(2, 9)
       });
       
-      // Update postcard data with backend response
+      // Convert Blob to data URL for storage
+      const imageDataUrl = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.readAsDataURL(imageBlob);
+      });
+      
+      // Update postcard data with backend response and data URL for localStorage
       const postcardDataWithId = {
         ...postcardData,
+        imageData: imageDataUrl, // Store as data URL for localStorage
         serverId: savedPostcard.id,
         timestamp: savedPostcard.timestamp || new Date().toISOString()
       };
@@ -107,28 +114,14 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
       // Call onSave callback with complete data
       onSave(postcardDataWithId);
       
-      // Try to save to localStorage with quota protection
-      const savedToStorage = await saveToLocalStorage(
-        `postcard_${savedPostcard.id}`,
-        postcardDataWithId
-      );
-      
       // Update state
       setIsSaved(true);
-      
-      // Set appropriate message based on storage success
-      if (savedToStorage) {
-        setSaveMessage(selectedLanguage === 'zh' ? '明信片已保存！' : 'Postcard saved!');
-      } else {
-        setSaveMessage(selectedLanguage === 'zh' ? 
-          '明信片已保存但未存储（存储空间不足）' : 
-          'Postcard saved but not stored (storage quota exceeded)');
-      }
+      setSaveMessage(selectedLanguage === 'zh' ? '明信片已保存！' : 'Postcard saved!');
       
       // Reset message after 2 seconds
       setTimeout(() => {
         setSaveMessage('');
-      }, 3000);
+      }, 2000);
     } catch (err) {
       console.error('Error saving postcard:', err);
       setSaveMessage(selectedLanguage === 'zh' ? '保存失败，请重试' : 'Failed to save, please try again');
@@ -144,6 +137,13 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
       
       // Generate the postcard image as a Blob
       const imageBlob = await generatePostcardImage();
+      
+      // Convert Blob to data URL for preview
+      const imageDataUrl = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.readAsDataURL(imageBlob);
+      });
       
       // Set preview image and show preview modal
       setPreviewImage(imageBlob);
