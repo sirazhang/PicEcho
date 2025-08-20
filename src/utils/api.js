@@ -57,7 +57,7 @@ export const sendPostcard = async (postcardData) => {
 };
 
 /**
- * Receive a random postcard from the backend
+ * Receive a postcard from another user
  * @param {Object} params - The parameters for the request
  * @returns {Promise<Object>} - The received postcard data
  */
@@ -71,8 +71,8 @@ export const receivePostcard = async (params) => {
       // Return a mock postcard when none are available
       return {
         postcard_id: Math.floor(Math.random() * 10000),
-        image_path: `/Level1/img_01.png`,
-        postcard_url: `/Level1/img_01.png`,
+        image_path: `/sample/sample_01.png`,
+        postcard_url: `/sample/sample_01.png`,
         created_at: new Date().toISOString(),
         status: 'sent',
         sender_token: 'mock-sender',
@@ -87,6 +87,7 @@ export const receivePostcard = async (params) => {
     }
     
     if (!response.ok) {
+      console.error(`Server error: ${response.status} ${response.statusText}`);
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     
@@ -98,8 +99,8 @@ export const receivePostcard = async (params) => {
     // Even if there's an error, return a mock postcard
     return {
       postcard_id: Math.floor(Math.random() * 10000),
-      image_path: `/Level1/img_01.png`,
-      postcard_url: `/Level1/img_01.png`,
+      image_path: `/sample/sample_01.png`,
+      postcard_url: `/sample/sample_01.png`,
       created_at: new Date().toISOString(),
       status: 'sent',
       sender_token: 'mock-sender',

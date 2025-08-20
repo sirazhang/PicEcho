@@ -259,7 +259,7 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview, selectedLanguage, setSel
                 <img 
                   src="/design/earth.png" 
                   alt="Earth" 
-                  className="absolute inset-0 w-full h-full object-contain"
+                  className="absolute inset-0 w-full h-full object-contain earth-animation"
                   style={{ transform: 'translate(-20%, 5%)', zIndex: 10 }}
                 />
               </span>
@@ -284,7 +284,7 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview, selectedLanguage, setSel
           {/* Level Buttons */}
           <div className="flex flex-wrap justify-center gap-8 mt-2">
             <button
-              className="px-8 py-4 rounded-lg font-inter font-bold text-2xl text-white focus:outline-none shadow-lg transform transition duration-300 hover:scale-105"
+              className="px-8 py-4 rounded-lg font-inter font-bold text-2xl text-white focus:outline-none shadow-lg transform transition duration-300 hover:scale-110"
               style={{ backgroundColor: '#7ecc8f' }}
               onClick={() => handleLevelChange(1)}
             >
@@ -292,7 +292,7 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview, selectedLanguage, setSel
             </button>
             
             <button
-              className="px-8 py-4 rounded-lg font-inter font-bold text-2xl text-white focus:outline-none shadow-lg transform transition duration-300 hover:scale-105"
+              className="px-8 py-4 rounded-lg font-inter font-bold text-2xl text-white focus:outline-none shadow-lg transform transition duration-300 hover:scale-110"
               style={{ backgroundColor: '#558e23' }}
               onClick={() => handleLevelChange(2)}
             >
@@ -300,7 +300,7 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview, selectedLanguage, setSel
             </button>
             
             <button
-              className="px-8 py-4 rounded-lg font-inter font-bold text-2xl text-white focus:outline-none shadow-lg transform transition duration-300 hover:scale-105"
+              className="px-8 py-4 rounded-lg font-inter font-bold text-2xl text-white focus:outline-none shadow-lg transform transition duration-300 hover:scale-110"
               style={{ backgroundColor: '#337d2f' }}
               onClick={() => handleLevelChange(3)}
             >
@@ -308,6 +308,22 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview, selectedLanguage, setSel
             </button>
           </div>
         </div>
+        
+        {/* Add global styles for the earth animation */}
+        <style jsx>{`
+          @keyframes rotate {
+            from {
+              transform: translate(-20%, 5%) rotate(0deg);
+            }
+            to {
+              transform: translate(-20%, 5%) rotate(360deg);
+            }
+          }
+          
+          .earth-animation {
+            animation: rotate 20s linear infinite;
+          }
+        `}</style>
       </div>
     </div>
   );

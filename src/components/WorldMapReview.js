@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { receivePostcard } from '../utils/api';
+import { receivePostcard, getImageFromIndexedDB } from '../utils/api';
 
 const WorldMapReview = ({ onBack, onViewPostcard, onShow }) => {
   const [savedPostcards, setSavedPostcards] = useState([]);
@@ -9,6 +9,7 @@ const WorldMapReview = ({ onBack, onViewPostcard, onShow }) => {
   const [receivedPostcard, setReceivedPostcard] = useState(null);
   const [isFetching, setIsFetching] = useState(false);
   const [senderToken, setSenderToken] = useState(''); // Add sender token state
+  const [modalImage, setModalImage] = useState(null); // For handling blob images in modals
 
   const refreshPostcards = () => {
     // Load saved postcards from localStorage
@@ -61,7 +62,15 @@ const WorldMapReview = ({ onBack, onViewPostcard, onShow }) => {
   const handleLocationClick = (location) => {
     // Add a check to ensure location and location.postcard are not null
     if (location && location.postcard) {
-      setSelectedPostcard(location.postcard);
+      // If the postcard contains blob data, ensure it's handled properly
+      const postcard = { ...location.postcard };
+      
+      // If image data is a blob, create an object URL for it
+      if (postcard.imageData instanceof Blob) {
+        postcard.imageDataUrl = URL.createObjectURL(postcard.imageData);
+      }
+      
+      setSelectedPostcard(postcard);
       setShowModal(true);
     } else {
       // Handle case where postcard data is missing
@@ -83,6 +92,12 @@ const WorldMapReview = ({ onBack, onViewPostcard, onShow }) => {
       const response = await receivePostcard({ senderToken });
       
       if (response) {
+        // Handle blob data in response
+        if (response.imageData instanceof Blob) {
+          // Create object URL for blob data
+          response.imageDataUrl = URL.createObjectURL(response.imageData);
+        }
+        
         setReceivedPostcard(response);
         setShowReceivedPostcard(true);
       } else {
@@ -94,8 +109,8 @@ const WorldMapReview = ({ onBack, onViewPostcard, onShow }) => {
       // Even if there's an error, show a mock postcard
       setReceivedPostcard({
         postcard_id: Math.floor(Math.random() * 10000),
-        image_path: `/Level1/img_01.png`,
-        postcard_url: `/Level1/img_01.png`,
+        image_path: `/sample/sample_01.png`,
+        postcard_url: `/sample/sample_01.png`,
         created_at: new Date().toISOString(),
         status: 'sent',
         sender_token: 'mock-sender',
@@ -112,6 +127,59 @@ const WorldMapReview = ({ onBack, onViewPostcard, onShow }) => {
       setIsFetching(false);
     }
   };
+  
+  // Cleanup function for blob URLs
+  useEffect(() => {
+    return () => {
+      if (receivedPostcard?.imageDataUrl) {
+        URL.revokeObjectURL(receivedPostcard.imageDataUrl);
+      }
+    };
+  }, [receivedPostcard]);
+
+  // Load image for selected postcard
+  useEffect(() => {
+    const loadPostcardImage = async () => {
+      if (selectedPostcard && selectedPostcard.id && !selectedPostcard.imageData) {
+        try {
+          // Try to get image from IndexedDB
+          const imageBlob = await getImageFromIndexedDB(selectedPostcard.id);
+          if (imageBlob && (imageBlob instanceof Blob || imageBlob instanceof File)) {
+            setModalImage(URL.createObjectURL(imageBlob));
+          } else {
+            setModalImage(null);
+          }
+        } catch (error) {
+          console.error('Error loading image from IndexedDB:', error);
+          setModalImage(null);
+        }
+      } else if (selectedPostcard && selectedPostcard.imageData) {
+        // If we already have imageData, set it as the modal image
+        if (typeof selectedPostcard.imageData === 'string' && selectedPostcard.imageData.startsWith('data:')) {
+          setModalImage(selectedPostcard.imageData);
+        } else if (selectedPostcard.imageData instanceof Blob || selectedPostcard.imageData instanceof File) {
+          setModalImage(URL.createObjectURL(selectedPostcard.imageData));
+        } else {
+          setModalImage(null);
+        }
+      } else {
+        // Clear the image when no postcard is selected
+        if (modalImage) {
+          URL.revokeObjectURL(modalImage);
+          setModalImage(null);
+        }
+      }
+    };
+
+    loadPostcardImage();
+
+    // Cleanup function to revoke object URL
+    return () => {
+      if (modalImage) {
+        URL.revokeObjectURL(modalImage);
+      }
+    };
+  }, [selectedPostcard, modalImage]);
 
   // Define text content
   const getTextContent = () => {
@@ -288,6 +356,31 @@ const WorldMapReview = ({ onBack, onViewPostcard, onShow }) => {
                             // Revoke the object URL after the image has loaded to free memory
                             URL.revokeObjectURL(e.target.src);
                           }}
+                        />
+                      );
+                    }
+                  } else if (selectedPostcard.id) {
+                    // For IndexedDB images, display the loaded image or a loading indicator
+                    if (modalImage) {
+                      return (
+                        <img 
+                          src={modalImage} 
+                          alt="Saved postcard" 
+                          className="max-w-full h-auto border border-gray-300 rounded-lg mb-4"
+                        />
+                      );
+                    } else {
+                      // Show loading indicator while fetching from IndexedDB or fallback image
+                      const sampleImages = [
+                        '/sample/sample_01.png',
+                        '/sample/sample_02.png'
+                      ];
+                      const randomImage = sampleImages[Math.floor(Math.random() * sampleImages.length)];
+                      return (
+                        <img 
+                          src={randomImage} 
+                          alt="Sample postcard" 
+                          className="max-w-full h-auto border border-gray-300 rounded-lg mb-4"
                         />
                       );
                     }
