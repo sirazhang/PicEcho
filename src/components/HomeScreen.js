@@ -24,6 +24,13 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview, selectedLanguage, setSel
   const [availableImages, setAvailableImages] = useState([]);
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   const [backgroundImage, setBackgroundImage] = useState('/design/background1.png');
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [isLoginMode, setIsLoginMode] = useState(true); // true for login, false for signup
+  const [authForm, setAuthForm] = useState({
+    email: '',
+    nickname: '',
+    password: ''
+  });
 
   // Load saved language preference from localStorage on component mount
   useEffect(() => {
@@ -183,6 +190,48 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview, selectedLanguage, setSel
     setShowLanguageDropdown(false);
   };
 
+  // Handle authentication form input changes
+  const handleAuthInputChange = (e) => {
+    const { name, value } = e.target;
+    setAuthForm(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  // Handle authentication form submission
+  const handleAuthSubmit = (e) => {
+    e.preventDefault();
+    if (isLoginMode) {
+      // Login logic
+      console.log('Login with:', authForm);
+      // 这里应该调用登录API
+      // 为了演示目的，我们直接关闭模态框
+      setShowAuthModal(false);
+      setAuthForm({ email: '', nickname: '', password: '' });
+    } else {
+      // Signup logic
+      console.log('Signup with:', authForm);
+      // 这里应该调用注册API
+      // 为了演示目的，我们直接关闭模态框
+      setShowAuthModal(false);
+      setAuthForm({ email: '', nickname: '', password: '' });
+    }
+  };
+
+  // Handle guest mode (直接开始体验)
+  const handleGuestMode = () => {
+    // 直接开始对话，无需登录
+    const randomImage = getRandomImage();
+    onStartDialogue(randomImage, selectedLanguage, selectedLevel);
+  };
+
+  // Switch between login and signup modes
+  const toggleAuthMode = () => {
+    setIsLoginMode(!isLoginMode);
+    setAuthForm({ email: '', nickname: '', password: '' });
+  };
+
   return (
     <div 
       className="min-h-screen flex flex-col relative"
@@ -196,8 +245,22 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview, selectedLanguage, setSel
       }}
     >
       <div className="absolute inset-0 flex flex-col items-center justify-center pt-0">
-        {/* Language Selector at top left */}
+        {/* 登录/注册按钮在左上角 */}
         <div className="absolute top-6 left-6">
+          <button
+            onClick={() => setShowAuthModal(true)}
+            className="px-4 py-2 bg-white rounded-lg font-inter font-bold text-base focus:outline-none flex items-center shadow-lg"
+            style={{ 
+              border: '2px solid #003153',
+              color: '#003153'
+            }}
+          >
+            {selectedLanguage === 'zh' ? '注册/登录' : 'Sign Up / Login'}
+          </button>
+        </div>
+
+        {/* Language Selector at top right */}
+        <div className="absolute top-6 right-6">
           <div className="relative">
             <button
               onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
@@ -232,20 +295,6 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview, selectedLanguage, setSel
               </div>
             )}
           </div>
-        </div>
-
-        {/* View Map button at top right */}
-        <div className="absolute top-6 right-6">
-          <button
-            onClick={onOpenMapReview}
-            className="px-4 py-2 rounded-lg font-inter font-bold text-base focus:outline-none flex items-center justify-center shadow-lg"
-            style={{ 
-              backgroundColor: '#3fbdc7',
-              color: 'white'
-            }}
-          >
-            {selectedLanguage === 'zh' ? '查看地图' : 'View Map'}
-          </button>
         </div>
 
         {/* Main Content */}
@@ -308,6 +357,176 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview, selectedLanguage, setSel
             </button>
           </div>
         </div>
+        
+        {/* View Map and Language Selector in top right corner */}
+        <div className="absolute top-6 right-6 flex space-x-2">
+          {/* View Map button */}
+          <div className="mr-2">
+            <button
+              onClick={onOpenMapReview}
+              className="px-4 py-2 rounded-lg font-inter font-bold text-base focus:outline-none flex items-center justify-center shadow-lg"
+              style={{ 
+                backgroundColor: '#3fbdc7',
+                color: 'white'
+              }}
+            >
+              {selectedLanguage === 'zh' ? '查看地图' : 'View Map'}
+            </button>
+          </div>
+          
+          {/* Language Selector */}
+          <div className="relative">
+            <button
+              onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
+              className="px-4 py-2 bg-white rounded-lg font-inter font-bold text-base focus:outline-none flex items-center shadow-lg"
+              style={{ 
+                border: '2px solid #003153',
+                color: '#003153'
+              }}
+            >
+              🌐
+              <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+              </svg>
+            </button>
+            
+            {showLanguageDropdown && (
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10" style={{ border: '2px solid #003153' }}>
+                <button
+                  onClick={() => handleLanguageChange('en')}
+                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                >
+                  <span className="mr-2">🇺🇸</span>
+                  English
+                </button>
+                <button
+                  onClick={() => handleLanguageChange('zh')}
+                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                >
+                  <span className="mr-2">🇨🇳</span>
+                  中文
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+        </div>
+        
+        {/* Authentication Modal */}
+        {showAuthModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-8 w-full max-w-md">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-800">
+                  {isLoginMode 
+                    ? (selectedLanguage === 'zh' ? '用户登录' : 'User Login') 
+                    : (selectedLanguage === 'zh' ? '用户注册' : 'User Signup')}
+                </h2>
+                <button 
+                  onClick={() => setShowAuthModal(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                  </svg>
+                </button>
+              </div>
+              
+              <form onSubmit={handleAuthSubmit}>
+                <div className="mb-4">
+                  <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="email">
+                    {selectedLanguage === 'zh' ? '邮箱' : 'Email'}
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    value={authForm.email}
+                    onChange={handleAuthInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                </div>
+                
+                {!isLoginMode && (
+                  <div className="mb-4">
+                    <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="nickname">
+                      {selectedLanguage === 'zh' ? '昵称' : 'Nickname'}
+                    </label>
+                    <input
+                      type="text"
+                      id="nickname"
+                      name="nickname"
+                      value={authForm.nickname}
+                      onChange={handleAuthInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required={!isLoginMode}
+                    />
+                  </div>
+                )}
+                
+                <div className="mb-6">
+                  <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="password">
+                    {selectedLanguage === 'zh' ? '密码' : 'Password'}
+                  </label>
+                  <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    value={authForm.password}
+                    onChange={handleAuthInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between mb-6">
+                  <button
+                    type="submit"
+                    className="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                  >
+                    {isLoginMode 
+                      ? (selectedLanguage === 'zh' ? '登录' : 'Login') 
+                      : (selectedLanguage === 'zh' ? '注册' : 'Sign Up')}
+                  </button>
+                </div>
+                
+                {/* Third-party login options */}
+                <div className="mb-4">
+                  <p className="text-center text-gray-600 mb-2">
+                    {selectedLanguage === 'zh' ? '或使用第三方登录' : 'Or login with'}
+                  </p>
+                  <div className="flex justify-center space-x-4">
+                    <button
+                      type="button"
+                      className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded"
+                    >
+                      Google
+                    </button>
+                    <button
+                      type="button"
+                      className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                    >
+                      Facebook
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="text-center">
+                  <button
+                    type="button"
+                    onClick={toggleAuthMode}
+                    className="text-blue-500 hover:text-blue-700"
+                  >
+                    {isLoginMode 
+                      ? (selectedLanguage === 'zh' ? '没有账户？注册' : 'No account? Sign Up') 
+                      : (selectedLanguage === 'zh' ? '已有账户？登录' : 'Have an account? Login')}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
         
         {/* Add global styles for the earth animation */}
         <style jsx>{`

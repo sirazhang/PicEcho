@@ -20,6 +20,7 @@ function App() {
   const [selectedPostcard, setSelectedPostcard] = useState(null);
   const [currentImageId, setCurrentImageId] = useState(null);
   const [currentLevel, setCurrentLevel] = useState(null);
+  const [isTransitioning, setIsTransitioning] = useState(false); // 添加过渡状态
 
   // Load saved state from localStorage on component mount
   useEffect(() => {
@@ -60,6 +61,9 @@ function App() {
   }, []);
 
   const handleStartDialogue = (imageId, language, level) => {
+    // 添加过渡效果
+    setIsTransitioning(true);
+    
     // Save selections to localStorage
     if (imageId) {
       setSelectedImage(imageId);
@@ -79,15 +83,19 @@ function App() {
     // Update URL hash with imageId, language, and level
     window.location.hash = `#/dialogue/${imageId}/${language || 'en'}/${level || 1}`;
     
-    setCurrentScreen('dialogue');
-    
-    if (currentImageId !== imageId) {
-      setCurrentImageId(imageId);
-    }
-    
-    if (currentLevel !== (level || 1)) {
-      setCurrentLevel(level || 1);
-    }
+    // 延迟设置当前屏幕以允许过渡动画完成
+    setTimeout(() => {
+      setCurrentScreen('dialogue');
+      setIsTransitioning(false);
+      
+      if (currentImageId !== imageId) {
+        setCurrentImageId(imageId);
+      }
+      
+      if (currentLevel !== (level || 1)) {
+        setCurrentLevel(level || 1);
+      }
+    }, 300);
   };
 
   // Handle finishing a dialogue
@@ -146,9 +154,13 @@ function App() {
 
 
   const handleCancelDialogue = () => {
-    setCurrentScreen('home');
-    setConversationHistory([]);
-    setSelectedImage('');
+    setIsTransitioning(true);
+    setTimeout(() => {
+      setCurrentScreen('home');
+      setConversationHistory([]);
+      setSelectedImage('');
+      setIsTransitioning(false);
+    }, 300);
   };
 
   const handleSavePostcard = async (postcardData) => {
@@ -257,31 +269,51 @@ function App() {
   };
 
   const handleViewMap = () => {
-    setCurrentScreen('map');
-    window.location.hash = '#/map';
+    setIsTransitioning(true);
+    setTimeout(() => {
+      setCurrentScreen('map');
+      window.location.hash = '#/map';
+      setIsTransitioning(false);
+    }, 300);
   };
 
   const handleViewPostOffice = () => {
-    setCurrentScreen('postoffice');
-    window.location.hash = '#/postoffice';
+    setIsTransitioning(true);
+    setTimeout(() => {
+      setCurrentScreen('postoffice');
+      window.location.hash = '#/postoffice';
+      setIsTransitioning(false);
+    }, 300);
   };
 
   const handleViewPostcard = (postcard) => {
-    setSelectedPostcard(postcard);
-    setCurrentScreen('review');
+    setIsTransitioning(true);
+    setTimeout(() => {
+      setSelectedPostcard(postcard);
+      setCurrentScreen('review');
+      setIsTransitioning(false);
+    }, 300);
   };
 
   const handleBackToMap = () => {
-    setCurrentScreen('map');
-    window.location.hash = '#/map';
+    setIsTransitioning(true);
+    setTimeout(() => {
+      setCurrentScreen('map');
+      window.location.hash = '#/map';
+      setIsTransitioning(false);
+    }, 300);
   };
 
   const handleBackToHome = () => {
-    setCurrentScreen('home');
-    setFeedback(null);
-    setConversationHistory([]);
-    setSelectedImage('');
-    window.location.hash = '';
+    setIsTransitioning(true);
+    setTimeout(() => {
+      setCurrentScreen('home');
+      setFeedback(null);
+      setConversationHistory([]);
+      setSelectedImage('');
+      window.location.hash = '';
+      setIsTransitioning(false);
+    }, 300);
   };
 
   // Handle next picture button click
@@ -357,75 +389,88 @@ function App() {
 
   return (
     <div className="App">
-      {currentScreen === 'home' && (
-        <HomeScreen 
-          onStartDialogue={handleStartDialogue}
-          onOpenMapReview={handleViewMap}
-          selectedLanguage={selectedLanguage}
-          setSelectedLanguage={setSelectedLanguage}
-        />
-      )}
-
-      {currentScreen === 'dialogue' && (
-        <DialogueMode 
-          imageId={currentImageId || selectedImage}
-          language={selectedLanguage}
-          level={currentLevel || selectedLevel}
-          onConversationComplete={handleFinishDialogue}
-          onCancel={handleCancelDialogue}
-        />
-      )}
-
-      {currentScreen === 'review' && (
-        selectedPostcard ? (
-          <ReviewPostcard
-            imageId={selectedPostcard.imageId}
-            conversationHistory={selectedPostcard.conversationHistory}
-            feedback={selectedPostcard.feedback}
-            onSave={handleSavePostcard}
-            onBack={handleBackToMap}
-            onNextPicture={handleNextPicture}
-            level={selectedPostcard.level}
+      <div className={`transition-container ${isTransitioning ? 'transitioning' : ''}`}>
+        {currentScreen === 'home' && (
+          <HomeScreen 
+            onStartDialogue={handleStartDialogue}
+            onOpenMapReview={handleViewMap}
             selectedLanguage={selectedLanguage}
-            isLoading={isLoading}
-            error={error}
+            setSelectedLanguage={setSelectedLanguage}
           />
-        ) : (
-          <ReviewPostcard
+        )}
+
+        {currentScreen === 'dialogue' && (
+          <DialogueMode 
             imageId={currentImageId || selectedImage}
-            conversationHistory={feedback?.conversationHistory || []}
-            feedback={feedback}
-            onSave={handleSavePostcard}
-            onBack={handleBackToHome}
-            onNextPicture={handleNextPicture}
+            language={selectedLanguage}
             level={currentLevel || selectedLevel}
-            selectedLanguage={selectedLanguage}
-            isLoading={isLoading}
-            error={error}
+            onConversationComplete={handleFinishDialogue}
+            onCancel={handleCancelDialogue}
+          />
+        )}
+
+        {currentScreen === 'review' && (
+          selectedPostcard ? (
+            <ReviewPostcard
+              imageId={selectedPostcard.imageId}
+              conversationHistory={selectedPostcard.conversationHistory}
+              feedback={selectedPostcard.feedback}
+              onSave={handleSavePostcard}
+              onBack={handleBackToMap}
+              onNextPicture={handleNextPicture}
+              level={selectedPostcard.level}
+              selectedLanguage={selectedLanguage}
+              isLoading={isLoading}
+              error={error}
+            />
+          ) : (
+            <ReviewPostcard
+              imageId={currentImageId || selectedImage}
+              conversationHistory={feedback?.conversationHistory || []}
+              feedback={feedback}
+              onSave={handleSavePostcard}
+              onBack={handleBackToHome}
+              onNextPicture={handleNextPicture}
+              level={currentLevel || selectedLevel}
+              selectedLanguage={selectedLanguage}
+              isLoading={isLoading}
+              error={error}
+              onOpenPostOffice={handleViewPostOffice}
+            />
+          )
+        )}
+
+        {currentScreen === 'loading' && (
+          <LoadingScreen />
+        )}
+
+        {currentScreen === 'map' && (
+          <WorldMapReview 
+            onViewPostcard={handleViewPostcard}
+            onBack={handleBackToHome}
+            refreshData={refreshMapData}
             onOpenPostOffice={handleViewPostOffice}
           />
-        )
-      )}
+        )}
 
-      {currentScreen === 'loading' && (
-        <LoadingScreen />
-      )}
-
-      {currentScreen === 'map' && (
-        <WorldMapReview 
-          onViewPostcard={handleViewPostcard}
-          onBack={handleBackToHome}
-          refreshData={refreshMapData}
-          onOpenPostOffice={handleViewPostOffice}
-        />
-      )}
-
-      {currentScreen === 'postoffice' && (
-        <PostOffice 
-          onBack={handleBackToHome}
-          onViewPostcard={handleViewPostcard}
-        />
-      )}
+        {currentScreen === 'postoffice' && (
+          <PostOffice 
+            onBack={handleBackToHome}
+            onViewPostcard={handleViewPostcard}
+          />
+        )}
+      </div>
+      
+      <style jsx>{`
+        .transition-container {
+          transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+        }
+        
+        .transition-container.transitioning {
+          opacity: 0;
+          transform: scale(0.95);
+        }
+      `}</style>
     </div>
   );
 }
