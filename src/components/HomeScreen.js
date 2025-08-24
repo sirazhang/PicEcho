@@ -425,115 +425,234 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview, selectedLanguage, setSel
         {/* Authentication Modal */}
         {showAuthModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-8 w-full max-w-md">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-800">
-                  {isLoginMode 
-                    ? (selectedLanguage === 'zh' ? '用户登录' : 'User Login') 
-                    : (selectedLanguage === 'zh' ? '用户注册' : 'User Signup')}
-                </h2>
-                <button 
-                  onClick={() => setShowAuthModal(false)}
-                  className="text-gray-500 hover:text-gray-700"
+            <div className="bg-white rounded-lg shadow-2xl w-full max-w-4xl flex overflow-hidden">
+              {/* Left side with landscape and robots */}
+              <div className="hidden md:flex flex-col w-1/2 bg-gray-100 relative">
+                {/* Hill background image */}
+                <div 
+                  className="absolute inset-0 bg-cover bg-center"
+                  style={{ backgroundImage: "url('/design/hill.png')" }}
+                ></div>
+                
+                {/* Robot 1 - center mountain top rotated -22 degrees, sliding to bottom right */}
+                <motion.div 
+                  className="absolute"
+                  style={{ 
+                    top: '20%', 
+                    left: '40%', 
+                    transform: 'translate(-50%, -50%) rotate(-22deg)',
+                    width: '80px',
+                    height: '80px'
+                  }}
+                  animate={{ 
+                    x: ['60%', '0%'], 
+                    y: ['0%', '60%'] 
+                  }}
+                  transition={{ 
+                    duration: 2,
+                    ease: "easeInOut",
+                    repeat: Infinity,   // 循环动画
+                    repeatType: 'loop', // 无限循环
+                  }}
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
-                  </svg>
-                </button>
+                  <img 
+                    src="/design/bot1.png" 
+                    alt="Robot 1" 
+                    className="w-full h-full object-contain"
+                  />
+                </motion.div>
+                
+                {/* Robot 2 - right mountain top rotated -18 degrees, sliding after bot1 */}
+                <motion.div 
+                  className="absolute"
+                  style={{ 
+                    top: '20%', 
+                    right: '4%', 
+                    transform: 'rotate(-18deg)',
+                    width: '70px',
+                    height: '70px'
+                  }}
+                  animate={{ 
+                    x: ['96%', '0%'], 
+                    y: ['0%', '40%'] 
+                  }}
+                  transition={{ 
+                    duration: 3,
+                    delay: 3,
+                    ease: "easeInOut",
+                    repeat: Infinity,   // 循环动画
+                    repeatType: 'loop', // 无限循环
+                  }}
+                >
+                  <img 
+                    src="/design/bot2.png" 
+                    alt="Robot 2" 
+                    className="w-full h-full object-contain"
+                  />
+                </motion.div>
+                
+                {/* Robot 3 - right hot spring pool, floating effect */}
+                <motion.div 
+                  className="absolute"
+                  style={{ 
+                    bottom: '26%', 
+                    right: '2%',
+                    width: '90px',
+                    height: '90px'
+                  }}
+                  animate={{ 
+                    y: [0, -10, 0] 
+                  }}
+                  transition={{ 
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  }}
+                >
+                  <img 
+                    src="/design/bot3.png" 
+                    alt="Robot 3" 
+                    className="w-full h-full object-contain"
+                  />
+                </motion.div>
+                
+                {/* Robot 4 - bottom left, breathing effect */}
+                <motion.div 
+                  className="absolute"
+                  style={{ 
+                    bottom: '10%', 
+                    left: '30%',
+                    width: '75px',
+                    height: '75px'
+                  }}
+                  animate={{ 
+                    scale: [1, 1.05, 1] 
+                  }}
+                  transition={{ 
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  }}
+                >
+                  <img 
+                    src="/design/bot4.png" 
+                    alt="Robot 4" 
+                    className="w-full h-full object-contain"
+                  />
+                </motion.div>
               </div>
               
-              <form onSubmit={handleAuthSubmit}>
-                <div className="mb-4">
-                  <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="email">
-                    {selectedLanguage === 'zh' ? '邮箱' : 'Email'}
-                  </label>
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    value={authForm.email}
-                    onChange={handleAuthInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
+              {/* Right side with form */}
+              <div className="w-full md:w-1/2 p-8">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-2xl font-bold text-gray-800">
+                    {isLoginMode 
+                      ? (selectedLanguage === 'zh' ? '用户登录' : 'User Login') 
+                      : (selectedLanguage === 'zh' ? '用户注册' : 'User Signup')}
+                  </h2>
+                  <button 
+                    onClick={() => setShowAuthModal(false)}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                  </button>
                 </div>
                 
-                {!isLoginMode && (
+                <form onSubmit={handleAuthSubmit}>
                   <div className="mb-4">
-                    <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="nickname">
-                      {selectedLanguage === 'zh' ? '昵称' : 'Nickname'}
+                    <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="email">
+                      {selectedLanguage === 'zh' ? '邮箱' : 'Email'}
                     </label>
                     <input
-                      type="text"
-                      id="nickname"
-                      name="nickname"
-                      value={authForm.nickname}
+                      type="email"
+                      id="email"
+                      name="email"
+                      value={authForm.email}
                       onChange={handleAuthInputChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required={!isLoginMode}
+                      required
                     />
                   </div>
-                )}
-                
-                <div className="mb-6">
-                  <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="password">
-                    {selectedLanguage === 'zh' ? '密码' : 'Password'}
-                  </label>
-                  <input
-                    type="password"
-                    id="password"
-                    name="password"
-                    value={authForm.password}
-                    onChange={handleAuthInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between mb-6">
-                  <button
-                    type="submit"
-                    className="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-                  >
-                    {isLoginMode 
-                      ? (selectedLanguage === 'zh' ? '登录' : 'Login') 
-                      : (selectedLanguage === 'zh' ? '注册' : 'Sign Up')}
-                  </button>
-                </div>
-                
-                {/* Third-party login options */}
-                <div className="mb-4">
-                  <p className="text-center text-gray-600 mb-2">
-                    {selectedLanguage === 'zh' ? '或使用第三方登录' : 'Or login with'}
-                  </p>
-                  <div className="flex justify-center space-x-4">
+                  
+                  {!isLoginMode && (
+                    <div className="mb-4">
+                      <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="nickname">
+                        {selectedLanguage === 'zh' ? '昵称' : 'Nickname'}
+                      </label>
+                      <input
+                        type="text"
+                        id="nickname"
+                        name="nickname"
+                        value={authForm.nickname}
+                        onChange={handleAuthInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required={!isLoginMode}
+                      />
+                    </div>
+                  )}
+                  
+                  <div className="mb-6">
+                    <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="password">
+                      {selectedLanguage === 'zh' ? '密码' : 'Password'}
+                    </label>
+                    <input
+                      type="password"
+                      id="password"
+                      name="password"
+                      value={authForm.password}
+                      onChange={handleAuthInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between mb-6">
                     <button
-                      type="button"
-                      className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded"
+                      type="submit"
+                      className="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
                     >
-                      Google
-                    </button>
-                    <button
-                      type="button"
-                      className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-                    >
-                      Facebook
+                      {isLoginMode 
+                        ? (selectedLanguage === 'zh' ? '登录' : 'Login') 
+                        : (selectedLanguage === 'zh' ? '注册' : 'Sign Up')}
                     </button>
                   </div>
-                </div>
-                
-                <div className="text-center">
-                  <button
-                    type="button"
-                    onClick={toggleAuthMode}
-                    className="text-blue-500 hover:text-blue-700"
-                  >
-                    {isLoginMode 
-                      ? (selectedLanguage === 'zh' ? '没有账户？注册' : 'No account? Sign Up') 
-                      : (selectedLanguage === 'zh' ? '已有账户？登录' : 'Have an account? Login')}
-                  </button>
-                </div>
-              </form>
+                  
+                  {/* Third-party login options */}
+                  <div className="mb-4">
+                    <p className="text-center text-gray-600 mb-2">
+                      {selectedLanguage === 'zh' ? '或使用第三方登录' : 'Or login with'}
+                    </p>
+                    <div className="flex justify-center space-x-4">
+                      <button
+                        type="button"
+                        className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded"
+                      >
+                        Google
+                      </button>
+                      <button
+                        type="button"
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                      >
+                        Facebook
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div className="text-center">
+                    <button
+                      type="button"
+                      onClick={toggleAuthMode}
+                      className="text-blue-500 hover:text-blue-700"
+                    >
+                      {isLoginMode 
+                        ? (selectedLanguage === 'zh' ? '没有账户？注册' : 'No account? Sign Up') 
+                        : (selectedLanguage === 'zh' ? '已有账户？登录' : 'Have an account? Login')}
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
           </div>
         )}
