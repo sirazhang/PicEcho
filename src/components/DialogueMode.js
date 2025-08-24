@@ -24,11 +24,52 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
   const [imageLoading, setImageLoading] = useState(true); // For image loading state
   const [imageError, setImageError] = useState(false); // For image error state
   const [currentImageSrc, setCurrentImageSrc] = useState(''); // For current image source
-  
+  const [currentUser, setCurrentUser] = useState(null); // For current user info
+  const [chatbotInfo, setChatbotInfo] = useState({
+    image: '/design/chatbot/chatbot4.png',
+    name: language === 'zh' ? '呼呼 (Huhu)' : 'Huhu'
+  }); // For chatbot info
+
   const recognitionRef = useRef(null);
   const textareaRef = useRef(null);
   const isInitialized = useRef(false); // 用于标记是否已初始化
   const synthRef = useRef(window.speechSynthesis); // For text-to-speech
+
+  // Load user info from localStorage
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem('currentUser') || 'null');
+    setCurrentUser(user);
+    
+    // Set chatbot info based on user selection
+    if (user && user.chatbot) {
+      const chatbots = {
+        'chatbot1': { 
+          image: '/design/chatbot/chatbot1.png', 
+          name: language === 'zh' ? '皮皮 (Pipi)' : 'Pipi' 
+        },
+        'chatbot2': { 
+          image: '/design/chatbot/chatbot2.png', 
+          name: language === 'zh' ? '伊伊 (Yiyi)' : 'Yiyi' 
+        },
+        'chatbot3': { 
+          image: '/design/chatbot/chatbot3.png', 
+          name: language === 'zh' ? '可可 (Keke)' : 'Keke' 
+        },
+        'chatbot4': { 
+          image: '/design/chatbot/chatbot4.png', 
+          name: language === 'zh' ? '呼呼 (Huhu)' : 'Huhu' 
+        }
+      };
+      
+      setChatbotInfo(chatbots[user.chatbot] || chatbots['chatbot4']);
+    } else {
+      // Default to chatbot4 if no user or no chatbot selected
+      setChatbotInfo({
+        image: '/design/chatbot/chatbot4.png',
+        name: language === 'zh' ? '呼呼 (Huhu)' : 'Huhu'
+      });
+    }
+  }, [language]);
 
   // 添加useEffect来监听level和imageId的变化
   useEffect(() => {
@@ -771,7 +812,7 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
           
           {/* Chat Section */}
           <div className="w-1/2 flex flex-col">
-            <div className="flex-grow border-8 border-[#77c6d7] bg-white rounded-xl p-6 flex flex-col" style={{ height: '90vh' }}>
+            <div className="flex-grow border border-black bg-white rounded-xl p-6 flex flex-col" style={{ height: '90vh' }}>
               <div className="flex-grow mb-4 overflow-y-auto">
                 <div className="space-y-2">
                   {messages.map((message) => (
@@ -786,17 +827,24 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
                       <div className="flex items-start">
                         {message.sender === 'ai' && (
                           <img 
-                            src="/design/robot.png" 
-                            alt="AI Tutor" 
+                            src={chatbotInfo.image} 
+                            alt={chatbotInfo.name} 
                             className="w-24 h-24 mr-4 object-contain align-start animate-pulse-slow" // Reduced from 80 to 24 (8vh)
+                          />
+                        )}
+                        {message.sender === 'user' && currentUser && currentUser.avatar && (
+                          <img 
+                            src={currentUser.avatar} 
+                            alt={currentUser.nickname || 'User'} 
+                            className="w-24 h-24 mr-4 object-contain align-start"
                           />
                         )}
                         <div className="flex flex-col">
                           <div className="font-semibold mb-1">
                             {message.sender === 'user' 
-                              ? textContent.you
+                              ? (currentUser ? (currentUser.nickname || textContent.you) : textContent.you)
                               : message.sender === 'ai'
-                              ? textContent.aiTutor
+                              ? chatbotInfo.name
                               : ''}
                           </div>
                           <div className={`p-6 rounded-lg ${message.sender === 'ai' ? 'bg-[#A6e2b1]' : ''}`}>
@@ -825,12 +873,12 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
                     <div className="rounded-lg mr-auto max-w-[90%] text-base font-sans tracking-wide leading-relaxed">
                       <div className="flex items-start">
                         <img 
-                          src="/design/robot.png" 
-                          alt="AI Tutor" 
+                          src={chatbotInfo.image} 
+                          alt={chatbotInfo.name} 
                           className="w-24 h-24 mr-4 object-contain align-start animate-pulse-slow" // Reduced from 80 to 24 (8vh)
                         />
                         <div className="flex flex-col">
-                          <div className="font-semibold mb-1">{textContent.aiTutor}</div>
+                          <div className="font-semibold mb-1">{chatbotInfo.name}</div>
                           <div className="bg-[#A6e2b1] p-6 rounded-lg">
                             <div className="flex space-x-1 items-center justify-center">
                               <div className="w-2 h-2 bg-gray-600 rounded-full typing-dot"></div>
