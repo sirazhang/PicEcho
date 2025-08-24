@@ -544,7 +544,6 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview, selectedLanguage, setSel
           }
         `}</style>
       </div>
-    </div>
   );
 };
 
