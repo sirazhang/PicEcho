@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 
 // 定义背景图片资源
 const BACKGROUND_IMAGES = [
@@ -330,31 +331,40 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview, selectedLanguage, setSel
             )}
           </div>
 
-          {/* Level Buttons */}
+          {/* Level Buttons with staggered animation */}
           <div className="flex flex-wrap justify-center gap-8 mt-2">
-            <button
+            <motion.button
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5 }}
               className="px-8 py-4 rounded-lg font-inter font-bold text-2xl text-white focus:outline-none shadow-lg transform transition duration-300 hover:scale-110"
               style={{ backgroundColor: '#7ecc8f' }}
               onClick={() => handleLevelChange(1)}
             >
               {selectedLanguage === 'zh' ? '等级 1' : 'Level 1'}
-            </button>
+            </motion.button>
             
-            <button
+            <motion.button
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1.0 }}
               className="px-8 py-4 rounded-lg font-inter font-bold text-2xl text-white focus:outline-none shadow-lg transform transition duration-300 hover:scale-110"
               style={{ backgroundColor: '#558e23' }}
               onClick={() => handleLevelChange(2)}
             >
               {selectedLanguage === 'zh' ? '等级 2' : 'Level 2'}
-            </button>
+            </motion.button>
             
-            <button
+            <motion.button
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1.5 }}
               className="px-8 py-4 rounded-lg font-inter font-bold text-2xl text-white focus:outline-none shadow-lg transform transition duration-300 hover:scale-110"
               style={{ backgroundColor: '#337d2f' }}
               onClick={() => handleLevelChange(3)}
             >
               {selectedLanguage === 'zh' ? '等级 3' : 'Level 3'}
-            </button>
+            </motion.button>
           </div>
         </div>
         
