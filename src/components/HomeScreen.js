@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import UserProfile from './UserProfile';
 
 // 定义背景图片资源
 const BACKGROUND_IMAGES = [
@@ -32,12 +33,22 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview, selectedLanguage, setSel
     nickname: '',
     password: ''
   });
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [showUserProfile, setShowUserProfile] = useState(false);
 
   // Load saved language preference from localStorage on component mount
   useEffect(() => {
     const savedLanguage = localStorage.getItem('selectedLanguage');
     if (savedLanguage) {
       setSelectedLanguage(savedLanguage);
+    }
+    
+    // Check if user is logged in
+    const user = JSON.parse(localStorage.getItem('currentUser') || 'null');
+    if (user) {
+      setIsLoggedIn(true);
+      setCurrentUser(user);
     }
   }, [setSelectedLanguage]);
 
@@ -206,15 +217,31 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview, selectedLanguage, setSel
     if (isLoginMode) {
       // Login logic
       console.log('Login with:', authForm);
-      // 这里应该调用登录API
-      // 为了演示目的，我们直接关闭模态框
+      // 模拟登录成功
+      const user = {
+        email: authForm.email,
+        nickname: 'User' + Math.floor(Math.random() * 1000),
+        avatar: '/chatbot/chatbot1.png',
+        chatbot: 'chatbot1'
+      };
+      localStorage.setItem('currentUser', JSON.stringify(user));
+      setIsLoggedIn(true);
+      setCurrentUser(user);
       setShowAuthModal(false);
       setAuthForm({ email: '', nickname: '', password: '' });
     } else {
       // Signup logic
       console.log('Signup with:', authForm);
-      // 这里应该调用注册API
-      // 为了演示目的，我们直接关闭模态框
+      // 模拟注册成功
+      const user = {
+        email: authForm.email,
+        nickname: authForm.nickname,
+        avatar: '/chatbot/chatbot1.png',
+        chatbot: 'chatbot1'
+      };
+      localStorage.setItem('currentUser', JSON.stringify(user));
+      setIsLoggedIn(true);
+      setCurrentUser(user);
       setShowAuthModal(false);
       setAuthForm({ email: '', nickname: '', password: '' });
     }
@@ -233,6 +260,12 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview, selectedLanguage, setSel
     setAuthForm({ email: '', nickname: '', password: '' });
   };
 
+  // Handle user update
+  const handleUpdateUser = (updatedUser) => {
+    localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+    setCurrentUser(updatedUser);
+  };
+
   return (
     <div 
       className="min-h-screen flex flex-col relative"
@@ -246,22 +279,59 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview, selectedLanguage, setSel
       }}
     >
       <div className="absolute inset-0 flex flex-col items-center justify-center pt-0">
-        {/* 登录/注册按钮在左上角 */}
+        {/* 登录/注册按钮或"我的"按钮在左上角 */}
         <div className="absolute top-6 left-6">
-          <button
-            onClick={() => setShowAuthModal(true)}
-            className="px-4 py-2 bg-white rounded-lg font-inter font-bold text-base focus:outline-none flex items-center shadow-lg"
-            style={{ 
-              border: '2px solid #003153',
-              color: '#003153'
-            }}
-          >
-            {selectedLanguage === 'zh' ? '注册/登录' : 'Sign Up / Login'}
-          </button>
+          {isLoggedIn ? (
+            <div className="relative">
+              <button
+                onClick={() => setShowUserProfile(true)}
+                className="px-4 py-2 bg-white rounded-lg font-inter font-bold text-base focus:outline-none flex items-center shadow-lg"
+                style={{ 
+                  border: '2px solid #003153',
+                  color: '#003153'
+                }}
+              >
+                {currentUser?.avatar ? (
+                  <img 
+                    src={currentUser.avatar} 
+                    alt="Avatar" 
+                    className="w-6 h-6 rounded-full mr-2 object-contain"
+                  />
+                ) : null}
+                我的
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setShowAuthModal(true)}
+              className="px-4 py-2 bg-white rounded-lg font-inter font-bold text-base focus:outline-none flex items-center shadow-lg"
+              style={{ 
+                border: '2px solid #003153',
+                color: '#003153'
+              }}
+            >
+              {selectedLanguage === 'zh' ? '注册/登录' : 'Sign Up / Login'}
+            </button>
+          )}
         </div>
 
-        {/* Language Selector at top right */}
-        <div className="absolute top-6 right-6">
+        {/* View Map and Language Selector in top right corner */}
+        <div className="absolute top-6 right-6 flex space-x-2">
+          {/* View Map button */}
+          <div>
+            <button
+              onClick={onOpenMapReview}
+              className="px-4 py-2 rounded-lg font-inter font-bold text-base focus:outline-none flex items-center justify-center shadow-lg"
+              style={{ 
+                backgroundColor: '#3fbdc7',
+                color: 'white'
+              }}
+            >
+              {selectedLanguage === 'zh' ? '查看地图' : 'View Map'}
+            </button>
+          </div>
+          
+          {/* Language Selector */}
           <div className="relative">
             <button
               onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
@@ -278,7 +348,7 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview, selectedLanguage, setSel
             </button>
             
             {showLanguageDropdown && (
-              <div className="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10" style={{ border: '2px solid #003153' }}>
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10" style={{ border: '2px solid #003153' }}>
                 <button
                   onClick={() => handleLanguageChange('en')}
                   className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
@@ -368,60 +438,6 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview, selectedLanguage, setSel
           </div>
         </div>
         
-        {/* View Map and Language Selector in top right corner */}
-        <div className="absolute top-6 right-6 flex space-x-2">
-          {/* View Map button */}
-          <div className="mr-2">
-            <button
-              onClick={onOpenMapReview}
-              className="px-4 py-2 rounded-lg font-inter font-bold text-base focus:outline-none flex items-center justify-center shadow-lg"
-              style={{ 
-                backgroundColor: '#3fbdc7',
-                color: 'white'
-              }}
-            >
-              {selectedLanguage === 'zh' ? '查看地图' : 'View Map'}
-            </button>
-          </div>
-          
-          {/* Language Selector */}
-          <div className="relative">
-            <button
-              onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
-              className="px-4 py-2 bg-white rounded-lg font-inter font-bold text-base focus:outline-none flex items-center shadow-lg"
-              style={{ 
-                border: '2px solid #003153',
-                color: '#003153'
-              }}
-            >
-              🌐
-              <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
-              </svg>
-            </button>
-            
-            {showLanguageDropdown && (
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10" style={{ border: '2px solid #003153' }}>
-                <button
-                  onClick={() => handleLanguageChange('en')}
-                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                >
-                  <span className="mr-2">🇺🇸</span>
-                  English
-                </button>
-                <button
-                  onClick={() => handleLanguageChange('zh')}
-                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                >
-                  <span className="mr-2">🇨🇳</span>
-                  中文
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-        </div>
-        
         {/* Authentication Modal */}
         {showAuthModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -466,15 +482,15 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview, selectedLanguage, setSel
                 <motion.div 
                   className="absolute"
                   style={{ 
-                    top: '20%', 
-                    right: '4%', 
+                    top: '25%', 
+                    right: '10%', 
                     transform: 'rotate(-18deg)',
                     width: '70px',
                     height: '70px'
                   }}
                   animate={{ 
-                    x: ['96%', '0%'], 
-                    y: ['0%', '40%'] 
+                    x: ['80%', '0%'], 
+                    y: ['0%', '25%'] 
                   }}
                   transition={{ 
                     duration: 3,
@@ -657,6 +673,15 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview, selectedLanguage, setSel
           </div>
         )}
         
+        {/* User Profile Modal */}
+        {showUserProfile && (
+          <UserProfile 
+            user={currentUser}
+            onUpdateUser={handleUpdateUser}
+            onClose={() => setShowUserProfile(false)}
+          />
+        )}
+        
         {/* Add global styles for the earth animation */}
         <style jsx>{`
           @keyframes rotate {
@@ -673,7 +698,8 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview, selectedLanguage, setSel
           }
         `}</style>
       </div>
+    </div>
   );
-};
-
+}
+  
 export default HomeScreen;
