@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const Ranking = ({ onBack }) => {
+const Ranking = ({ onBack, selectedLanguage }) => {
   const [rankings, setRankings] = useState([]);
 
   useEffect(() => {
@@ -16,6 +16,41 @@ const Ranking = ({ onBack }) => {
     
     setRankings(mockRankings);
   }, []);
+
+  // Define text content based on selected language
+  const getTextContent = () => {
+    if (selectedLanguage === 'zh') {
+      return {
+        communityButton: '社区',
+        title: '排行榜',
+        topLearners: '顶尖学习者',
+        conversations: '次对话'
+      };
+    } else if (selectedLanguage === 'es') {
+      return {
+        communityButton: 'Comunidad',
+        title: 'Clasificación',
+        topLearners: 'Mejores Estudiantes',
+        conversations: 'conversaciones'
+      };
+    } else if (selectedLanguage === 'fr') {
+      return {
+        communityButton: 'Communauté',
+        title: 'Classement',
+        topLearners: 'Meilleurs Apprenants',
+        conversations: 'conversations'
+      };
+    } else {
+      return {
+        communityButton: 'Community',
+        title: 'Ranking',
+        topLearners: 'Top Learners',
+        conversations: 'conversations'
+      };
+    }
+  };
+
+  const textContent = getTextContent();
 
   return (
     <div className="min-h-screen bg-cover bg-center" style={{ 
@@ -36,15 +71,18 @@ const Ranking = ({ onBack }) => {
             minHeight: '40px'
           }}
         >
-          Community
+          {textContent.communityButton}
         </button>
+        <h1 className="text-3xl font-gloria-hallelujah text-center absolute left-1/2 transform -translate-x-1/2">
+          {textContent.title}
+        </h1>
         <div className="w-32"></div> {/* Spacer for balance */}
       </div>
 
       {/* Main content */}
       <div className="flex flex-col items-center pt-8">
         <div className="w-full max-w-2xl bg-white bg-opacity-80 rounded-2xl p-6 shadow-xl">
-          <h2 className="text-2xl font-bold text-center mb-6">Top Learners</h2>
+          <h2 className="text-2xl font-bold text-center mb-6">{textContent.topLearners}</h2>
           
           {/* Ranking list */}
           <div className="space-y-4">
@@ -67,7 +105,7 @@ const Ranking = ({ onBack }) => {
                 {/* User info */}
                 <div className="flex-grow">
                   <div className="font-bold text-lg">{user.nickname}</div>
-                  <div className="text-gray-600">{user.conversations} conversations</div>
+                  <div className="text-gray-600">{user.conversations} {textContent.conversations}</div>
                 </div>
                 
                 {/* Medals for top 3 */}
@@ -93,31 +131,37 @@ const Ranking = ({ onBack }) => {
         
         {/* Decorative elements */}
         <div className="relative w-full" style={{ height: '50vh' }}>
-          {/* Cat element (with jump animation) */}
+          {/* Bird element */}
           <div 
             className="absolute"
             style={{ 
               top: '10%', 
-              left: '70%',
-              width: '350px',
-              height: '350px'
+              left: '10%',
+              width: '80px',
+              height: '80px'
             }}
           >
-            <style jsx>{`
-              @keyframes jump {
-                0% { transform: translateY(0); }
-                50% { transform: translateY(-10px); }
-                100% { transform: translateY(0); }
-              }
-              
-              .cat-jump {
-                animation: jump 1s infinite ease-in-out;
-              }
-            `}</style>
+            <img 
+              src="/design/bird.png" 
+              alt="Bird" 
+              className="w-full h-full object-contain"
+            />
+          </div>
+          
+          {/* Cat element */}
+          <div 
+            className="absolute"
+            style={{ 
+              top: '60%', 
+              left: '80%',
+              width: '100px',
+              height: '100px'
+            }}
+          >
             <img 
               src="/design/cat.png" 
               alt="Cat" 
-              className="w-full h-full object-contain cat-jump"
+              className="w-full h-full object-contain"
             />
           </div>
         </div>

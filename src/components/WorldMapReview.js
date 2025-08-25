@@ -234,18 +234,59 @@ const WorldMapReview = ({ onBack, onViewPostcard, onShow, onOpenPostOffice, sele
 
   // Define text content
   const getTextContent = () => {
-    return {
-      title: 'Learning Journey Map',
-      subtitle: 'Click on the markers to review your learning progress. ',
-      completedText: 'You\'ve completed',
-      activitiesText: 'activities so far.',
-      homeButton: 'Home',
-      receiveButton: 'Receive Postcard',
-      close: 'Close',
-      noPostcards: 'No postcards available at the moment.',
-      view: 'View',
-      completedActivities: 'Completed Activities'
-    };
+    if (selectedLanguage === 'zh') {
+      return {
+        title: '学习旅程地图',
+        subtitle: '点击标记查看您的学习进度。',
+        completedText: '您已完成',
+        activitiesText: '项活动。',
+        homeButton: '主页',
+        receiveButton: '接收明信片',
+        close: '关闭',
+        noPostcards: '暂时没有明信片。',
+        view: '查看',
+        completedActivities: '已完成的活动'
+      };
+    } else if (selectedLanguage === 'es') {
+      return {
+        title: 'Mapa del Viaje de Aprendizaje',
+        subtitle: 'Haz clic en los marcadores para revisar tu progreso de aprendizaje.',
+        completedText: 'Has completado',
+        activitiesText: 'actividades hasta ahora.',
+        homeButton: 'Inicio',
+        receiveButton: 'Recibir Postal',
+        close: 'Cerrar',
+        noPostcards: 'No hay postales disponibles en este momento.',
+        view: 'Ver',
+        completedActivities: 'Actividades Completadas'
+      };
+    } else if (selectedLanguage === 'fr') {
+      return {
+        title: 'Carte du Parcours d\'Apprentissage',
+        subtitle: 'Cliquez sur les marqueurs pour revoir vos progrès d\'apprentissage.',
+        completedText: 'Vous avez terminé',
+        activitiesText: 'activités jusqu\'à présent.',
+        homeButton: 'Accueil',
+        receiveButton: 'Recevoir une Carte Postale',
+        close: 'Fermer',
+        noPostcards: 'Aucune carte postale disponible pour le moment.',
+        view: 'Voir',
+        completedActivities: 'Activités Terminées'
+      };
+    } else {
+      return {
+        title: 'Learning Journey Map',
+        subtitle: 'Click on the markers to review your learning progress.',
+        completedText: 'You\'ve completed',
+        activitiesText: 'activities so far.',
+        homeButton: 'Home',
+        receiveButton: 'Receive Postcard',
+        close: 'Close',
+        noPostcards: 'No postcards available at the moment.',
+        view: 'View',
+        completedActivities: 'Completed Activities'
+      };
+    }
   };
 
   const textContent = getTextContent();

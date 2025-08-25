@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { receivePostcard } from '../utils/api';
 
-const PostOffice = ({ onBack, onViewPostcard }) => {
+const PostOffice = ({ onBack, onViewPostcard, selectedLanguage }) => {
   const [receivedPostcard, setReceivedPostcard] = useState(null);
   const [isFetching, setIsFetching] = useState(false);
   const [senderToken, setSenderToken] = useState('');
@@ -12,6 +12,77 @@ const PostOffice = ({ onBack, onViewPostcard }) => {
   const [currentPostcardIndex, setCurrentPostcardIndex] = useState(0);
   const [message, setMessage] = useState('');
   const audioContextRef = useRef(null);
+
+  // Define text content based on selected language
+  const getTextContent = () => {
+    if (selectedLanguage === 'zh') {
+      return {
+        communityButton: '社区',
+        receiveHint1: '叽叽！点击红色邮筒，我帮你看看有没有人给你寄明信片哦！',
+        receiveHint2: '嘿嘿，点击绿色邮筒，我会帮你寄出你的明信片给别人！快来试试吧！',
+        receivedPostcardTitle: '收到的明信片',
+        close: '关闭',
+        noPostcards: '暂时没有明信片。',
+        view: '查看',
+        inboxTitle: '收件箱',
+        outboxTitle: '发件箱',
+        checkReceived: '查看您收到的明信片！',
+        sendToOthers: '发送您的明信片给其他人！',
+        goToPostOffice: '前往邮局',
+        postcardSent: '明信片发送成功！'
+      };
+    } else if (selectedLanguage === 'es') {
+      return {
+        communityButton: 'Comunidad',
+        receiveHint1: '¡Chirp! ¡Haz clic en el buzón rojo y te ayudaré a ver si alguien te envió una postal!',
+        receiveHint2: '¡Jeje! ¡Haz clic en el buzón verde y te ayudaré a enviar tu postal a otras personas! ¡Ven a probarlo!',
+        receivedPostcardTitle: 'Postal Recibida',
+        close: 'Cerrar',
+        noPostcards: 'No hay postales disponibles en este momento.',
+        view: 'Ver',
+        inboxTitle: 'Bandeja de Entrada',
+        outboxTitle: 'Bandeja de Salida',
+        checkReceived: '¡Revisa tus postales recibidas!',
+        sendToOthers: '¡Envía tus postales a otros!',
+        goToPostOffice: 'Ir a la Oficina de Correos',
+        postcardSent: '¡Postal enviada exitosamente!'
+      };
+    } else if (selectedLanguage === 'fr') {
+      return {
+        communityButton: 'Communauté',
+        receiveHint1: 'Chirp ! Cliquez sur la boîte aux lettres rouge, je vous aiderai à voir si quelqu\'un vous a envoyé une carte postale !',
+        receiveHint2: 'Héhé, cliquez sur la boîte aux lettres verte, je vous aiderai à envoyer votre carte postale à d\'autres personnes ! Venez essayer !',
+        receivedPostcardTitle: 'Carte Postale Reçue',
+        close: 'Fermer',
+        noPostcards: 'Aucune carte postale disponible pour le moment.',
+        view: 'Voir',
+        inboxTitle: 'Boîte de Réception',
+        outboxTitle: 'Boîte d\'Envoi',
+        checkReceived: 'Consultez vos cartes postales reçues !',
+        sendToOthers: 'Envoyez vos cartes postales aux autres !',
+        goToPostOffice: 'Aller au Bureau de Poste',
+        postcardSent: 'Carte postale envoyée avec succès !'
+      };
+    } else {
+      return {
+        communityButton: 'Community',
+        receiveHint1: 'Chirp! Click the red mailbox, I\'ll help you see if anyone sent you a postcard!',
+        receiveHint2: 'Hehe, click the green mailbox, I\'ll help you send your postcard to others! Come try it!',
+        receivedPostcardTitle: 'Received Postcard',
+        close: 'Close',
+        noPostcards: 'No postcards available at the moment.',
+        view: 'View',
+        inboxTitle: 'Inbox',
+        outboxTitle: 'Outbox',
+        checkReceived: 'Check your received postcards!',
+        sendToOthers: 'Send your postcards to others!',
+        goToPostOffice: 'Go to Post Office',
+        postcardSent: 'Postcard sent successfully!'
+      };
+    }
+  };
+
+  const textContent = getTextContent();
 
   useEffect(() => {
     // Generate or load sender token
@@ -195,7 +266,7 @@ const PostOffice = ({ onBack, onViewPostcard }) => {
   const handleSendPostcard = () => {
     // In a real implementation, this would send the postcard
     // For now, we'll just show a success message
-    alert('Postcard sent successfully!');
+    alert(textContent.postcardSent);
     closeOutbox();
   };
 
@@ -244,10 +315,10 @@ const PostOffice = ({ onBack, onViewPostcard }) => {
       <div className="pt-6 text-center px-4">
         <div className="inline-block bg-white rounded-lg shadow-lg px-6 py-4">
           <p className="text-black text-lg font-inter font-bold">
-            叽叽！点击红色邮筒，我帮你看看有没有人给你寄明信片哦！
+            {textContent.receiveHint1}
           </p>
           <p className="text-black text-lg font-inter font-bold mt-2">
-            嘿嘿，点击绿色邮筒，我会帮你寄出你的明信片给别人！快来试试吧！
+            {textContent.receiveHint2}
           </p>
         </div>
       </div>
@@ -264,7 +335,7 @@ const PostOffice = ({ onBack, onViewPostcard }) => {
             minHeight: '40px'
           }}
         >
-          Community
+          {textContent.communityButton}
         </button>
         <div className="w-32"></div> {/* Spacer to balance the header */}
       </div>
@@ -312,7 +383,7 @@ const PostOffice = ({ onBack, onViewPostcard }) => {
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xl font-semibold text-gray-800">
-                  Received Postcards
+                  {textContent.inboxTitle}
                 </h3>
                 <button 
                   onClick={closeInbox}
@@ -330,7 +401,7 @@ const PostOffice = ({ onBack, onViewPostcard }) => {
                   {currentPostcardIndex > 0 && (
                     <button 
                       onClick={prevPostcard}
-                      className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white bg-opacity-75 rounded-full p-2 shadow-md hover:bg-opacity-100"
+                      className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-4 bg-white rounded-full p-2 shadow-lg hover:bg-gray-100 z-10"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -341,7 +412,7 @@ const PostOffice = ({ onBack, onViewPostcard }) => {
                   {currentPostcardIndex < savedPostcards.length - 1 && (
                     <button 
                       onClick={nextPostcard}
-                      className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-white bg-opacity-75 rounded-full p-2 shadow-md hover:bg-opacity-100"
+                      className="absolute right-0 top-1/2 transform -translate-y-1/2 translate-x-4 bg-white rounded-full p-2 shadow-lg hover:bg-gray-100 z-10"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -349,86 +420,23 @@ const PostOffice = ({ onBack, onViewPostcard }) => {
                     </button>
                   )}
                   
-                  {/* Postcard stack visualization */}
-                  <div className="flex justify-center items-center py-8">
-                    {savedPostcards.map((postcard, index) => {
-                      // Calculate offset based on position in stack
-                      const offset = (index - currentPostcardIndex) * 10;
-                      const zIndex = 10 - Math.abs(index - currentPostcardIndex);
-                      const scale = 1 - Math.abs(index - currentPostcardIndex) * 0.05;
-                      const opacity = 1 - Math.abs(index - currentPostcardIndex) * 0.2;
-                      
-                      // Only show nearby postcards for performance
-                      if (Math.abs(index - currentPostcardIndex) > 2) return null;
-                      
-                      return (
-                        <div
-                          key={postcard.id || index}
-                          className="absolute transition-all duration-300 ease-in-out"
-                          style={{
-                            transform: `translateX(${offset}px) scale(${scale})`,
-                            zIndex: zIndex,
-                            opacity: opacity,
-                            boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
-                          }}
-                        >
-                          <div className="bg-white rounded-lg border border-gray-200 p-2">
-                            {postcard.imageId && postcard.level ? (
-                              <img 
-                                src={`/Level${postcard.level}/${postcard.imageId}.png`} 
-                                alt="Postcard" 
-                                className="w-80 h-60 object-cover rounded"
-                              />
-                            ) : (
-                              <div className="w-80 h-60 bg-gray-200 rounded flex items-center justify-center">
-                                <span className="text-gray-500">Postcard Image</span>
-                              </div>
-                            )}
-                            <p className="text-xs text-center mt-2 text-gray-600">
-                              {new Date(postcard.timestamp).toLocaleDateString()}
-                            </p>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  
-                  {/* Postcard details */}
+                  {/* Postcard display */}
                   {selectedPostcard && (
-                    <div className="mt-8 bg-gray-50 rounded-lg p-4">
-                      <h4 className="font-semibold mb-2">Postcard Details</h4>
-                      <p className="text-sm text-gray-600 mb-1">
-                        <span className="font-medium">Date:</span> {new Date(selectedPostcard.timestamp).toLocaleString()}
+                    <div className="flex flex-col items-center">
+                      <img 
+                        src={selectedPostcard.imageData?.url || `/Level${selectedPostcard.level}/${selectedPostcard.imageId}.png`} 
+                        alt="Postcard" 
+                        className="max-w-full h-auto max-h-96 object-contain mb-4"
+                      />
+                      <p className="text-gray-600">
+                        {new Date(selectedPostcard.timestamp).toLocaleString()}
                       </p>
-                      <p className="text-sm text-gray-600 mb-1">
-                        <span className="font-medium">Level:</span> {selectedPostcard.level}
-                      </p>
-                      {selectedPostcard.feedback && (
-                        <div className="mt-3">
-                          <h5 className="font-medium mb-1">Feedback:</h5>
-                          <div className="text-sm bg-white p-2 rounded">
-                            <p><span className="font-medium">Remarks:</span> {selectedPostcard.feedback.encouragingRemarks}</p>
-                            <p><span className="font-medium">Errors:</span> {selectedPostcard.feedback.errorSummary}</p>
-                            <p><span className="font-medium">Suggestions:</span> {selectedPostcard.feedback.suggestions}</p>
-                          </div>
-                        </div>
-                      )}
                     </div>
                   )}
-                  
-                  <div className="flex justify-center mt-4 text-sm text-gray-500">
-                    {currentPostcardIndex + 1} of {savedPostcards.length}
-                  </div>
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <p className="text-gray-600">No postcards received yet.</p>
-                  <button
-                    onClick={handleReceivePostcard}
-                    className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                  >
-                    Receive a Postcard
-                  </button>
+                  <p className="text-gray-600 mb-4">{textContent.noPostcards}</p>
                 </div>
               )}
             </div>
@@ -442,8 +450,8 @@ const PostOffice = ({ onBack, onViewPostcard }) => {
           <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto mx-4">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-2xl font-semibold text-gray-800">
-                  Send a Postcard
+                <h3 className="text-xl font-semibold text-gray-800">
+                  {textContent.outboxTitle}
                 </h3>
                 <button 
                   onClick={closeOutbox}
@@ -455,130 +463,61 @@ const PostOffice = ({ onBack, onViewPostcard }) => {
                 </button>
               </div>
               
-              {savedPostcards.length > 0 ? (
-                <div>
-                  <div className="mb-4">
-                    <label className="block text-gray-700 text-sm font-bold mb-2">
-                      Select a postcard to send:
-                    </label>
-                    <div className="grid grid-cols-2 gap-6 max-h-80 overflow-y-auto p-2">
-                      {savedPostcards.map((postcard, index) => (
-                        <div
-                          key={postcard.id || index}
-                          className={`border rounded-lg p-2 cursor-pointer transition-all ${
-                            selectedPostcard === postcard 
-                              ? 'border-blue-500 bg-blue-50' 
-                              : 'border-gray-200 hover:border-gray-300'
-                          }`}
-                          onClick={() => setSelectedPostcard(postcard)}
-                        >
-                          {postcard.imageId && postcard.level ? (
-                            <img 
-                              src={`/Level${postcard.level}/${postcard.imageId}.png`} 
-                              alt="Postcard" 
-                              className="w-full h-24 object-cover rounded"
-                            />
-                          ) : (
-                            <div className="w-full h-24 bg-gray-200 rounded flex items-center justify-center">
-                              <span className="text-gray-500">Postcard Image</span>
-                            </div>
-                          )}
-                          <p className="text-xs text-center mt-1 text-gray-600 truncate">
-                            {new Date(postcard.timestamp).toLocaleDateString()}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
+              <div className="text-center py-8">
+                {savedPostcards.length > 0 ? (
+                  <div>
+                    <p className="mb-4">{textContent.sendToOthers}</p>
+                    <button
+                      onClick={handleSendPostcard}
+                      className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+                    >
+                      {textContent.goToPostOffice}
+                    </button>
                   </div>
-                  
-                  {selectedPostcard && (
-                    <div className="mt-4">
-                      <label className="block text-gray-700 text-sm font-bold mb-2">
-                        Add a message (optional):
-                      </label>
-                      <textarea
-                        value={message}
-                        onChange={(e) => setMessage(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        rows="3"
-                        placeholder="Write a message to send with your postcard..."
-                      ></textarea>
-                      
-                      <div className="mt-6 flex justify-end">
-                        <button
-                          onClick={handleSendPostcard}
-                          className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
-                        >
-                          Send Postcard
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-gray-600">You don't have any postcards to send yet.</p>
-                  <button
-                    onClick={onViewPostcard}
-                    className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                  >
-                    Create a Postcard
-                  </button>
-                </div>
-              )}
+                ) : (
+                  <div>
+                    <p className="mb-4">{textContent.noPostcards}</p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Received Postcard Display Area */}
-      <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 w-4/5 max-w-3xl">
-        {receivedPostcard ? (
-          <div className="bg-white rounded-xl shadow-xl p-6 relative">
-            {/* Close button */}
-            <button
-              onClick={closeReceivedPostcard}
-              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-            
-            <div className="flex flex-col items-center">
-              <img 
-                src={receivedPostcard.image_path || receivedPostcard.postcard_url} 
-                alt="Received postcard" 
-                className="max-w-full h-auto border border-gray-300 rounded-lg mb-4"
-                onError={(e) => {
-                  // Fallback to sample images if the specified image fails to load
-                  const sampleImages = [
-                    '/sample/sample_01.png',
-                    '/sample/sample_02.png',
-                    '/sample/sample_03.png',
-                    '/sample/sample_04.png'
-                  ];
-                  const randomImage = sampleImages[Math.floor(Math.random() * sampleImages.length)];
-                  e.target.src = randomImage;
-                }}
-              />
-              <p className="text-gray-600 text-center mt-2">
-                Received: {new Date(receivedPostcard.created_at || receivedPostcard.timestamp).toLocaleString()}
-              </p>
-              {receivedPostcard.feedback_text && (
-                <div className="mt-4 w-full">
-                  <h3 className="font-bold text-lg mb-2">Feedback:</h3>
-                  <pre className="whitespace-pre-wrap bg-gray-100 p-3 rounded">
-                    {typeof receivedPostcard.feedback_text === 'string' 
-                      ? receivedPostcard.feedback_text 
-                      : JSON.stringify(receivedPostcard.feedback_text, null, 2)}
-                  </pre>
-                </div>
-              )}
+      {/* Received Postcard Modal */}
+      {receivedPostcard && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-semibold text-gray-800">
+                  {textContent.receivedPostcardTitle}
+                </h3>
+                <button 
+                  onClick={closeReceivedPostcard}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              
+              <div className="flex flex-col items-center">
+                <img 
+                  src={receivedPostcard.image_path || receivedPostcard.postcard_url} 
+                  alt="Received postcard" 
+                  className="max-w-full h-auto border border-gray-300 rounded-lg mb-4"
+                />
+                <p className="text-gray-600 text-center">
+                  {new Date(receivedPostcard.created_at).toLocaleString()}
+                </p>
+              </div>
             </div>
           </div>
-        ) : null}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

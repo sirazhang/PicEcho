@@ -1,7 +1,50 @@
 import React, { useState, useEffect } from 'react';
 
-const Community = ({ onBack, onNavigateToPostOffice, onNavigateToRanking }) => {
+const Community = ({ onBack, onNavigateToPostOffice, onNavigateToRanking, selectedLanguage }) => {
   const [activeFeature, setActiveFeature] = useState(null);
+
+  // Define text content based on selected language
+  const getTextContent = () => {
+    if (selectedLanguage === 'zh') {
+      return {
+        homeButton: '主页',
+        title: '社区',
+        postOffice: '邮局',
+        snowMountain: '雪山',
+        cat: '猫',
+        bird: '鸟'
+      };
+    } else if (selectedLanguage === 'es') {
+      return {
+        homeButton: 'Inicio',
+        title: 'Comunidad',
+        postOffice: 'Oficina de Correos',
+        snowMountain: 'Montaña Nevada',
+        cat: 'Gato',
+        bird: 'Pájaro'
+      };
+    } else if (selectedLanguage === 'fr') {
+      return {
+        homeButton: 'Accueil',
+        title: 'Communauté',
+        postOffice: 'Bureau de Poste',
+        snowMountain: 'Montagne Enneigée',
+        cat: 'Chat',
+        bird: 'Oiseau'
+      };
+    } else {
+      return {
+        homeButton: 'Home',
+        title: 'Community',
+        postOffice: 'Post Office',
+        snowMountain: 'Snow Mountain',
+        cat: 'Cat',
+        bird: 'Bird'
+      };
+    }
+  };
+
+  const textContent = getTextContent();
 
   return (
     <div className="min-h-screen bg-cover bg-center" style={{ 
@@ -22,8 +65,11 @@ const Community = ({ onBack, onNavigateToPostOffice, onNavigateToRanking }) => {
             minHeight: '40px'
           }}
         >
-          Home
+          {textContent.homeButton}
         </button>
+        <h1 className="text-3xl font-gloria-hallelujah text-center absolute left-1/2 transform -translate-x-1/2">
+          {textContent.title}
+        </h1>
         <div className="w-32"></div> {/* Spacer for balance */}
       </div>
 
@@ -42,7 +88,7 @@ const Community = ({ onBack, onNavigateToPostOffice, onNavigateToRanking }) => {
         >
           <img 
             src="/design/postoffice.png" 
-            alt="Post Office" 
+            alt={textContent.postOffice} 
             className="w-full h-full object-contain"
           />
         </div>
@@ -59,7 +105,7 @@ const Community = ({ onBack, onNavigateToPostOffice, onNavigateToRanking }) => {
         >
           <img 
             src="/design/bird.png" 
-            alt="Bird" 
+            alt={textContent.bird} 
             className="w-full h-full object-contain"
           />
         </div>
@@ -77,7 +123,7 @@ const Community = ({ onBack, onNavigateToPostOffice, onNavigateToRanking }) => {
         >
           <img 
             src="/design/snow1.png" 
-            alt="Snow Mountain 1" 
+            alt={textContent.snowMountain} 
             className="w-full h-full object-contain"
           />
         </div>
@@ -95,7 +141,7 @@ const Community = ({ onBack, onNavigateToPostOffice, onNavigateToRanking }) => {
         >
           <img 
             src="/design/snow2.png" 
-            alt="Snow Mountain 2" 
+            alt={textContent.snowMountain} 
             className="w-full h-full object-contain"
           />
         </div>
@@ -122,7 +168,7 @@ const Community = ({ onBack, onNavigateToPostOffice, onNavigateToRanking }) => {
           `}</style>
           <img 
             src="/design/cat.png" 
-            alt="Cat" 
+            alt={textContent.cat} 
             className="w-full h-full object-contain cat-jump"
           />
         </div>
@@ -149,7 +195,7 @@ const Community = ({ onBack, onNavigateToPostOffice, onNavigateToRanking }) => {
             <div className="text-center py-8">
               {activeFeature === 'inbox' ? (
                 <div>
-                  <p className="mb-4">Check your received postcards!</p>
+                  <p className="mb-4">{selectedLanguage === 'zh' ? '查看您收到的明信片！' : selectedLanguage === 'es' ? '¡Revisa tus postales recibidas!' : selectedLanguage === 'fr' ? 'Consultez vos cartes postales reçues !' : 'Check your received postcards!'}</p>
                   <button
                     onClick={() => {
                       setActiveFeature(null);
@@ -157,12 +203,12 @@ const Community = ({ onBack, onNavigateToPostOffice, onNavigateToRanking }) => {
                     }}
                     className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
                   >
-                    Go to Post Office
+                    {selectedLanguage === 'zh' ? '前往邮局' : selectedLanguage === 'es' ? 'Ir a la Oficina de Correos' : selectedLanguage === 'fr' ? 'Aller au Bureau de Poste' : 'Go to Post Office'}
                   </button>
                 </div>
               ) : (
                 <div>
-                  <p className="mb-4">Send your postcards to others!</p>
+                  <p className="mb-4">{selectedLanguage === 'zh' ? '发送您的明信片给其他人！' : selectedLanguage === 'es' ? '¡Envía tus postales a otros!' : selectedLanguage === 'fr' ? 'Envoyez vos cartes postales aux autres !' : 'Send your postcards to others!'}</p>
                   <button
                     onClick={() => {
                       setActiveFeature(null);
@@ -170,7 +216,7 @@ const Community = ({ onBack, onNavigateToPostOffice, onNavigateToRanking }) => {
                     }}
                     className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
                   >
-                    Go to Post Office
+                    {selectedLanguage === 'zh' ? '前往邮局' : selectedLanguage === 'es' ? 'Ir a la Oficina de Correos' : selectedLanguage === 'fr' ? 'Aller au Bureau de Poste' : 'Go to Post Office'}
                   </button>
                 </div>
               )}

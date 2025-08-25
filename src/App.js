@@ -657,12 +657,22 @@ function App() {
             onBack={handleBackToHome}
             onNavigateToPostOffice={handleViewPostOffice}
             onNavigateToRanking={handleViewRanking}
+            selectedLanguage={selectedLanguage}
           />
         )}
         
         {currentScreen === 'ranking' && (
           <Ranking 
             onBack={handleViewCommunity}
+            selectedLanguage={selectedLanguage}
+          />
+        )}
+        
+        {currentScreen === 'postoffice' && (
+          <PostOffice 
+            onBack={handleViewCommunity}
+            onViewPostcard={handleViewPostcard}
+            selectedLanguage={selectedLanguage}
           />
         )}
       </div>

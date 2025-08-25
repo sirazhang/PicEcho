@@ -497,7 +497,7 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
 
   return (
     <div className="min-h-screen bg-[#e5f5fb] p-0">
-      {/* Header with action buttons */}
+      {/* Action Buttons */}
       <div className="flex justify-center items-center p-6 gap-4">
         <button 
           onClick={() => {
@@ -552,6 +552,19 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
           }}
         >
           {textContent.nextPicture}
+        </button>
+        
+        <button
+          onClick={handleOpenCommunity}
+          className="px-4 py-2 text-base font-inter font-bold focus:outline-none rounded-lg flex items-center justify-center"
+          style={{ 
+            backgroundColor: '#F26E0A',
+            color: 'white',
+            minWidth: '120px',
+            minHeight: '40px'
+          }}
+        >
+          Community
         </button>
       </div>
 
