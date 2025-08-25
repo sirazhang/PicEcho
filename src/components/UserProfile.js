@@ -62,6 +62,19 @@ const UserProfile = ({ user, onUpdateUser, onClose }) => {
     setSelectedBot(botId);
   };
 
+  // 添加退出登录功能
+  const handleLogout = () => {
+    // 确认退出登录
+    const confirmLogout = window.confirm('确定要退出登录吗？');
+    if (confirmLogout) {
+      // 清除本地存储的用户信息
+      localStorage.removeItem('currentUser');
+      
+      // 刷新页面以应用更改
+      window.location.reload();
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-8 w-full max-w-md">
@@ -76,45 +89,40 @@ const UserProfile = ({ user, onUpdateUser, onClose }) => {
             </svg>
           </button>
         </div>
-
+        
         <div className="mb-6">
-          <div className="flex flex-col items-center">
-            <div 
-              className="w-24 h-24 rounded-full bg-gray-200 mb-4 cursor-pointer relative overflow-hidden border-2 border-gray-300"
-              onClick={() => fileInputRef.current.click()}
-            >
-              {avatar ? (
-                <img 
-                  src={avatar} 
-                  alt="User Avatar" 
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="flex items-center justify-center h-full">
-                  <svg className="w-12 h-12 text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                    <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd"></path>
-                  </svg>
-                </div>
-              )}
-              <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                </svg>
+          <label className="block text-gray-700 text-sm font-bold mb-2">
+            头像
+          </label>
+          <div className="flex items-center">
+            {avatar ? (
+              <img 
+                src={avatar} 
+                alt="Avatar" 
+                className="w-16 h-16 rounded-full object-contain mr-4"
+              />
+            ) : (
+              <div className="w-16 h-16 rounded-full bg-gray-200 mr-4 flex items-center justify-center">
+                <span className="text-gray-500">无头像</span>
               </div>
-            </div>
+            )}
+            <button
+              onClick={() => fileInputRef.current.click()}
+              className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded"
+            >
+              上传头像
+            </button>
             <input
               type="file"
               ref={fileInputRef}
-              className="hidden"
-              accept="image/*"
               onChange={handleAvatarUpload}
+              accept="image/*"
+              className="hidden"
             />
-            <p className="text-sm text-gray-500">点击上传头像</p>
           </div>
         </div>
 
-        <div className="mb-6">
+        <div className="mb-4">
           <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="nickname">
             昵称
           </label>
@@ -157,17 +165,25 @@ const UserProfile = ({ user, onUpdateUser, onClose }) => {
 
         <div className="flex items-center justify-between">
           <button
-            onClick={onClose}
-            className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium"
+            onClick={handleLogout}
+            className="px-4 py-2 bg-red-500 hover:bg-red-700 text-white font-bold rounded focus:outline-none focus:shadow-outline"
           >
-            取消
+            退出登录
           </button>
-          <button
-            onClick={handleSave}
-            className="px-4 py-2 bg-blue-500 hover:bg-blue-700 text-white font-bold rounded focus:outline-none focus:shadow-outline"
-          >
-            保存
-          </button>
+          <div>
+            <button
+              onClick={onClose}
+              className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium mr-2"
+            >
+              取消
+            </button>
+            <button
+              onClick={handleSave}
+              className="px-4 py-2 bg-blue-500 hover:bg-blue-700 text-white font-bold rounded focus:outline-none focus:shadow-outline"
+            >
+              保存
+            </button>
+          </div>
         </div>
       </div>
     </div>
