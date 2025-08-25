@@ -195,6 +195,7 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview, selectedLanguage, setSel
     }, 300);
   };
 
+  // Handle language change
   const handleLanguageChange = (language) => {
     setSelectedLanguage(language);
     // Save language preference to localStorage
@@ -274,8 +275,8 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview, selectedLanguage, setSel
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
-        backgroundAttachment: 'fixed', // 防止滚动时背景移动
-        transition: 'background-image 0.5s ease-in-out' // 添加背景切换动画
+        backgroundAttachment: 'fixed',
+        transition: 'background-image 0.5s ease-in-out'
       }}
     >
       <div className="absolute inset-0 flex flex-col items-center justify-center pt-0">
@@ -362,6 +363,20 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview, selectedLanguage, setSel
                 >
                   <span className="mr-2">🇨🇳</span>
                   中文
+                </button>
+                <button
+                  onClick={() => handleLanguageChange('es')}
+                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                >
+                  <span className="mr-2">🇪🇸</span>
+                  Español
+                </button>
+                <button
+                  onClick={() => handleLanguageChange('fr')}
+                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                >
+                  <span className="mr-2">🇫🇷</span>
+                  Français
                 </button>
               </div>
             )}
@@ -701,5 +716,5 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview, selectedLanguage, setSel
     </div>
   );
 }
-  
+
 export default HomeScreen;

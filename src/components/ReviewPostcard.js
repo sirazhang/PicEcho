@@ -68,7 +68,21 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
       '/img_post/img_post_03.png',
       '/img_post/img_post_04.png',
       '/img_post/img_post_05.png',
-      '/img_post/img_post_06.png'
+      '/img_post/img_post_06.png',
+      '/img_post/img_post_07.png',
+      '/img_post/img_post_08.png',
+      '/img_post/img_post_09.png',
+      '/img_post/img_post_10.png',
+      '/img_post/img_post_11.png',
+      '/img_post/img_post_12.png',
+      '/img_post/img_post_13.png',
+      '/img_post/img_post_14.png',
+      '/img_post/img_post_15.png',
+      '/img_post/img_post_16.png',
+      '/img_post/img_post_17.png',
+      '/img_post/img_post_18.png',
+      '/img_post/img_post_19.png',
+      '/img_post/img_post_20.png'
     ];
     
     const randomIndex = Math.floor(Math.random() * stampImages.length);

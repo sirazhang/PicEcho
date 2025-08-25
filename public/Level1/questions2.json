@@ -14,7 +14,7 @@
       "What’s on their heads? ❄️",
       "Can you see the fruits beside the pool? 🍉",
       "Do you think the cats are having fun soaking? 😊",
-      "Are the cats 🐱playing with water or taking a bath in the pool? 🛁",
+      "Are the cats 🐱 playing with water or taking a bath in the pool? 🛁",
       "If we put a small toy in the pool, what game do you think the cats will play? 🎮"
     ]
   },
@@ -22,9 +22,9 @@
     "questions": [
       "Wow! Look, who’s 🗽 standing on the street? ",
       "What’s in her right hand? And what’s in her left hand? ",
-      "What color is her ice - cream🍦? And What flavor do you think it is?",
+      "What color is her ice-cream🍦? And what flavor do you think it is?",
       "If you met her, would you share your snacks? 🍪",
-      "At night on the street, where does the Statue of Liberty want to take the ice - cream? 🌃"
+      "At night on the street, where does the Statue of Liberty want to take the ice-cream? 🌃"
     ]
   },
   "img_04": {
@@ -42,10 +42,90 @@
       "Wow! Look, what’s the girl doing near the mushroom🍄? ",
       "How big is the red 🔴 mushroom? ",
       "Can you see the two birds 🐦 on the mushroom? ",
-      "Will the birds 🐦on the big mushroom sing for the elf?",
+      "Will the birds 🐦 on the big mushroom sing for the elf?",
       "What interesting interaction do you think the elf in the straw hat is having with the small mushroom? 🧚🍄",
       "When it rains 🌧️, will the elf's wings get wet?",
       "Will the small flowers and grass around protect the mushroom🍄 with the elf? 🌼🍄"
+    ]
+  },
+  "img_06": {
+    "questions": [
+      "Wow! Look, it's raining🌧️. What are the three little parrots doing under the lotus leaf?",
+      "Guess which little parrot has the most eye-catching feather color🌈?",
+      "What do the raindrops on the lotus leaf look like💧? Are they little pearls?",
+      "If the little parrots could talk, what funny things would they be chatting about🗣️?"
+    ]
+  },
+  "img_07": {
+    "questions": [
+      "Wow! The puppies are by the river. What is the puppy with the baguette going to do🥖?",
+      "Is the puppy wearing the yellow hat saying hello to the kitten🐶🐱?",
+      "What are the people in the boat on the river happily doing🚤?",
+      "If you were here, would you want to take a walk with them or take a boat ride🚶‍♀️🚤?"
+    ]
+  },
+  "img_08": {
+    "questions": [
+      "Wow! Two little parrots are under 'The Starry Night'. Are they sharing coffee☕?",
+      "What does the feather pattern of the purple parrot look like🦜? Is it like a zebra's stripes?",
+      "Which is more beautiful, the starry sky in this painting or the real starry sky🌃?",
+      "If you had tea with the little parrots, what story would you tell them📖?"
+    ]
+  },
+  "img_09": {
+    "questions": [
+      "Wow! The sun is shining so brightly☀️. Can the person fishing catch a fish🐟?",
+      "Does the reflection of the mountains and water look like a painting in a mirror🖼️? Isn't it amazing?",
+      "Which friend does the little flower by the lake want to make🌸? A little fish or a big mountain?",
+      "If you were here, would you want to fish or pick wildflowers🎣🌼?"
+    ]
+  },
+  "img_10": {
+    "questions": [
+      "Wow! The cat with the pearl necklace is elegantly doing what🐱☕?",
+      "Which cup on the table has the most beautiful pattern🏺?",
+      "Where did the cat's pearl necklace come from💎? Is it a treasure?",
+      "If you had tea with the cat, what snack would you give it🍪?"
+    ]
+  },
+  "img_11": {
+    "questions": [
+      "Wow! The elephant and the woolly mammoth are together. Are they comparing whose tusks are longer🦷?",
+      "Are the little birds singing to them🐦?",
+      "Does this grassland look like a soft green blanket🍃? Do you want to jump on it?",
+      "If you could play with them, would you want to ride the elephant or the woolly mammoth🐘🦣?"
+    ]
+  },
+  "img_12": {
+    "questions": [
+      "Wow! The girl is sitting in the sunroom. What is she looking at outside the window🌳?",
+      "Which plant in the sunroom is the cutest🌿? Is it the one with flowers?",
+      "If you were here, would you want to drink tea or enjoy the scenery with the girl🍵👀?",
+      "Will the big tree outside the window tell the girl its story🌳🗣️?"
+    ]
+  },
+  "img_13": {
+    "questions": [
+      "Wow! The little angel is holding a small flower basket. Who is she going to give the flowers to👼💐?",
+      "Does the center of the big flower look like a little star⭐? Does it shine?",
+      "Are the falling petals playing a game with the little angel🍂?",
+      "If you had wings, where would you want to fly with the little angel🦅?"
+    ]
+  },
+  "img_14": {
+    "questions": [
+      "Wow! The little gray cat is rowing a boat🚣‍♂️. Where is it going🐱?",
+      "Which of the colorful houses on both sides is most like your home🏠?",
+      "Will the water lily on the water float along with the cat's boat🌸🚤?",
+      "If you rowed a boat with the cat, what song would you sing🎤?"
+    ]
+  },
+  "img_15": {
+    "questions": [
+      "Wow! The carrot house🥕 on the big tree, who lives there?",
+      "What game are the little rabbits playing with the big snail🐰🐌?",
+      "Will there be little fish swimming out of the small puddle by the tree🐟?",
+      "If you lived here, would you want to dig carrots with the rabbits or chat with the snail🥕💬?"
     ]
   }
 }

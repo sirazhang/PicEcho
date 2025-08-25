@@ -58,5 +58,65 @@
             "Each animal has a 'job' or activity. The rabbit bakes, squirrel collects, cat runs the shop. How do these roles make their tiny community work? 🥧",
             "If a new animal (like a bird) joins their day, where would it fit in? Describe the new scene (which panel’s setting) and what the bird does! 🐦"
         ]
+    },
+    "img_06": {
+        "questions": [
+            "What’s this story about? 🐒🦒🐻🐨",
+            "What are people and animals doing in the first/second/third/fourth panel? 🖼",
+            "How do the kids feel at first? And after meeting different animals? 😃➡️?",
+            "Why can’t they feed the monkey at first but feed other animals? 🔍",
+            "What new animal might they meet next? 🌟",
+            "How do the adults and kids work together in these pictures? 👨👩👧👦",
+            "How would you describe the zoo’s environment using details from the pictures? 🌳🌿",
+            "Put the actions in order and tell how one leads to another. 🐒→🦒→🐻→🐨"
+        ]
+    },
+    "img_07": {
+        "questions": [
+            "What’s the man’s story at the train station? ⏰🚂",
+            "What’s the man doing in each panel? First/second/third/fourth. 🖼",
+            "How does his mood shift from start to end? 😐➡️😟",
+            "Why does the train time cause him trouble? 🔍",
+            "Does he catch the train? What happens after? 🌟",
+            "Use the clocks/timestamps to explain the sequence of events. 🕒17:45→17:52→18:20→18:30",
+            "What do the other people (policeman, old man) do in his story? 👮👴",
+            "How could he avoid missing the train next time? 🤔"
+        ]
+    },
+    "img_08": {
+        "questions": [
+            "What’s the bear up to in the café? 🐻🍰",
+            "What’s the bear doing in each panel? First/second/third/fourth. 🖼",
+            "How does the bear feel from serving to encountering problems to the end? 😊➡️😕➡️😃",
+            "Why does the bear look sad in the third panel? 🔍",
+            "What sweet thing happens after the bird sings? 🌟",
+            "Describe the café’s look using details like the building, tables, and music. ☕🎵",
+            "How does the bird help the bear’s mood? 🐦→🐻",
+            "Explain how one action (serving cake) leads to the next (spilling strawberries, then bird’s song). 🍓→🎶"
+        ]
+    },
+    "img_09": {
+        "questions": [
+            "What’s the family’s dinner story? 🍽👩👧",
+            "What’s each person doing in every panel? First/second/third/fourth. 🖼",
+            "How do the kid’s feelings about dinner change? 😳➡️?",
+            "Why does the mom say “Tonight’s dish is different”? 🔍",
+            "Does the kid end up loving the new food? 🌟",
+            "How do mom and kid show care for each other here? 👩👧❤️",
+            "Use colors and shapes to describe the food in the pictures. 🥕🥦🥝",
+            "How does this dinner differ from a usual one, and why? 🍳→🥗"
+        ]
+    },
+    "img_10": {
+        "questions": [
+            "What’s the magic show story about the kid? 🎩🪄",
+            "What happens in each panel? First (magician’s show), second (kid watches), third (magic trick), fourth (secret revealed). 🖼",
+            "How does the kid feel from watching to figuring out the trick? 😲➡️😎",
+            "Why does the mirror help the magician’s trick? 🔍",
+            "What new magic trick will the kid try after this? 🌟",
+            "How do other people in the crowd react to the magic? 👨👩👧👦👏",
+            "Use simple science (reflection) to explain the mirror trick. 🪞🌈",
+            "Connect the magician’s act to the kid’s discovery step by step."
+        ]
     }
 }

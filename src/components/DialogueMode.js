@@ -154,7 +154,14 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
   const loadQuestions = async () => {
     try {
       // Determine which question file to load based on language
-      const questionFile = language === 'zh' ? 'questions1.json' : 'questions2.json';
+      let questionFile = 'questions1.json'; // Default to Chinese
+      if (language === 'en') {
+        questionFile = 'questions2.json';
+      } else if (language === 'es') {
+        questionFile = 'questions3.json';
+      } else if (language === 'fr') {
+        questionFile = 'questions4.json';
+      }
       
       // Load questions from the appropriate level file
       const response = await fetch(`/Level${level}/${questionFile}`);
@@ -208,6 +215,16 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
         "你觉得TA现在在想什么呢？ 💭",
         "你觉得这个地方在哪里？现实中会有吗？ 🏞️",
         "如果你能走进画里，你会做什么？ 🚪"
+      ] : language === 'es' ? [
+        "¿Quién es este personaje? Si pudieras darle un nombre, ¿cómo lo llamarías? 🤔",
+        "¿Qué crees que está pensando ahora mismo? 💭",
+        "¿Dónde crees que se encuentra este lugar? ¿Podría existir en la vida real? 🏞️",
+        "Si pudieras entrar en esta imagen, ¿qué harías? 🚪"
+      ] : language === 'fr' ? [
+        "Qui est-ce ? Si tu pouvais lui donner un nom, comment l'appellerais-tu ? 🤔",
+        "Que penses-tu qu'il ou elle pense en ce moment ? 💭",
+        "Où penses-tu que se trouve cet endroit ? Est-ce qu'il pourrait exister dans la vraie vie ? 🏞️",
+        "Si tu pouvais entrer dans ce dessin, que ferais-tu ? 🚪"
       ] : [
         "Who is this? If you could give them a name, what would it be?",
         "What do you think they are thinking about right now?",
@@ -308,7 +325,15 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
       recognition.interimResults = true;
       
       // Set language based on current selection
-      recognition.lang = language === 'zh' ? 'zh-CN' : 'en-US';
+      if (language === 'zh') {
+        recognition.lang = 'zh-CN';
+      } else if (language === 'es') {
+        recognition.lang = 'es-ES';
+      } else if (language === 'fr') {
+        recognition.lang = 'fr-FR';
+      } else {
+        recognition.lang = 'en-US';
+      }
       
       recognition.onstart = () => {
         setIsListening(true);
@@ -363,7 +388,15 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
   // Update speech recognition language when language changes
   useEffect(() => {
     if (recognitionRef.current) {
-      recognitionRef.current.lang = language === 'zh' ? 'zh-CN' : 'en-US';
+      if (language === 'zh') {
+        recognitionRef.current.lang = 'zh-CN';
+      } else if (language === 'es') {
+        recognitionRef.current.lang = 'es-ES';
+      } else if (language === 'fr') {
+        recognitionRef.current.lang = 'fr-FR';
+      } else {
+        recognitionRef.current.lang = 'en-US';
+      }
     }
   }, [language]);
   
@@ -418,7 +451,15 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
       const utterThis = new SpeechSynthesisUtterance(text);
       
       // Set utterance properties
-      utterThis.lang = language === 'zh' ? 'zh-CN' : 'en-US';
+      if (language === 'zh') {
+        utterThis.lang = 'zh-CN';
+      } else if (language === 'es') {
+        utterThis.lang = 'es-ES';
+      } else if (language === 'fr') {
+        utterThis.lang = 'fr-FR';
+      } else {
+        utterThis.lang = 'en-US';
+      }
       utterThis.pitch = 1;
       utterThis.rate = 1;
       
@@ -484,6 +525,10 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
         // Positive response before next question
         const positiveResponse = language === 'zh' ? 
           "很棒的回答！👍 " : 
+          language === 'es' ?
+          "¡Buena respuesta! 👍 " :
+          language === 'fr' ?
+          "Bonne réponse ! 👍 " :
           "Great answer! 👍 ";
         
         nextQuestion = positiveResponse + questions[userMessagesCount];
@@ -491,6 +536,10 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
         // Final positive response
         const finalResponse = language === 'zh' ? 
           "谢谢你和我练习！🎉" : 
+          language === 'es' ?
+          "¡Gracias por practicar conmigo! 🎉" :
+          language === 'fr' ?
+          "Merci de pratiquer avec moi ! 🎉" :
           "Thanks for practicing with me! 🎉";
         
         nextQuestion = finalResponse;
@@ -526,14 +575,26 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
       if (userMessagesCount < questionLimit) {
         const positiveResponse = language === 'zh' ? 
           "很棒的回答！👍 " : 
+          language === 'es' ?
+          "¡Buena respuesta! 👍 " :
+          language === 'fr' ?
+          "Bonne réponse ! 👍 " :
           "Great answer! 👍 ";
         
         nextQuestion = positiveResponse + (language === 'zh' ? 
           "你能告诉我更多吗？" : 
+          language === 'es' ?
+          "¿Puedes contarme más?" :
+          language === 'fr' ?
+          "Peux-tu me dire davantage ?" :
           "Can you tell me more?");
       } else {
         nextQuestion = language === 'zh' ? 
           "谢谢你和我练习！🎉" : 
+          language === 'es' ?
+          "¡Gracias por practicar conmigo! 🎉" :
+          language === 'fr' ?
+          "Merci de pratiquer avec moi ! 🎉" :
           "Thanks for practicing with me! 🎉";
       }
       
@@ -652,6 +713,40 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
         stopListening: '停止语音输入',
         speechNotSupported: '您的浏览器不支持语音识别',
         speechError: '语音识别错误'
+      };
+    } else if (language === 'es') {
+      return {
+        title: 'ChatPic',
+        cancel: 'Cancelar',
+        conversation: 'Conversación',
+        you: 'Tú',
+        aiTutor: 'Tutor AI',
+        placeholder: 'Escribe tu respuesta aquí...',
+        send: 'Enviar',
+        finish: 'Finalizar conversación',
+        pressEnter: 'Presiona Enter para enviar, Shift+Enter para nueva línea',
+        imageAnalysis: 'La IA está examinando cuidadosamente tu imagen 📷—¡un momento!',
+        startListening: 'Iniciar entrada de voz',
+        stopListening: 'Detener entrada de voz',
+        speechNotSupported: 'El reconocimiento de voz no es compatible con tu navegador',
+        speechError: 'Error de reconocimiento de voz'
+      };
+    } else if (language === 'fr') {
+      return {
+        title: 'ChatPic',
+        cancel: 'Annuler',
+        conversation: 'Conversation',
+        you: 'Vous',
+        aiTutor: 'Tuteur IA',
+        placeholder: 'Tapez votre réponse ici...',
+        send: 'Envoyer',
+        finish: 'Terminer la conversation',
+        pressEnter: 'Appuyez sur Entrée pour envoyer, Maj+Entrée pour une nouvelle ligne',
+        imageAnalysis: "L'IA examine attentivement votre image 📷—un instant !",
+        startListening: "Démarrer la saisie vocale",
+        stopListening: "Arrêter la saisie vocale",
+        speechNotSupported: "La reconnaissance vocale n'est pas prise en charge par votre navigateur",
+        speechError: "Erreur de reconnaissance vocale"
       };
     } else {
       return {

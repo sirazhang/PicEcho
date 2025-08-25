@@ -1,68 +1,122 @@
-[
-    {
-        "image_01": {
-            "questions": [
-                "What interesting 👀scene is presented in this picture?",
-                "Are there any special things that the characters in the picture are holding?",
-                "Among these animal riders🚴, which one do you think is cycling the fastest? And what makes you think so? 🚴‍♂️",
-                "The little animals on the side of the road are holding signs that say 'Sou hu!'. Who do you think they are cheering for? 🥳 ",
-                "Look at the crocodile 🐊rider in the leopard - print outfit. What color is its bicycle? Does the color match its outfit? 🤔 ",
-                "After the race ends, what do you imagine the winning animal will do to celebrate its victory? 🎉 ",
-                "There are referees here. How do you think they will judge which animal reaches the finish line first? 👀 ",
-                "If you were at the race scene, what cheering slogan would you shout for these cute animal riders? 📣 "
-            ]
-        }
+{
+    "image_01": {
+        "questions": [
+            "What kind of childlike race is going on in the picture? Can you fully describe this lively scene by combining the animal contestants, spectators and background elements? 👀🏁",
+            "The dog contestant wearing an orange helmet and an orange shirt with lightning patterns is riding a bicycle. What color is the bicycle? Is there any connection between the lightning pattern on its shirt and its riding state? 🚴⚡",
+            "Besides the red brick wall buildings and fountains in the background, what fantasy element makes this race unusual? What kind of atmosphere does this element add to the scene? 🌌🐋",
+            "The crocodile in a leopard print outfit is pedaling a green bicycle closely behind the dog. What small difficulties do you think it might encounter during the ride, and how will it overcome them? 🤔🐊",
+            "The rabbit spectators holding the 'Sou hu!' sign by the road and the participating animal contestants—do you think they are familiar neighbors or partners from the same animal community? 👫🐇",
+            "Looking at the picture of animals competing hard and spectators cheering enthusiastically, how do you think everyone at the scene is feeling now? From which actions or expressions can you clearly see this emotion? 😃👏"
+        ]
     },
-    {
-        "image_02": {
-            "questions": [
-                "On this boat 🚢named 'Wild Waves', which sea animal do you think people would most like to make friends with? And why? 🐬 ",
-                "The little girl on the jet - ski next to the boat—do you think she will have an interesting interaction with the whale? 🐋 ",
-                "The people on the boat 🚣 all look very happy. What interesting sights do you think they saw at sea to make them so joyful? 😄 ",
-                "If you were to board this boat, what interesting thing would you most want to do on it? Like watching dolphins or feeding seagulls. 🐦 ",
-                "The orange and white ⚪️lifebuoys on the boat—when do you think they can be really useful? 🛟 ",
-                "There are many seagulls 🐦flying in the sky. Do you think they will follow the boat all the way and put on a show for everyone? 🦅 "
-            ]
-        }
+    "image_02": {
+        "questions": [
+            "What kind of sea travel activity is shown in the picture as a whole? Can you tell which elements in the picture make this trip lively and special? 👀⚓",
+            "Some passengers on the cruise ship lean on the railing to look at the sea, while others sit together chatting. What sea views or travel experiences do you guess they might be talking about? 🗣🌊",
+            "In the sea in the background, besides the blue whale spouting water and the dolphins leaping out of the water, what other marine creatures are there? How do their presence make this sea area feel? 🐠🐬",
+            "A girl in orange clothes is riding a motorboat and shuttling quickly beside the cruise ship. Do you think she is guiding the cruise ship or simply enjoying the joy of riding on the sea? 🤔🚤",
+            "The divers in diving suits are exploring the seabed underwater. Will there be any interaction between them and the passengers on the cruise ship? For example, in what way can they share their underwater discoveries? 🤿✨",
+            "The sun makes the sea sparkle, and seagulls hover overhead. How do these make the people on the cruise ship feel? Can you use a few words to describe this relaxed atmosphere? 😃☀️"
+        ]
     },
-    {
-        "image_03": {
-            "questions": [
-                "How much summer fun is hidden in this beach picture? Describe all the lively things you see, like people’s activities and beach elements.",
-                "The people on the beach 🏖️are all wearing nice sunglasses. What happy expressions do you guess are hidden behind their sunglasses? 😎 ",
-                "The uncle in the floral shirt is holding a drink. What delicious ingredients do you think might be in his drink? 🥤 ",
-                "The children building sandcastles—what interesting shapes do you think they can make the sandcastles into? Like castles or small animals. 🐚 ",
-                "The small boat on the sea—do you think it is going fishing in the sea or taking tourists for a sightseeing trip? 🚤 ",
-                "The child lying on the pink flamingo float—do you think he will have a 'water race' with the flamingo float? 🏊 ",
-                "If you were at this beach, which beach activity would you most want to take part in? Building sandcastles, swimming, or eating ice - cream? 🍦 "
-            ]
-        }
+    "image_03": {
+        "questions": [
+            "What kind of coastal beach scene is presented in the picture? From people's clothes and activities, what kind of vacation atmosphere can you feel? 👀🏖️",
+            "The lady wearing a straw hat is eating ice cream and reading a book on a green checkered blanket. There are also watermelons and sandwiches beside her. Do these foods show how well-prepared she is for the vacation? 🍉🍦",
+            "A cruise ship sails slowly on the horizon in the background. Does its appearance make the beach look more spacious or add a sense of expectation for travel? 🚢🌅",
+            "The little boy wearing heart-shaped sunglasses is running on the beach without any toys in his hand. Do you think he might be chasing small crabs on the beach or playing hide-and-seek with his friends in the distance? 🤔🕶️",
+            "The man holding a purple sunshade and the lady in a white dress smile at each other, and their dressing styles match well. Do you think they are a couple or good friends who came to the beach for a vacation together? 👫💖",
+            "People on the beach are either resting, playing, or chatting, and their faces are all relaxed. How do you think their mood differs from when they are working or studying in the city? 😃🌴"
+        ]
     },
-    {
-        "image_04": {
-            "questions": [
-                "In this family dinner, what special and warm things can you find? Describe the loving moments in the picture, like people’s interactions and the cozy setting.",
-                "The person wearing headphones🎧 is pouring something on the food. What delicious sauce do you think it could be? 🍳 ",
-                "The laptop on the table shows 'Backward'. What interesting thing do you think the person using the laptop is doing? 💻 ",
-                "The cat 🐱wearing VR glasses—what wonderful pictures do you think it seems to'see'?  ",
-                "The baby👶 has food on his face. What delicious food do you guess he just ate to make himself like this?  ",
-                "Everyone is sitting around the table for dinner. What dish do you think is the most delicious in this meal? 🥗 ",
-                "If you joined this family dinner, what interesting thing that happened to you recently would you share with your family? 👨‍👩‍👧‍👦 "
-            ]
-        }
+    "image_04": {
+        "questions": [
+            "What kind of family scene is shown in the picture? Which items on the dining table make this scene feel warm and full of life? 👀🍽️",
+            "The orange cat under the table is wearing VR glasses. What fun does this special detail add to the family dinner time? Who do you think put the VR glasses on the cat? 🐱🥽",
+            "There are no obvious windows or balcony views in the room. From the furniture arrangement (such as the dining table and chairs), which area of the house do you guess this is? What else is this area usually used for? 🏠👀",
+            "The lady wearing headphones is holding a fork, and the egg yolk from the fried egg on her plate is about to slide off. Do you think she is about to taste the food, or is she too absorbed in the music to notice the egg yolk? 🤔🎧",
+            "The elderly person with white hair is looking at a mobile phone, the man is working on a computer with a 'Backward' interface, the little girl is holding a mobile phone, and the baby is laughing. What family relationships do you think exist between them, and what roles do they each play in the family? 👨👩👧👦👶",
+            "The baby's giggles make the whole dining table atmosphere relaxed, and other family members occasionally look at the baby even though they are doing their own things. How would you describe the atmosphere of this family now, and what emotions do you think everyone is feeling? 😃👨👩👧👦"
+        ]
     },
-    {
-        "image_05": {
-            "questions": [
-                "In this lively street scene, what interesting things can you find? Describe the whole picture, like the people, shops and little details.",
-                "What tool is the vegetable🥬 - selling uncle holding? Explain what it’s used for and how it works in this scene.",
-                "At the strawberry stall in the market, do you think these strawberries are sweet? And how can you tell? 🍓 ",
-                "The big cat at the entrance of the bakery—do you think it will sneak into the store and eat the delicious bread? 🥐 ",
-                "The child pushing the cart—what interesting things do you think might be in his cart? 📦 ",
-                "The people in the second - floor windows—who do you think they are greeting warmly downstairs? 👋 ",
-                "There is a market and a bakery in the street. If you were to go shopping, would you first buy fresh fruits and vegetables at the market or buy bread at the bakery? 🥖 ",
-                "If you were a vendor in this street market, what special things would you sell to make people like to come to your stall? 🧺 "
-            ]
-        }
+    "image_05": {
+        "questions": [
+            "The small town street in the picture is full of life. Can you describe the lively scene of this street by combining the status of the shops on both sides, passers-by and residents upstairs? 👀🏘️",
+            "At the MARKET shop on the left, the vendor is weighing strawberries for the little girl squatting in front of the strawberry stall. The little girl has her hands clasped together—do you think she is looking forward to the taste of the strawberries, or hoping the vendor will give her a little more? 🍓👧",
+            "Some residents upstairs lean on the windowsills to look down, and some stick their heads out to chat. What kind of community does their actions make this street feel like? 🏘️👥",
+            "A boy in a striped shirt is struggling to drag a large cardboard box past the bakery. Do you guess the box might contain ingredients needed by the bakery, or items he needs to deliver to another place? 🤔📦",
+            "A lady pushing a stroller and a man beside her stop at the entrance of the bakery. They are looking at the bread on the shelf—do you think they are discussing which kind of bread to buy, or planning their next trip in the small town? 👫🍞",
+            "A yellow cat is lying leisurely on the awning of the bakery, birds are flying above the street, and fallen leaves are slowly floating to the ground. How do you think the small town residents feel based on this picture, and what kind of life rhythm can you sense? 😃🍂"
+        ]
+    },
+    "image_06": {
+        "questions": [
+            "What theme of community activity is shown in the picture as a whole? From elements such as the river, spectators and banner, can you tell how lively the activity is? 👀🦆",
+            "Yellow rubber ducks are densely floating forward with the current in the small river—do you think these rubber ducks were pre-adopted by the residents, or uniformly prepared by the event organizers? 🦆💛",
+            "A yellow banner that says 'Annual Duck Race' is hung on the red brick building in the background. What does the word 'Annual' tell you about this event? Do you think the residents look forward to it every year? 🏯📅",
+            "A staff member in a red vest is speaking loudly with a loudspeaker—do you think he is announcing the start of the race, or reminding the spectators on the bank to pay attention to safety? 🤔📢",
+            "The spectators on the stone bridge, the children holding balloons on the bank, and the parents holding babies all come from different families in the town. Do you think this event is helpful for improving the neighborhood relationship? 👫🎈",
+            "The spectators are staring at the rubber ducks in the river, and some even hold up their mobile phones to take photos—do you think their mood is nervous and expectant, or simply enjoying the fun of the event? From which actions can you tell? 😃📸"
+        ]
+    },
+    "image_07": {
+        "questions": [
+            "What kind of special baseball game is presented in the picture? Compared with the baseball games you usually know, what is the most different part? 👀⚾",
+            "In the home plate area, someone is riding on an elephant's back to swing a bat and hit the ball. The elephant is very large—do you think riding an elephant to compete is to make the hit more powerful, or simply to add fun to the game? 🐘🥎",
+            "The audience stands in the background are full of people, and the electronic scoreboard shows 0:0. What stage of the game does this score indicate? What service will the hot dog cart by the field provide for the spectators? 🏟️🌭",
+            "The red team player on the runway is running desperately towards the base, and the blue team player is chasing behind. What do you think the red team player is most worried about now, and how will he try to ensure he safely reaches the base? 🤔🏃",
+            "The person riding a horse to compete and the person riding an elephant to hit the ball are wearing clothes of different colors—do you think they are opponents from different teams, or teammates responsible for different positions in the same team? 👫🐎",
+            "The spectators by the field are waving small flags, and the dog at the edge of the field is running back and forth. How do you think everyone feels about this special baseball game? Is it more enjoyable than a regular baseball game? 😃🎉"
+        ]
+    },
+    "image_08": {
+        "questions": [
+            "What type of music event is shown in the picture? From the stage, audience and background buildings, what kind of atmosphere can you feel at the scene? 👀🎶",
+            "The lead singer on the stage has purple hair, wears sunglasses and a black jacket. Do you think he is singing rock, pop or another style of song? Does his outfit match the style of the song? 🎤🕶️",
+            "The city high-rises in the background look soft in the sunset, and the city lights are slowly turning on. What special feeling does this environment give the outdoor concert compared with an indoor concert? 🌆🏙️",
+            "Some of the audience off the stage stand up and sway their bodies to the music, and some hold drinks and cheer—do you think they are doing this because they like the band's songs, or because they enjoy the atmosphere of listening to music with everyone? 🤔🥤",
+            "The guitarist, drummer and lead singer on the stage cooperate very well. Do you think they spend a lot of time rehearsing usually? From which details can you see their cooperation is skilled? 👫🎸",
+            "The sound of music, cheers and the background sound of the city are intertwined—how do you think the band members on the stage and the audience off the stage are feeling now? Can you describe it with words other than 'excited' and 'happy'? 😃🎊"
+        ]
+    },
+    "image_09": {
+        "questions": [
+            "What kind of sci-fi scene is presented in the picture? From which key elements can you clearly judge that this is a Mars airport rather than an airport on Earth? 👀🪐",
+            "The suitcases on the conveyor belt have cute shapes such as lighthouses and small boats. These shapes seem inconsistent with the sci-fi theme of Mars—why do you think the designer made the suitcases like this? 🧳🏴‍☠️",
+            "Through the floor-to-ceiling windows in the background, you can see the red Martian surface and the starry sky, and the airport dome also simulates the Martian landscape. How can this design make the 'passengers' who come to Mars feel? 🌌🔴",
+            "The penguin wearing a straw hat is dragging a yellow suitcase, and the astronaut is pulling a yellow suitcase of the same style—do you think the penguin is a 'companion' with the astronaut, or a separate traveler coming to Mars? 🤔🐧",
+            "Animals such as dinosaurs, squirrels and wolves also appear in the airport, and they are very different from the astronaut in size and species. How do you think they came to the Mars airport? 👫🦖",
+            "This Mars airport has both a sci-fi feel and childlike fun—do you think the 'passengers' in the picture are excitedly looking forward to their Mars trip, or curiously observing the airport environment? Can you tell from their actions? 😃🚀"
+        ]
+    },
+    "image_10": {
+        "questions": [
+            "What kind of cat-themed house is shown in the picture? From the structure of the house and the internal layout, how comfortable can you tell the cats' lives are? 👀🐱",
+            "In the sunroom on the top floor, some cats lie beside the green plants to bask in the sun, and some rub their faces against each other. There is also a 'cat fish' decoration on the roof—what preference of the cats might this 'cat fish' decoration be to satisfy? 🐱🐟",
+            "In the small river outside the house in the background, there are golden carp swimming, and there are green plants and flowers on the bank. What kind of observation fun can these outdoor scenes provide for the cats? 🌊🌸",
+            "Several cats lie on the blue sofa in the living room on the middle floor—some close their eyes, and some stare out the window. Do you think they are resting, or waiting for their owner to feed them snacks? 🤔😴",
+            "The cats in the living room on the first floor sit around the table, as if watching TV, and their postures are very neat—do you think they are a 'family' that has lived together for a long time, or just gathered here temporarily? 👫📺",
+            "The cats either lie or play in the house, and their movements are very relaxed—do you think they are in a comfortable mood now? How is this living state different from that of stray cats? 😃🏠"
+        ]
+    },
+    "image_11": {
+        "questions": [
+            "What kind of fantasy outdoor scene is presented in the picture? From elements such as the moon, children and houses, what kind of imagination can you feel? 👀🌙",
+            "The huge moon suspended at a low altitude has many craters on its surface, and small pieces of meteorites are falling down—do you think this moon is a real celestial body, or an effect created by a special device? 🌕🔥",
+            "The colorful houses in the background are small and cute, and there are stars dotted in the blue sky. What kind of visual effect does this background form with the green park on the ground? Does it make the whole scene more dreamy? 🏠✨",
+            "Some children pull the manhole cover as if exploring something, and some run with pilot goggles on—do you think they are playing a 'space adventure' game? Why do they play this kind of game? 🤔👩🚀",
+            "The elderly person sitting on the bench uses a telescope to observe the sky, and the children next to him occasionally lean over to look—do you think the elderly person might be explaining knowledge about the moon or stars to the children? 👫🔭",
+            "Facing such a fantasy scene, the children are playing happily, and the elderly person is observing quietly—what are the similarities and differences between their moods now? Can you describe them in detail? 😃👴👶"
+        ]
+    },
+    "image_12": {
+        "questions": [
+            "What kind of special place in the forest is shown in the picture? From the big tree, sign and animal characters, what kind of atmosphere can you feel here? 👀🌳",
+            "In the 'Forest Coffee' cafe transformed from a tree hole, one rabbit is operating a coffee machine, and the other is lying on the windowsill looking outside—do you think they, as waiters, will have a good service attitude? What details make you think so? 🐰☕",
+            "The big tree in the background is very thick, the spiral staircase wraps around the tree trunk, and there are small mushroom-shaped facilities next to it—how well do these designs integrate the cafe with the forest environment? 🌳🍄",
+            "Outside, rabbits, cats and pigs sit together by the stump table drinking coffee—do you think they might be discussing new things in the forest, or sharing their feelings about drinking coffee? 🤔🐷",
+            "The fox lying on the green leaf roof looks down at the rabbits in the cafe from time to time—do you think the fox wants to buy coffee, or is it a friend who comes to chat with the rabbit waiters? 👫🦊",
+            "The air in the forest is very fresh, and there are vines and small flowers around the cafe—do you think the small animals coming here are in a relaxed mood now? Can this atmosphere make them forget the troubles in the forest? 😃💐"
+        ]
     }
-]
+}
