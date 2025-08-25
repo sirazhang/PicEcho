@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { receivePostcard, getImageFromIndexedDB } from '../utils/api';
 
-const WorldMapReview = ({ onBack, onViewPostcard, onShow, onOpenPostOffice }) => {
+const WorldMapReview = ({ onBack, onViewPostcard, onShow, onOpenPostOffice, selectedLanguage }) => {
   const [savedPostcards, setSavedPostcards] = useState([]);
   const [selectedPostcard, setSelectedPostcard] = useState(null);
   const [showModal, setShowModal] = useState(false);
@@ -340,7 +340,7 @@ const WorldMapReview = ({ onBack, onViewPostcard, onShow, onOpenPostOffice }) =>
         </div>
       </div>
 
-      {/* PostOffice icon button in bottom right corner, outside the map area */}
+      {/* Community icon button in bottom right corner, outside the map area */}
       <div 
         className="absolute cursor-pointer transform hover:scale-110 transition-transform duration-200"
         style={{ 
@@ -349,11 +349,11 @@ const WorldMapReview = ({ onBack, onViewPostcard, onShow, onOpenPostOffice }) =>
           width: '50px',
           height: '50px'
         }}
-        onClick={onOpenPostOffice}
+        onClick={onOpenPostOffice} // We'll update this in App.js
       >
         <img 
-          src="/design/postoffice.png" 
-          alt="Post Office" 
+          src="/design/community.png" 
+          alt="Community" 
           className="w-full h-full object-contain"
         />
       </div>
@@ -364,7 +364,9 @@ const WorldMapReview = ({ onBack, onViewPostcard, onShow, onOpenPostOffice }) =>
           <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xl font-semibold text-gray-800">Saved Postcard</h3>
+                <h3 className="text-xl font-semibold text-gray-800">
+                  {selectedLanguage === 'zh' ? '已保存的明信片' : selectedLanguage === 'es' ? 'Postal guardada' : selectedLanguage === 'fr' ? 'Carte postale enregistrée' : 'Saved Postcard'}
+                </h3>
                 <button 
                   onClick={closeModal}
                   className="text-gray-500 hover:text-gray-700"
@@ -603,7 +605,9 @@ const WorldMapReview = ({ onBack, onViewPostcard, onShow, onOpenPostOffice }) =>
           <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xl font-semibold text-gray-800">Received Postcard</h3>
+                <h3 className="text-xl font-semibold text-gray-800">
+                  {selectedLanguage === 'zh' ? '收到的明信片' : selectedLanguage === 'es' ? 'Postal recibida' : selectedLanguage === 'fr' ? 'Carte postale reçue' : 'Received Postcard'}
+                </h3>
                 <button 
                   onClick={() => setShowReceivedPostcard(false)}
                   className="text-gray-500 hover:text-gray-700"
@@ -694,7 +698,8 @@ const WorldMapReview = ({ onBack, onViewPostcard, onShow, onOpenPostOffice }) =>
                   }
                 })()}
                 <p className="text-gray-600 text-center mt-2">
-                  Received: {new Date(receivedPostcard.created_at || receivedPostcard.timestamp).toLocaleString()}
+                  {selectedLanguage === 'zh' ? '收到时间：' : selectedLanguage === 'es' ? 'Recibido: ' : selectedLanguage === 'fr' ? 'Reçu: ' : 'Received: '}
+                  {new Date(receivedPostcard.created_at || receivedPostcard.timestamp).toLocaleString()}
                 </p>
               </div>
             </div>

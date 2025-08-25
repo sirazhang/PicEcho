@@ -189,6 +189,78 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
     }
   };
 
+  // Handle print postcard button click
+  const handlePrintPostcard = async () => {
+    try {
+      setIsSaving(true);
+      setSaveMessage('');
+      
+      // Generate the postcard image as a Blob
+      const imageBlob = await generatePostcardImage();
+      
+      // Create a temporary URL for the blob
+      const imageUrl = URL.createObjectURL(imageBlob);
+      
+      // Create a temporary image element for printing
+      const img = new Image();
+      img.src = imageUrl;
+      
+      img.onload = () => {
+        // Create a new window for printing
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(`
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <title>Print Postcard</title>
+              <style>
+                body {
+                  margin: 0;
+                  padding: 0;
+                  display: flex;
+                  justify-content: center;
+                  align-items: center;
+                  min-height: 100vh;
+                  background: #f0f0f0;
+                }
+                img {
+                  max-width: 100%;
+                  max-height: 100vh;
+                  box-shadow: 0 0 20px rgba(0,0,0,0.3);
+                }
+              </style>
+            </head>
+            <body>
+              <img src="${imageUrl}" onload="window.print(); setTimeout(() => window.close(), 1000);" />
+            </body>
+          </html>
+        `);
+        printWindow.document.close();
+        
+        // Clean up the object URL after a delay
+        setTimeout(() => {
+          URL.revokeObjectURL(imageUrl);
+        }, 5000);
+      };
+      
+      img.onerror = () => {
+        URL.revokeObjectURL(imageUrl);
+        setSaveMessage(selectedLanguage === 'zh' ? '打印失败，请重试' : 'Failed to print, please try again');
+        setTimeout(() => {
+          setSaveMessage('');
+        }, 2000);
+      };
+    } catch (err) {
+      console.error('Error printing postcard:', err);
+      setSaveMessage(selectedLanguage === 'zh' ? '打印失败，请重试' : 'Failed to print, please try again');
+      setTimeout(() => {
+        setSaveMessage('');
+      }, 2000);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   // Handle next picture button click
   const handleNextPicture = () => {
     if (onNextPicture) {
@@ -202,10 +274,10 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
     setSelectedPostcard(null);
   };
   
-  // Handle opening the post office
-  const handleOpenPostOffice = () => {
+  // Handle opening the community
+  const handleOpenCommunity = () => {
     if (onOpenPostOffice) {
-      onOpenPostOffice();
+      onOpenPostOffice(); // Reuse the same callback for now, will be updated in App.js
     }
   };
 
@@ -445,7 +517,7 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
         </button>
         
         <button
-          onClick={handleSavePostcard}
+          onClick={handlePrintPostcard}
           disabled={isSaving}
           className={`px-4 py-2 text-base font-inter font-bold focus:outline-none rounded-lg flex items-center justify-center ${
             isSaved ? 'bg-green-500' : 'bg-[#66ab4b]'
@@ -459,28 +531,14 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
           {isSaving ? (
             <>
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-              {textContent.saving}
-            </>
-          ) : isSaved ? (
-            <>
-              <span className="mr-2">✓</span> {textContent.saved}
+              {selectedLanguage === 'zh' ? '打印中...' : selectedLanguage === 'es' ? 'Imprimiendo...' : selectedLanguage === 'fr' ? 'Impression...' : 'Printing...'}
             </>
           ) : (
-            textContent.save
+            <>
+              <span className="mr-2">🖨️</span> 
+              {selectedLanguage === 'zh' ? '打印' : selectedLanguage === 'es' ? 'Imprimir' : selectedLanguage === 'fr' ? 'Imprimer' : 'Print'}
+            </>
           )}
-        </button>
-        
-        <button
-          onClick={handleSendPostcard}
-          className="px-4 py-2 text-base font-inter font-bold focus:outline-none rounded-lg flex items-center justify-center"
-          style={{ 
-            backgroundColor: '#ff9800',
-            color: 'white',
-            minWidth: '120px',
-            minHeight: '40px'
-          }}
-        >
-          {textContent.send}
         </button>
         
         <button
@@ -514,7 +572,7 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
           </div>
 
           {/* Stamp */}
-          <div className="absolute top-4 right-4 w-28 h-32 flex items-start">
+          <div className="absolute top-4 right-4 w-32 h-36 flex items-start">
             <img 
               src={stampImage} 
               alt="Stamp" 
@@ -530,24 +588,24 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
                 {imageLoading ? (
                   <div className="flex items-center justify-center h-full">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mr-2"></div>
-                    <span className="text-gray-700">{selectedLanguage === 'zh' ? '加载图片中...' : 'Loading image...'}</span>
+                    <span className="text-gray-700">{selectedLanguage === 'zh' ? '加载图片中...' : selectedLanguage === 'es' ? 'Cargando imagen...' : selectedLanguage === 'fr' ? 'Chargement de l\'image...' : 'Loading image...'}</span>
                   </div>
                 ) : imageError ? (
                   <div className="flex items-center justify-center h-full bg-gray-100">
                     <div className="text-center">
-                      <p className="text-red-500 mb-2">{selectedLanguage === 'zh' ? '图片未找到' : 'Image not found'}</p>
+                      <p className="text-red-500 mb-2">{selectedLanguage === 'zh' ? '图片未找到' : selectedLanguage === 'es' ? 'Imagen no encontrada' : selectedLanguage === 'fr' ? 'Image non trouvée' : 'Image not found'}</p>
                       <button
                         onClick={() => window.location.reload()}
                         className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
                       >
-                        {selectedLanguage === 'zh' ? '重试' : 'Retry'}
+                        {selectedLanguage === 'zh' ? '重试' : selectedLanguage === 'es' ? 'Reintentar' : selectedLanguage === 'fr' ? 'Réessayer' : 'Retry'}
                       </button>
                     </div>
                   </div>
                 ) : (
                   <img 
                     src={currentImageSrc} 
-                    alt={selectedLanguage === 'zh' ? '对话图片' : 'Conversation image'} 
+                    alt={selectedLanguage === 'zh' ? '对话图片' : selectedLanguage === 'es' ? 'Imagen de conversación' : selectedLanguage === 'fr' ? 'Image de conversation' : 'Conversation image'} 
                     className="h-full w-full object-cover rounded-lg"
                   />
                 )}
@@ -563,7 +621,7 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
                     {textContent.encouragingRemarks}
                   </div>
                   <div className="font-inter text-base whitespace-pre-line bg-[#f0fdf4] p-3 rounded-lg">
-                    {localFeedback?.encouragingRemarks || (selectedLanguage === 'zh' ? '✅ 做得很好！继续努力！' : '✅ Well done! Keep up the good work!')}
+                    {localFeedback?.encouragingRemarks || (selectedLanguage === 'zh' ? '✅ 做得很好！继续努力！' : selectedLanguage === 'es' ? '✅ ¡Bien hecho! ¡Sigue esforzándote!' : selectedLanguage === 'fr' ? '✅ Bien joué ! Continue comme ça !' : '✅ Well done! Keep up the good work!')}
                   </div>
                 </div>
                 
@@ -573,7 +631,7 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
                     {textContent.errorSummary}
                   </div>
                   <div className="font-inter text-base whitespace-pre-line bg-[#fef3c7] p-3 rounded-lg">
-                    {localFeedback?.errorSummary || (selectedLanguage === 'zh' ? '❗️ 没有发现明显错误' : '❗️ No significant errors found')}
+                    {localFeedback?.errorSummary || (selectedLanguage === 'zh' ? '❗️ 没有发现明显错误' : selectedLanguage === 'es' ? '❗️ No se encontraron errores significativos' : selectedLanguage === 'fr' ? '❗️ Aucune erreur significative trouvée' : '❗️ No significant errors found')}
                   </div>
                 </div>
                 
@@ -583,7 +641,7 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
                     {textContent.suggestions}
                   </div>
                   <div className="font-inter text-base whitespace-pre-line bg-[#dbeafe] p-3 rounded-lg">
-                    {localFeedback?.suggestions || (selectedLanguage === 'zh' ? '💡 保持当前水平，继续练习！' : '💡 Maintain your current level and keep practicing!')}
+                    {localFeedback?.suggestions || (selectedLanguage === 'zh' ? '💡 保持当前水平，继续练习！' : selectedLanguage === 'es' ? '💡 ¡Mantén tu nivel actual y sigue practicando!' : selectedLanguage === 'fr' ? '💡 Maintiens ton niveau actuel et continue à t\'entraîner !' : '💡 Maintain your current level and keep practicing!')}
                   </div>
                 </div>
               </div>
@@ -593,7 +651,7 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
         </div>
       </div>
 
-      {/* PostOffice icon button in bottom right corner */}
+      {/* Community icon button in bottom right corner */}
       <div 
         className="fixed cursor-pointer transform -translate-x-1/2 -translate-y-1/2 hover:scale-110 transition-transform duration-200 z-40"
         style={{ 
@@ -602,15 +660,15 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
           width: '50px',
           height: '50px'
         }}
-        onClick={handleOpenPostOffice}
+        onClick={handleOpenCommunity}
       >
         <img 
-          src="/design/postoffice.png" 
-          alt="Post Office" 
+          src="/design/community.png" 
+          alt="Community" 
           className="w-full h-full object-contain"
           onError={(e) => {
             // Fallback to sample image if the specified image fails to load
-            e.target.src = '/sample/sample_postoffice.png';
+            e.target.src = '/sample/sample_community.png';
           }}
         />
       </div>
@@ -622,7 +680,7 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xl font-semibold text-gray-800">
-                  {selectedLanguage === 'zh' ? '预览明信片' : 'Preview Postcard'}
+                  {selectedLanguage === 'zh' ? '预览明信片' : selectedLanguage === 'es' ? 'Vista previa de la postal' : selectedLanguage === 'fr' ? 'Aperçu de la carte postale' : 'Preview Postcard'}
                 </h3>
                 <button 
                   onClick={() => setShowPreview(false)}
@@ -651,7 +709,7 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
                     onClick={() => setShowPreview(false)}
                     className="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg font-medium"
                   >
-                    {selectedLanguage === 'zh' ? '取消' : 'Cancel'}
+                    {selectedLanguage === 'zh' ? '取消' : selectedLanguage === 'es' ? 'Cancelar' : selectedLanguage === 'fr' ? 'Annuler' : 'Cancel'}
                   </button>
                   <button
                     onClick={async () => {
@@ -679,13 +737,13 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
                         setShowPreview(false);
                         
                         // 显示发送成功消息
-                        setSaveMessage(selectedLanguage === 'zh' ? '明信片已发送！' : 'Postcard sent!');
+                        setSaveMessage(selectedLanguage === 'zh' ? '明信片已发送！' : selectedLanguage === 'es' ? '¡Postal enviada!' : selectedLanguage === 'fr' ? 'Carte postale envoyée !' : 'Postcard sent!');
                         setTimeout(() => {
                           setSaveMessage('');
                         }, 2000);
                       } catch (error) {
                         console.error('Error sending postcard:', error);
-                        setSaveMessage(selectedLanguage === 'zh' ? '发送失败，请重试' : 'Failed to send, please try again');
+                        setSaveMessage(selectedLanguage === 'zh' ? '发送失败，请重试' : selectedLanguage === 'es' ? 'Error al enviar, inténtalo de nuevo' : selectedLanguage === 'fr' ? 'Échec de l\'envoi, veuillez réessayer' : 'Failed to send, please try again');
                         setTimeout(() => {
                           setSaveMessage('');
                         }, 2000);
@@ -693,7 +751,7 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
                     }}
                     className="px-4 py-2 bg-blue-500 text-white rounded-lg font-medium"
                   >
-                    {selectedLanguage === 'zh' ? '发送' : 'Send'}
+                    {selectedLanguage === 'zh' ? '发送' : selectedLanguage === 'es' ? 'Enviar' : selectedLanguage === 'fr' ? 'Envoyer' : 'Send'}
                   </button>
                 </div>
               </div>
@@ -708,7 +766,9 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
           <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xl font-semibold text-gray-800">Saved Postcard</h3>
+                <h3 className="text-xl font-semibold text-gray-800">
+                  {selectedLanguage === 'zh' ? '已保存的明信片' : selectedLanguage === 'es' ? 'Postal guardada' : selectedLanguage === 'fr' ? 'Carte postale enregistrée' : 'Saved Postcard'}
+                </h3>
                 <button 
                   onClick={closeModal}
                   className="text-gray-500 hover:text-gray-700"
@@ -832,13 +892,6 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
       {saveMessage && (
         <div className="fixed bottom-4 right-4 bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg">
           {saveMessage}
-        </div>
-      )}
-      
-      {/* Success Message */}
-      {showSuccess && (
-        <div className="fixed bottom-4 left-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg animate-fade-in">
-          {textContent.successMessage}
         </div>
       )}
       

@@ -5,8 +5,10 @@ import ReviewPostcard from './components/ReviewPostcard';
 import LoadingScreen from './components/LoadingScreen';
 import WorldMapReview from './components/WorldMapReview';
 import PostOffice from './components/PostOffice';
+import Community from './components/Community';
 import { generateKimiFeedback } from './utils/kimiApi';
 import { saveImageToIndexedDB } from './utils/api';
+import html2canvas from 'html2canvas';
 
 function App() {
   const [currentScreen, setCurrentScreen] = useState('home'); // 'home', 'dialogue', 'review', 'loading', 'map', 'postoffice'
@@ -113,6 +115,14 @@ function App() {
       // Generate feedback using Kimi API
       const feedbackData = await generateKimiFeedback(conversation, imageDescription, selectedLanguage);
       
+      // Auto-save postcard to WorldMapReview
+      await autoSavePostcard({
+        imageId: selectedImage,
+        level: selectedLevel,
+        feedback: feedbackData,
+        conversationHistory: conversation
+      });
+      
       setFeedback({
         ...feedbackData,
         imageId: selectedImage,
@@ -125,6 +135,15 @@ function App() {
       setError('Failed to load description or generate feedback');
       // 即使出错也跳转到review页面，使用标准反馈模板
       const templateFeedback = getFallbackFeedback(selectedLanguage);
+      
+      // Auto-save postcard to WorldMapReview even when error occurs
+      await autoSavePostcard({
+        imageId: selectedImage,
+        level: selectedLevel,
+        feedback: templateFeedback,
+        conversationHistory: conversation
+      });
+      
       setFeedback({
         ...templateFeedback,
         imageId: selectedImage,
@@ -286,6 +305,15 @@ function App() {
     }, 300);
   };
 
+  const handleViewCommunity = () => {
+    setIsTransitioning(true);
+    setTimeout(() => {
+      setCurrentScreen('community');
+      window.location.hash = '#/community';
+      setIsTransitioning(false);
+    }, 300);
+  };
+
   const handleViewPostcard = (postcard) => {
     setIsTransitioning(true);
     setTimeout(() => {
@@ -387,6 +415,159 @@ function App() {
     console.log('Cache cleared');
   };
 
+  // Auto-save postcard to WorldMapReview
+  const autoSavePostcard = async (postcardData) => {
+    try {
+      // Create a temporary postcard element for screenshot
+      const tempDiv = document.createElement('div');
+      tempDiv.style.position = 'absolute';
+      tempDiv.style.left = '-9999px';
+      tempDiv.style.width = '1200px';
+      tempDiv.style.height = '800px';
+      tempDiv.style.backgroundColor = '#F5F5F5';
+      tempDiv.style.fontFamily = 'Inter, sans-serif';
+      
+      // Generate random postal code
+      const generatePostalCode = () => {
+        let result = '';
+        for (let i = 0; i < 6; i++) {
+          result += Math.floor(Math.random() * 10);
+        }
+        return result;
+      };
+      
+      const postalCode = generatePostalCode();
+      
+      // Select random stamp image
+      const stampImages = [
+        '/img_post/img_post_01.png',
+        '/img_post/img_post_02.png',
+        '/img_post/img_post_03.png',
+        '/img_post/img_post_04.png',
+        '/img_post/img_post_05.png',
+        '/img_post/img_post_06.png',
+        '/img_post/img_post_07.png',
+        '/img_post/img_post_08.png',
+        '/img_post/img_post_09.png',
+        '/img_post/img_post_10.png',
+        '/img_post/img_post_11.png',
+        '/img_post/img_post_12.png',
+        '/img_post/img_post_13.png',
+        '/img_post/img_post_14.png',
+        '/img_post/img_post_15.png',
+        '/img_post/img_post_16.png',
+        '/img_post/img_post_17.png',
+        '/img_post/img_post_18.png',
+        '/img_post/img_post_19.png',
+        '/img_post/img_post_20.png'
+      ];
+      
+      const randomStamp = stampImages[Math.floor(Math.random() * stampImages.length)];
+      
+      // Add postcard structure
+      tempDiv.innerHTML = `
+        <div style="width: 100%; height: 100%; position: relative; background-color: #F5F5F5;">
+          <div style="position: absolute; top: 16px; left: 16px; display: flex; gap: 4px;">
+            ${postalCode.split('').map(digit => `
+              <div style="width: 32px; height: 32px; background: white; border: 2px solid black; display: flex; align-items: center; justify-content: center; font-family: 'Gloria Hallelujah', cursive; font-size: 24px;">${digit}</div>
+            `).join('')}
+          </div>
+          
+          <div style="position: absolute; top: 16px; right: 16px; width: 112px; height: 128px;">
+            <img src="${randomStamp}" style="width: 100%; height: 100%; object-contain;" />
+          </div>
+          
+          <div style="display: flex; height: 100%; padding-top: 64px;">
+            <div style="width: 50%; height: 100%; border-right: 4px solid #ccc; padding: 0 16px; box-sizing: border-box;">
+              <div style="width: 100%; height: 100%; overflow: hidden; border-radius: 8px;">
+                <img src="/Level${postcardData.level}/${postcardData.imageId}.png" style="width: 100%; height: 100%; object-cover;" />
+              </div>
+            </div>
+            
+            <div style="width: 50%; padding: 0 16px; box-sizing: border-box; display: flex; flex-direction: column;">
+              <div style="flex-grow: 1; overflow-y: auto; padding-top: 80px;">
+                <div style="margin-bottom: 16px;">
+                  <div style="font-family: 'Inter', sans-serif; font-weight: 600; color: #374151; margin-bottom: 4px;">
+                    ${(selectedLanguage === 'zh' || selectedLanguage === 'es' || selectedLanguage === 'fr') ? '鼓励评价 ✅' : 'Encouraging Remarks ✅'}
+                  </div>
+                  <div style="font-family: 'Inter', sans-serif; font-size: 16px; white-space: pre-line; background-color: #f0fdf4; padding: 12px; border-radius: 8px;">
+                    ${postcardData.feedback?.encouragingRemarks || (selectedLanguage === 'zh' ? '✅ 做得很好！继续努力！' : selectedLanguage === 'es' ? '✅ ¡Bien hecho! ¡Sigue esforzándote!' : selectedLanguage === 'fr' ? '✅ Bien joué ! Continue comme ça !' : '✅ Well done! Keep up the good work!')}
+                  </div>
+                </div>
+                
+                <div style="margin-bottom: 16px;">
+                  <div style="font-family: 'Inter', sans-serif; font-weight: 600; color: #374151; margin-bottom: 4px;">
+                    ${(selectedLanguage === 'zh' || selectedLanguage === 'es' || selectedLanguage === 'fr') ? '错误总结 ❗️' : 'Error Summary ❗️'}
+                  </div>
+                  <div style="font-family: 'Inter', sans-serif; font-size: 16px; white-space: pre-line; background-color: #fef3c7; padding: 12px; border-radius: 8px;">
+                    ${postcardData.feedback?.errorSummary || (selectedLanguage === 'zh' ? '❗️ 没有发现明显错误' : selectedLanguage === 'es' ? '❗️ No se encontraron errores significativos' : selectedLanguage === 'fr' ? '❗️ Aucune erreur significative trouvée' : '❗️ No significant errors found')}
+                  </div>
+                </div>
+                
+                <div style="margin-bottom: 16px;">
+                  <div style="font-family: 'Inter', sans-serif; font-weight: 600; color: #374151; margin-bottom: 4px;">
+                    ${(selectedLanguage === 'zh' || selectedLanguage === 'es' || selectedLanguage === 'fr') ? '改进建议 💡' : 'Suggestions 💡'}
+                  </div>
+                  <div style="font-family: 'Inter', sans-serif; font-size: 16px; white-space: pre-line; background-color: #dbeafe; padding: 12px; border-radius: 8px;">
+                    ${postcardData.feedback?.suggestions || (selectedLanguage === 'zh' ? '💡 保持当前水平，继续练习！' : selectedLanguage === 'es' ? '💡 ¡Mantén tu nivel actual y sigue practicando!' : selectedLanguage === 'fr' ? '💡 Maintiens ton niveau actuel et continue à t\'entraîner !' : '💡 Maintain your current level and keep practicing!')}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      document.body.appendChild(tempDiv);
+      
+      // Use html2canvas to generate image
+      const canvas = await html2canvas(tempDiv, {
+        scale: 1,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff'
+      });
+      
+      // Convert canvas to Blob
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png', 0.95));
+      
+      // Clean up
+      document.body.removeChild(tempDiv);
+      
+      // Save to IndexedDB
+      const postcardId = `postcard_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      await saveImageToIndexedDB(postcardId, blob);
+      
+      // Create simplified postcard data for localStorage
+      const simplifiedPostcard = {
+        id: postcardId,
+        timestamp: new Date().toISOString(),
+        imageId: postcardData.imageId,
+        level: postcardData.level,
+        feedback: postcardData.feedback
+      };
+
+      // Retrieve existing postcards
+      let existingPostcards = [];
+      try {
+        existingPostcards = JSON.parse(localStorage.getItem('savedPostcards') || '[]');
+      } catch (parseError) {
+        console.error('Error parsing existing postcards:', parseError);
+        existingPostcards = [];
+      }
+
+      // Add the new postcard
+      const updatedPostcards = [...existingPostcards, simplifiedPostcard];
+
+      // Save back to localStorage
+      localStorage.setItem('savedPostcards', JSON.stringify(updatedPostcards));
+      
+      console.log('Postcard auto-saved to WorldMapReview');
+    } catch (error) {
+      console.error('Error auto-saving postcard:', error);
+    }
+  };
+
   return (
     <div className="App">
       <div className={`transition-container ${isTransitioning ? 'transitioning' : ''}`}>
@@ -435,7 +616,7 @@ function App() {
               selectedLanguage={selectedLanguage}
               isLoading={isLoading}
               error={error}
-              onOpenPostOffice={handleViewPostOffice}
+              onOpenPostOffice={handleViewCommunity}
             />
           )
         )}
@@ -449,7 +630,8 @@ function App() {
             onViewPostcard={handleViewPostcard}
             onBack={handleBackToHome}
             refreshData={refreshMapData}
-            onOpenPostOffice={handleViewPostOffice}
+            onOpenPostOffice={handleViewCommunity}
+            selectedLanguage={selectedLanguage}
           />
         )}
 
@@ -457,6 +639,14 @@ function App() {
           <PostOffice 
             onBack={handleBackToHome}
             onViewPostcard={handleViewPostcard}
+          />
+        )}
+        
+        {currentScreen === 'community' && (
+          <Community 
+            onBack={handleBackToHome}
+            onNavigateToPostOffice={handleViewPostOffice}
+            onNavigateToRanking={() => console.log('Navigate to ranking')}
           />
         )}
       </div>
