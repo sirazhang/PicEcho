@@ -252,7 +252,7 @@ const WorldMapReview = ({ onBack, onViewPostcard, onShow, onOpenPostOffice, sele
 
   return (
     <div className="min-h-screen bg-[#e5f5fb] p-0">
-      {/* Header with title and home button */}
+      {/* Header with title and home/community buttons */}
       <div className="flex justify-between items-center p-6">
         <button
           onClick={onBack}
@@ -269,9 +269,18 @@ const WorldMapReview = ({ onBack, onViewPostcard, onShow, onOpenPostOffice, sele
         <h1 className="text-2xl font-gloria-hallelujah absolute left-1/2 transform -translate-x-1/2">
           {textContent.title}
         </h1>
-        <div className="flex space-x-2">
-          {/* Empty div to maintain layout balance */}
-        </div>
+        <button
+          onClick={onOpenPostOffice}
+          className="px-4 py-2 text-base font-inter font-bold focus:outline-none rounded-lg"
+          style={{ 
+            backgroundColor: '#F26E0A',
+            color: 'white',
+            minWidth: '120px',
+            minHeight: '40px'
+          }}
+        >
+          Community
+        </button>
       </div>
 
       {/* Progress text */}
@@ -340,23 +349,6 @@ const WorldMapReview = ({ onBack, onViewPostcard, onShow, onOpenPostOffice, sele
         </div>
       </div>
 
-      {/* Community icon button in bottom right corner, outside the map area */}
-      <div 
-        className="absolute cursor-pointer transform hover:scale-110 transition-transform duration-200"
-        style={{ 
-          right: '20px', 
-          bottom: '20px',
-          width: '50px',
-          height: '50px'
-        }}
-        onClick={onOpenPostOffice} // We'll update this in App.js
-      >
-        <img 
-          src="/design/community.png" 
-          alt="Community" 
-          className="w-full h-full object-contain"
-        />
-      </div>
 
       {/* Saved Postcard Modal */}
       {showModal && selectedPostcard && (

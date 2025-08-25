@@ -10,7 +10,7 @@ const Community = ({ onBack, onNavigateToPostOffice, onNavigateToRanking }) => {
       backgroundPosition: 'center',
       backgroundRepeat: 'no-repeat'
     }}>
-      {/* Header with back button */}
+      {/* Header with home button */}
       <div className="flex justify-between items-center p-6">
         <button
           onClick={onBack}
@@ -22,11 +22,8 @@ const Community = ({ onBack, onNavigateToPostOffice, onNavigateToRanking }) => {
             minHeight: '40px'
           }}
         >
-          Back
+          Home
         </button>
-        <h1 className="text-3xl font-gloria-hallelujah text-center absolute left-1/2 transform -translate-x-1/2">
-          Community
-        </h1>
         <div className="w-32"></div> {/* Spacer for balance */}
       </div>
 
@@ -36,10 +33,10 @@ const Community = ({ onBack, onNavigateToPostOffice, onNavigateToRanking }) => {
         <div 
           className="absolute cursor-pointer transform hover:scale-105 transition-transform duration-200"
           style={{ 
-            top: '40%', 
-            left: '30%',
-            width: '100px',
-            height: '120px'
+            top: '62%', 
+            left: '78%',
+            width: '360px',
+            height: '360px'
           }}
           onClick={onNavigateToPostOffice}
         >
@@ -50,50 +47,14 @@ const Community = ({ onBack, onNavigateToPostOffice, onNavigateToRanking }) => {
           />
         </div>
 
-        {/* Inbox element */}
-        <div 
-          className="absolute cursor-pointer transform hover:scale-105 transition-transform duration-200"
-          style={{ 
-            top: '55%', 
-            left: '25%',
-            width: '60px',
-            height: '60px'
-          }}
-          onClick={() => setActiveFeature('inbox')}
-        >
-          <img 
-            src="/design/inbox.png" 
-            alt="Inbox" 
-            className="w-full h-full object-contain"
-          />
-        </div>
-
-        {/* Outbox element */}
-        <div 
-          className="absolute cursor-pointer transform hover:scale-105 transition-transform duration-200"
-          style={{ 
-            top: '55%', 
-            left: '35%',
-            width: '60px',
-            height: '60px'
-          }}
-          onClick={() => setActiveFeature('outbox')}
-        >
-          <img 
-            src="/design/outbox.png" 
-            alt="Outbox" 
-            className="w-full h-full object-contain"
-          />
-        </div>
-
         {/* Bird element */}
         <div 
           className="absolute"
           style={{ 
-            top: '20%', 
-            left: '70%',
-            width: '80px',
-            height: '80px'
+            top: '25%', 
+            left: '88%',
+            width: '120px',
+            height: '120px'
           }}
         >
           <img 
@@ -107,10 +68,10 @@ const Community = ({ onBack, onNavigateToPostOffice, onNavigateToRanking }) => {
         <div 
           className="absolute cursor-pointer transform hover:scale-105 transition-transform duration-200"
           style={{ 
-            top: '30%', 
-            left: '60%',
-            width: '120px',
-            height: '120px'
+            top: '1%', 
+            left: '30%',
+            width: '350px',
+            height: '350px'
           }}
           onClick={onNavigateToRanking}
         >
@@ -125,10 +86,10 @@ const Community = ({ onBack, onNavigateToPostOffice, onNavigateToRanking }) => {
         <div 
           className="absolute cursor-pointer transform hover:scale-105 transition-transform duration-200"
           style={{ 
-            top: '35%', 
-            left: '70%',
-            width: '100px',
-            height: '100px'
+            top: '3%', 
+            left: '32%',
+            width: '350px',
+            height: '350px'
           }}
           onClick={onNavigateToRanking}
         >
@@ -139,20 +100,30 @@ const Community = ({ onBack, onNavigateToPostOffice, onNavigateToRanking }) => {
           />
         </div>
 
-        {/* Cat element */}
+        {/* Cat element with jump animation */}
         <div 
           className="absolute"
           style={{ 
-            top: '60%', 
-            left: '65%',
-            width: '70px',
-            height: '70px'
+            top: '50%', 
+            left: '30%',
+            width: '100px',
+            height: '100px'
           }}
         >
+          <style jsx>{`
+            @keyframes jump {
+              0%, 100% { transform: translateY(0); }
+              50% { transform: translateY(-10px); }
+            }
+            
+            .cat-jump {
+              animation: jump 2s infinite ease-in-out;
+            }
+          `}</style>
           <img 
             src="/design/cat.png" 
             alt="Cat" 
-            className="w-full h-full object-contain"
+            className="w-full h-full object-contain cat-jump"
           />
         </div>
       </div>

@@ -6,6 +6,7 @@ import LoadingScreen from './components/LoadingScreen';
 import WorldMapReview from './components/WorldMapReview';
 import PostOffice from './components/PostOffice';
 import Community from './components/Community';
+import Ranking from './components/Ranking';
 import { generateKimiFeedback } from './utils/kimiApi';
 import { saveImageToIndexedDB } from './utils/api';
 import html2canvas from 'html2canvas';
@@ -310,6 +311,15 @@ function App() {
     setTimeout(() => {
       setCurrentScreen('community');
       window.location.hash = '#/community';
+      setIsTransitioning(false);
+    }, 300);
+  };
+
+  const handleViewRanking = () => {
+    setIsTransitioning(true);
+    setTimeout(() => {
+      setCurrentScreen('ranking');
+      window.location.hash = '#/ranking';
       setIsTransitioning(false);
     }, 300);
   };
@@ -637,7 +647,7 @@ function App() {
 
         {currentScreen === 'postoffice' && (
           <PostOffice 
-            onBack={handleBackToHome}
+            onBack={handleViewCommunity}
             onViewPostcard={handleViewPostcard}
           />
         )}
@@ -646,7 +656,13 @@ function App() {
           <Community 
             onBack={handleBackToHome}
             onNavigateToPostOffice={handleViewPostOffice}
-            onNavigateToRanking={() => console.log('Navigate to ranking')}
+            onNavigateToRanking={handleViewRanking}
+          />
+        )}
+        
+        {currentScreen === 'ranking' && (
+          <Ranking 
+            onBack={handleViewCommunity}
           />
         )}
       </div>
