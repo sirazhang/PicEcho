@@ -281,83 +281,6 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
     }
   };
 
-  // Define text content for different languages
-  const getTextContent = () => {
-    if (selectedLanguage === 'zh') {
-      return {
-        send: '发送明信片',
-        sendPreviewConfirm: '这是您要发送的明信片，确认发送吗？',
-        step3: '点击发送按钮将明信片发送给其他学习者',
-        postOfficeButton: '邮局',
-        successMessage: '操作成功！'
-      };
-    } else {
-      return {
-        send: 'Send Postcard',
-        sendPreviewConfirm: 'This is the postcard you want to send. Confirm sending?',
-        step3: 'Click the send button to send the postcard to another learner',
-        postOfficeButton: 'Post Office',
-        successMessage: 'Operation successful!'
-      };
-    }
-  };
-
-  // 新的处理发送明信片函数
-  const handleSendPostcard = async () => {
-    try {
-      // 获取文本内容
-      const textContent = getTextContent();
-      
-      // 创建一个canvas元素来渲染明信片
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      
-      // 设置canvas尺寸，匹配ReviewPostcard界面比例
-      canvas.width = 1200;
-      canvas.height = 800;
-      
-      // 绘制背景
-      const backgroundColor = '#F5F5F5';
-      ctx.fillStyle = backgroundColor;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      
-      // 生成明信片图像
-      const imageBlob = await generatePostcardImage();
-      
-      // 将Blob转换为URL
-      const imageUrl = URL.createObjectURL(imageBlob);
-      
-      // 准备发送数据
-      const postcardData = {
-        imageData: imageBlob,
-        senderToken: localStorage.getItem('senderToken') || 'user_' + Math.random().toString(36).substr(2, 9),
-        feedback: localFeedback,
-        postalCode: postalCode
-      };
-      
-      // 发送明信片
-      const savedPostcard = await sendPostcard(postcardData);
-      
-      // 释放对象URL
-      URL.revokeObjectURL(imageUrl);
-      
-      // 关闭预览窗口
-      setShowPreview(false);
-      
-      // 显示发送成功消息
-      setSaveMessage(selectedLanguage === 'zh' ? '明信片已发送！' : 'Postcard sent!');
-      setTimeout(() => {
-        setSaveMessage('');
-      }, 2000);
-    } catch (error) {
-      console.error('Error sending postcard:', error);
-      setSaveMessage(selectedLanguage === 'zh' ? '发送失败，请重试' : 'Failed to send, please try again');
-      setTimeout(() => {
-        setSaveMessage('');
-      }, 2000);
-    }
-  };
-
   // Generate postcard image using html2canvas
   const generatePostcardImage = async () => {
     try {
@@ -554,6 +477,7 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
           {textContent.nextPicture}
         </button>
         
+        {/* Community button */}
         <button
           onClick={handleOpenCommunity}
           className="px-4 py-2 text-base font-inter font-bold focus:outline-none rounded-lg flex items-center justify-center"
@@ -566,6 +490,24 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
         >
           Community
         </button>
+      </div>
+
+      {/* Robot decoration in bottom right corner */}
+      <div 
+        className="absolute cursor-default z-40"
+        style={{ 
+          right: '5px', 
+          bottom: '5px',
+          width: '300px',
+          height: '300px'
+        }}
+      >
+        <img 
+          src="/design/robotscorner.png" 
+          alt="Robot Decoration" 
+          className="w-full h-full object-contain animate-pulse"
+          style={{ animation: 'pulse 2s infinite' }}
+        />
       </div>
 
       {/* Postcard Container */}
@@ -585,7 +527,7 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
           </div>
 
           {/* Stamp */}
-          <div className="absolute top-4 right-4 w-32 h-36 flex items-start">
+          <div className="absolute top-4 right-4 w-40 h-auto flex items-start">
             <img 
               src={stampImage} 
               alt="Stamp" 
@@ -664,27 +606,6 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
         </div>
       </div>
 
-      {/* Community icon button in bottom right corner */}
-      <div 
-        className="fixed cursor-pointer transform -translate-x-1/2 -translate-y-1/2 hover:scale-110 transition-transform duration-200 z-40"
-        style={{ 
-          right: '20px', 
-          bottom: '20px',
-          width: '50px',
-          height: '50px'
-        }}
-        onClick={handleOpenCommunity}
-      >
-        <img 
-          src="/design/community.png" 
-          alt="Community" 
-          className="w-full h-full object-contain"
-          onError={(e) => {
-            // Fallback to sample image if the specified image fails to load
-            e.target.src = '/sample/sample_community.png';
-          }}
-        />
-      </div>
       
       {/* Preview Modal */}
       {showPreview && (
@@ -723,48 +644,6 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
                     className="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg font-medium"
                   >
                     {selectedLanguage === 'zh' ? '取消' : selectedLanguage === 'es' ? 'Cancelar' : selectedLanguage === 'fr' ? 'Annuler' : 'Cancel'}
-                  </button>
-                  <button
-                    onClick={async () => {
-                      // 实际发送明信片的逻辑
-                      try {
-                        // 从localStorage获取发送者token，如果没有则生成一个
-                        let senderToken = localStorage.getItem('senderToken');
-                        if (!senderToken) {
-                          senderToken = 'user_' + Math.random().toString(36).substr(2, 9);
-                          localStorage.setItem('senderToken', senderToken);
-                        }
-                        
-                        // 准备明信片数据
-                        const postcardData = {
-                          imageData: previewImage,
-                          senderToken: senderToken,
-                          feedback: localFeedback,
-                          postalCode: postalCode
-                        };
-                        
-                        // 发送明信片
-                        await sendPostcard(postcardData);
-                        
-                        // 关闭预览窗口
-                        setShowPreview(false);
-                        
-                        // 显示发送成功消息
-                        setSaveMessage(selectedLanguage === 'zh' ? '明信片已发送！' : selectedLanguage === 'es' ? '¡Postal enviada!' : selectedLanguage === 'fr' ? 'Carte postale envoyée !' : 'Postcard sent!');
-                        setTimeout(() => {
-                          setSaveMessage('');
-                        }, 2000);
-                      } catch (error) {
-                        console.error('Error sending postcard:', error);
-                        setSaveMessage(selectedLanguage === 'zh' ? '发送失败，请重试' : selectedLanguage === 'es' ? 'Error al enviar, inténtalo de nuevo' : selectedLanguage === 'fr' ? 'Échec de l\'envoi, veuillez réessayer' : 'Failed to send, please try again');
-                        setTimeout(() => {
-                          setSaveMessage('');
-                        }, 2000);
-                      }
-                    }}
-                    className="px-4 py-2 bg-blue-500 text-white rounded-lg font-medium"
-                  >
-                    {selectedLanguage === 'zh' ? '发送' : selectedLanguage === 'es' ? 'Enviar' : selectedLanguage === 'fr' ? 'Envoyer' : 'Send'}
                   </button>
                 </div>
               </div>

@@ -11,6 +11,7 @@ const PostOffice = ({ onBack, onViewPostcard, selectedLanguage }) => {
   const [selectedPostcard, setSelectedPostcard] = useState(null);
   const [currentPostcardIndex, setCurrentPostcardIndex] = useState(0);
   const [message, setMessage] = useState('');
+  const [showLetterAnimation, setShowLetterAnimation] = useState(false); // 添加letter动画状态
   const audioContextRef = useRef(null);
 
   // Define text content based on selected language
@@ -278,15 +279,28 @@ const PostOffice = ({ onBack, onViewPostcard, selectedLanguage }) => {
     }
 
     try {
-      // In a real implementation, this would send the postcard to the backend
-      // For now, we'll just show a success message
-      alert(textContent.postcardSent);
+      // 播放ding音效
+      createDingSound();
       
-      // Close the outbox
-      closeOutbox();
+      // 触发letter动画
+      setShowLetterAnimation(true);
+      
+      // 等待动画完成后关闭outbox并显示成功消息
+      setTimeout(() => {
+        // In a real implementation, this would send the postcard to the backend
+        // For now, we'll just show a success message
+        alert(textContent.postcardSent);
+        
+        // Close the outbox
+        closeOutbox();
+        
+        // 重置动画状态
+        setShowLetterAnimation(false);
+      }, 2000); // 与动画持续时间匹配
     } catch (error) {
       console.error('Error sending postcard:', error);
       alert(selectedLanguage === 'zh' ? '发送失败，请重试' : 'Failed to send, please try again');
+      setShowLetterAnimation(false); // 出错时也要重置动画状态
     }
   };
 
@@ -344,6 +358,21 @@ const PostOffice = ({ onBack, onViewPostcard, selectedLanguage }) => {
             animation: swing 2s infinite ease-in-out;
             transform-origin: center top;
           }
+          
+          @keyframes letter-move {
+            0% {
+              transform: translate(-50%, 0) rotate(0deg);
+              bottom: 0;
+            }
+            100% {
+              transform: translate(-50%, -300%) rotate(10deg);
+              bottom: 100%;
+            }
+          }
+          
+          .letter-move-animation {
+            animation: letter-move 2s ease-out forwards;
+          }
         `}</style>
         <img 
           src="/design/bird.png" 
@@ -400,6 +429,27 @@ const PostOffice = ({ onBack, onViewPostcard, selectedLanguage }) => {
         />
       </div>
 
+      {/* Letter element for animation */}
+      {showLetterAnimation && (
+        <div 
+          className="absolute letter-move-animation"
+          style={{
+            left: '70%',
+            bottom: '20%',
+            width: '80px',
+            height: '80px',
+            transform: 'translate(-50%, 0)',
+            zIndex: 10
+          }}
+        >
+          <img 
+            src="/design/letter.png" 
+            alt="Letter" 
+            className="w-full h-full object-contain"
+          />
+        </div>
+      )}
+
       {/* Inbox Modal - Show received postcards */}
       {showInbox && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -447,11 +497,143 @@ const PostOffice = ({ onBack, onViewPostcard, selectedLanguage }) => {
                   {/* Postcard display */}
                   {selectedPostcard && (
                     <div className="flex flex-col items-center">
-                      <img 
-                        src={selectedPostcard.imageData?.url || `/Level${selectedPostcard.level}/${selectedPostcard.imageId}.png`} 
-                        alt="Postcard" 
-                        className="max-w-full h-auto max-h-96 object-contain mb-4"
-                      />
+                      {(() => {
+                        // Check if we have imageDataUrl (created when handling location click)
+                        if (selectedPostcard.imageDataUrl) {
+                          return (
+                            <img 
+                              src={selectedPostcard.imageDataUrl} 
+                              alt="Postcard" 
+                              className="max-w-full h-auto max-h-96 object-contain mb-4"
+                            />
+                          );
+                        }
+                        
+                        // Check if we have imageData in various formats
+                        if (selectedPostcard.imageData) {
+                          // Handle different imageData formats
+                          if (typeof selectedPostcard.imageData === 'string') {
+                            if (selectedPostcard.imageData.startsWith('data:')) {
+                              // It's already a data URL
+                              return (
+                                <img 
+                                  src={selectedPostcard.imageData} 
+                                  alt="Postcard" 
+                                  className="max-w-full h-auto max-h-96 object-contain mb-4"
+                                />
+                              );
+                            } else {
+                              // It might be a path
+                              return (
+                                <img 
+                                  src={selectedPostcard.imageData} 
+                                  alt="Postcard" 
+                                  className="max-w-full h-auto max-h-96 object-contain mb-4"
+                                  onError={(e) => {
+                                    // Fallback to sample image if the specified image fails to load
+                                    const sampleImages = [
+                                      '/sample/sample_01.png',
+                                      '/sample/sample_02.png'
+                                    ];
+                                    const randomImage = sampleImages[Math.floor(Math.random() * sampleImages.length)];
+                                    e.target.src = randomImage;
+                                  }}
+                                />
+                              );
+                            }
+                          } else if (selectedPostcard.imageData instanceof Blob) {
+                            // It's a Blob, convert it to URL
+                            const imageUrl = URL.createObjectURL(selectedPostcard.imageData);
+                            return (
+                              <img 
+                                src={imageUrl} 
+                                alt="Postcard" 
+                                className="max-w-full h-auto max-h-96 object-contain mb-4"
+                                onLoad={(e) => {
+                                  // Revoke the object URL after the image has loaded to free memory
+                                  URL.revokeObjectURL(e.target.src);
+                                }}
+                              />
+                            );
+                          } else if (typeof selectedPostcard.imageData === 'object') {
+                            // Check if it has a url property
+                            if (selectedPostcard.imageData.url) {
+                              return (
+                                <img 
+                                  src={selectedPostcard.imageData.url} 
+                                  alt="Postcard" 
+                                  className="max-w-full h-auto max-h-96 object-contain mb-4"
+                                />
+                              );
+                            }
+                            // Check if it has a blob property
+                            else if (selectedPostcard.imageData.blob) {
+                              const imageUrl = URL.createObjectURL(selectedPostcard.imageData.blob);
+                              return (
+                                <img 
+                                  src={imageUrl} 
+                                  alt="Postcard" 
+                                  className="max-w-full h-auto max-h-96 object-contain mb-4"
+                                  onLoad={(e) => {
+                                    // Revoke the object URL after the image has loaded to free memory
+                                    URL.revokeObjectURL(e.target.src);
+                                  }}
+                                />
+                              );
+                            }
+                          }
+                        } else if (selectedPostcard.image_path) {
+                          return (
+                            <img 
+                              src={selectedPostcard.image_path} 
+                              alt="Postcard" 
+                              className="max-w-full h-auto max-h-96 object-contain mb-4"
+                              onError={(e) => {
+                                // Fallback to sample image if the specified image fails to load
+                                const sampleImages = [
+                                  '/sample/sample_01.png',
+                                  '/sample/sample_02.png'
+                                ];
+                                const randomImage = sampleImages[Math.floor(Math.random() * sampleImages.length)];
+                                e.target.src = randomImage;
+                              }}
+                            />
+                          );
+                        } else if (selectedPostcard.imageId && selectedPostcard.level) {
+                          // Generate image path from imageId and level
+                          const imagePath = `/Level${selectedPostcard.level}/${selectedPostcard.imageId}.png`;
+                          return (
+                            <img 
+                              src={imagePath} 
+                              alt="Postcard" 
+                              className="max-w-full h-auto max-h-96 object-contain mb-4"
+                              onError={(e) => {
+                                // Fallback to sample image if the specified image fails to load
+                                const sampleImages = [
+                                  '/sample/sample_01.png',
+                                  '/sample/sample_02.png'
+                                ];
+                                const randomImage = sampleImages[Math.floor(Math.random() * sampleImages.length)];
+                                e.target.src = randomImage;
+                              }}
+                            />
+                          );
+                        } else {
+                          // Fallback to sample images when no image is available
+                          const sampleImages = [
+                            '/sample/sample_01.png',
+                            '/sample/sample_02.png'
+                          ];
+                          const randomImage = sampleImages[Math.floor(Math.random() * sampleImages.length)];
+                          return (
+                            <img 
+                              src={randomImage} 
+                              alt="Sample postcard" 
+                              className="max-w-full h-auto max-h-96 object-contain mb-4"
+                            />
+                          );
+                        }
+                      })()}
                       <p className="text-gray-600">
                         {new Date(selectedPostcard.timestamp).toLocaleString()}
                       </p>
@@ -506,24 +688,131 @@ const PostOffice = ({ onBack, onViewPostcard, selectedLanguage }) => {
                           onClick={() => handleSelectPostcardForSending(postcard)}
                         >
                           <div className="bg-gray-100 rounded-lg p-2 shadow">
-                            {postcard.imageData?.url ? (
-                              <img 
-                                src={postcard.imageData.url} 
-                                alt="Postcard" 
-                                className="w-full h-32 object-cover rounded"
-                              />
-                            ) : (
-                              // 使用 sample 库中的图片作为占位图，修正图片路径
-                              <img 
-                                src={`/sample/sample_0${index % 4 + 1}.png`} 
-                                alt="Sample Postcard Image" 
-                                className="w-full h-32 object-cover rounded"
-                                onError={(e) => {
-                                  // Fallback to another sample image if the first one fails to load
-                                  e.target.src = `/sample/sample_${index % 2 + 1}.png`;
-                                }}
-                              />
-                            )}
+                            {(() => {
+                              // Check if we have imageData in various formats (similar to WorldMapReview)
+                              if (postcard.imageData) {
+                                // Handle different imageData formats
+                                if (typeof postcard.imageData === 'string') {
+                                  if (postcard.imageData.startsWith('data:')) {
+                                    // It's already a data URL
+                                    return (
+                                      <img 
+                                        src={postcard.imageData} 
+                                        alt="Postcard" 
+                                        className="w-full h-32 object-cover rounded"
+                                      />
+                                    );
+                                  } else {
+                                    // It might be a path
+                                    return (
+                                      <img 
+                                        src={postcard.imageData} 
+                                        alt="Postcard" 
+                                        className="w-full h-32 object-cover rounded"
+                                        onError={(e) => {
+                                          // Fallback to sample image if the specified image fails to load
+                                          const sampleImages = [
+                                            `/sample/sample_01.png`,
+                                            `/sample/sample_02.png`
+                                          ];
+                                          const randomImage = sampleImages[Math.floor(Math.random() * sampleImages.length)];
+                                          e.target.src = randomImage;
+                                        }}
+                                      />
+                                    );
+                                  }
+                                } else if (postcard.imageData instanceof Blob) {
+                                  // It's a Blob, convert it to URL
+                                  const imageUrl = URL.createObjectURL(postcard.imageData);
+                                  return (
+                                    <img 
+                                      src={imageUrl} 
+                                      alt="Postcard" 
+                                      className="w-full h-32 object-cover rounded"
+                                      onLoad={(e) => {
+                                        // Revoke the object URL after the image has loaded to free memory
+                                        URL.revokeObjectURL(e.target.src);
+                                      }}
+                                    />
+                                  );
+                                } else if (typeof postcard.imageData === 'object') {
+                                  // Check if it has a url property
+                                  if (postcard.imageData.url) {
+                                    return (
+                                      <img 
+                                        src={postcard.imageData.url} 
+                                        alt="Postcard" 
+                                        className="w-full h-32 object-cover rounded"
+                                      />
+                                    );
+                                  }
+                                  // Check if it has a blob property
+                                  else if (postcard.imageData.blob) {
+                                    const imageUrl = URL.createObjectURL(postcard.imageData.blob);
+                                    return (
+                                      <img 
+                                        src={imageUrl} 
+                                        alt="Postcard" 
+                                        className="w-full h-32 object-cover rounded"
+                                        onLoad={(e) => {
+                                          // Revoke the object URL after the image has loaded to free memory
+                                          URL.revokeObjectURL(e.target.src);
+                                        }}
+                                      />
+                                    );
+                                  }
+                                }
+                              } else if (postcard.image_path) {
+                                return (
+                                  <img 
+                                    src={postcard.image_path} 
+                                    alt="Postcard" 
+                                    className="w-full h-32 object-cover rounded"
+                                    onError={(e) => {
+                                      // Fallback to sample image if the specified image fails to load
+                                      const sampleImages = [
+                                        `/sample/sample_01.png`,
+                                        `/sample/sample_02.png`
+                                      ];
+                                      const randomImage = sampleImages[Math.floor(Math.random() * sampleImages.length)];
+                                      e.target.src = randomImage;
+                                    }}
+                                  />
+                                );
+                              } else if (postcard.imageId && postcard.level) {
+                                // Generate image path from imageId and level
+                                const imagePath = `/Level${postcard.level}/${postcard.imageId}.png`;
+                                return (
+                                  <img 
+                                    src={imagePath} 
+                                    alt="Postcard" 
+                                    className="w-full h-32 object-cover rounded"
+                                    onError={(e) => {
+                                      // Fallback to sample image if the specified image fails to load
+                                      const sampleImages = [
+                                        `/sample/sample_01.png`,
+                                        `/sample/sample_02.png`
+                                      ];
+                                      const randomImage = sampleImages[Math.floor(Math.random() * sampleImages.length)];
+                                      e.target.src = randomImage;
+                                    }}
+                                  />
+                                );
+                              } else {
+                                // 使用 sample 库中的图片作为占位图，修正图片路径
+                                return (
+                                  <img 
+                                    src={`/sample/sample_0${index % 4 + 1}.png`} 
+                                    alt="Sample Postcard Image" 
+                                    className="w-full h-32 object-cover rounded"
+                                    onError={(e) => {
+                                      // Fallback to another sample image if the first one fails to load
+                                      e.target.src = `/sample/sample_${index % 2 + 1}.png`;
+                                    }}
+                                  />
+                                );
+                              }
+                            })()}
                             <p className="text-xs text-gray-500 mt-2 text-center">
                               {new Date(postcard.timestamp).toLocaleDateString()}
                             </p>
