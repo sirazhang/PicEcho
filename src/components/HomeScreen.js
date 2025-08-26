@@ -386,16 +386,16 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview, selectedLanguage, setSel
         {/* Main Content */}
         <div className="flex flex-col items-center justify-center text-center" style={{ transform: 'translateY(-10px)' }}>
           {/* PicEcho Title with Earth Overlay */}
-          <div className="relative mb-2 flex items-center justify-center">
+          <div className="text-center" style={{ transform: 'translateX(80px)' }}>  {/* 👈 这里控制水平位移 */}
             <h1 className="text-10xl font-gloria-hallelujah text-gray-800 relative flex items-center">
               PicEch
-              <span className="relative inline-block" style={{ width: '1.3em', height: '1.3em' }}>
+              <span className="relative inline-block" style={{ width: '1.8em', height: '1.3em' }}>
                 <span className="opacity-0">o</span>
                 <img 
                   src="/design/earth.png" 
                   alt="Earth" 
                   className="absolute inset-0 w-full h-full object-contain earth-animation"
-                  style={{ transform: 'translate(-20%, 5%)', zIndex: 10 }}
+                  style={{ transform: 'translate(15%, 50%)', width: '80%', height: '80%', zIndex: 10 }}
                 />
               </span>
             </h1>

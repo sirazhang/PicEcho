@@ -18,8 +18,8 @@ const PostOffice = ({ onBack, onViewPostcard, selectedLanguage }) => {
     if (selectedLanguage === 'zh') {
       return {
         communityButton: '社区',
-        receiveHint1: '叽叽！点击红色邮筒，我帮你看看有没有人给你寄明信片哦！',
-        receiveHint2: '嘿嘿，点击绿色邮筒，我会帮你寄出你的明信片给别人！快来试试吧！',
+        receiveHint1: '叽叽！点击红色🔴邮筒，我帮你看看有没有人给你寄明信片哦！',
+        receiveHint2: '嘿嘿，点击绿色🟢邮筒，我会帮你寄出你的明信片给别人！快来试试吧！',
         receivedPostcardTitle: '收到的明信片',
         close: '关闭',
         noPostcards: '暂时没有明信片。',
@@ -34,8 +34,8 @@ const PostOffice = ({ onBack, onViewPostcard, selectedLanguage }) => {
     } else if (selectedLanguage === 'es') {
       return {
         communityButton: 'Comunidad',
-        receiveHint1: '¡Chirp! ¡Haz clic en el buzón rojo y te ayudaré a ver si alguien te envió una postal!',
-        receiveHint2: '¡Jeje! ¡Haz clic en el buzón verde y te ayudaré a enviar tu postal a otras personas! ¡Ven a probarlo!',
+        receiveHint1: '¡Chirp! ¡Haz clic en el buzón rojo 🔴 y te ayudaré a ver si alguien te envió una postal!',
+        receiveHint2: '¡Jeje! ¡Haz clic en el buzón verde 🟢 y te ayudaré a enviar tu postal a otras personas! ¡Ven a probarlo!',
         receivedPostcardTitle: 'Postal Recibida',
         close: 'Cerrar',
         noPostcards: 'No hay postales disponibles en este momento.',
@@ -50,8 +50,8 @@ const PostOffice = ({ onBack, onViewPostcard, selectedLanguage }) => {
     } else if (selectedLanguage === 'fr') {
       return {
         communityButton: 'Communauté',
-        receiveHint1: 'Chirp ! Cliquez sur la boîte aux lettres rouge, je vous aiderai à voir si quelqu\'un vous a envoyé une carte postale !',
-        receiveHint2: 'Héhé, cliquez sur la boîte aux lettres verte, je vous aiderai à envoyer votre carte postale à d\'autres personnes ! Venez essayer !',
+        receiveHint1: 'Chirp ! Cliquez sur la boîte aux lettres rouge🔴, je vous aiderai à voir si quelqu\'un vous a envoyé une carte postale !',
+        receiveHint2: 'Héhé, cliquez sur la boîte aux lettres verte🟢, je vous aiderai à envoyer votre carte postale à d\'autres personnes ! Venez essayer !',
         receivedPostcardTitle: 'Carte Postale Reçue',
         close: 'Fermer',
         noPostcards: 'Aucune carte postale disponible pour le moment.',
@@ -66,8 +66,8 @@ const PostOffice = ({ onBack, onViewPostcard, selectedLanguage }) => {
     } else {
       return {
         communityButton: 'Community',
-        receiveHint1: 'Chirp! Click the red mailbox, I\'ll help you see if anyone sent you a postcard!',
-        receiveHint2: 'Hehe, click the green mailbox, I\'ll help you send your postcard to others! Come try it!',
+        receiveHint1: 'Chirp! Click the red 🔴 mailbox, I\'ll help you see if anyone sent you a postcard!',
+        receiveHint2: 'Hehe, click the green 🟢 mailbox, I\'ll help you send your postcard to others! Come try it!',
         receivedPostcardTitle: 'Received Postcard',
         close: 'Close',
         noPostcards: 'No postcards available at the moment.',
@@ -270,6 +270,31 @@ const PostOffice = ({ onBack, onViewPostcard, selectedLanguage }) => {
     closeOutbox();
   };
 
+  // Handle actual postcard sending with message
+  const handleSendPostcardWithMessage = async () => {
+    if (!selectedPostcard || !message.trim()) {
+      alert(selectedLanguage === 'zh' ? '请选择明信片并填写寄语' : 'Please select a postcard and enter a message');
+      return;
+    }
+
+    try {
+      // In a real implementation, this would send the postcard to the backend
+      // For now, we'll just show a success message
+      alert(textContent.postcardSent);
+      
+      // Close the outbox
+      closeOutbox();
+    } catch (error) {
+      console.error('Error sending postcard:', error);
+      alert(selectedLanguage === 'zh' ? '发送失败，请重试' : 'Failed to send, please try again');
+    }
+  };
+
+  // Handle postcard selection for sending
+  const handleSelectPostcardForSending = (postcard) => {
+    setSelectedPostcard(postcard);
+  };
+
   return (
     <div 
       className="min-h-screen bg-[#e5f5fb] p-0 relative"
@@ -282,6 +307,22 @@ const PostOffice = ({ onBack, onViewPostcard, selectedLanguage }) => {
       onClick={handleUserInteraction}
       onTouchStart={handleUserInteraction}
     >
+      {/* Header with community button at top left */}
+      <div className="absolute top-6 left-6">
+        <button
+          onClick={onBack}
+          className="px-4 py-2 text-base font-inter font-bold focus:outline-none rounded-lg"
+          style={{ 
+            backgroundColor: '#F26E0A',
+            color: 'white',
+            minWidth: '120px',
+            minHeight: '40px'
+          }}
+        >
+          {textContent.communityButton}
+        </button>
+      </div>
+
       {/* Bird element with swing animation */}
       <div 
         className="absolute"
@@ -291,7 +332,7 @@ const PostOffice = ({ onBack, onViewPostcard, selectedLanguage }) => {
           width: '150px',
           height: '150px'
         }}
-      >
+        >
         <style jsx>{`
           @keyframes swing {
             0% { transform: rotate(-5deg); }
@@ -311,8 +352,8 @@ const PostOffice = ({ onBack, onViewPostcard, selectedLanguage }) => {
         />
       </div>
 
-      {/* Hint messages */}
-      <div className="pt-6 text-center px-4">
+      {/* Hint messages moved down from top */}
+      <div className="pt-24 text-center px-4">
         <div className="inline-block bg-white rounded-lg shadow-lg px-6 py-4">
           <p className="text-black text-lg font-inter font-bold">
             {textContent.receiveHint1}
@@ -321,23 +362,6 @@ const PostOffice = ({ onBack, onViewPostcard, selectedLanguage }) => {
             {textContent.receiveHint2}
           </p>
         </div>
-      </div>
-
-      {/* Header with title and community button */}
-      <div className="flex justify-between items-start p-6">
-        <button
-          onClick={onBack}
-          className="px-4 py-2 text-base font-inter font-bold focus:outline-none rounded-lg"
-          style={{ 
-            backgroundColor: '#F26E0A', // Updated orange background
-            color: 'white',             // White text
-            minWidth: '120px',
-            minHeight: '40px'
-          }}
-        >
-          {textContent.communityButton}
-        </button>
-        <div className="w-32"></div> {/* Spacer to balance the header */}
       </div>
 
       {/* Red Inbox Mailbox */}
@@ -447,7 +471,7 @@ const PostOffice = ({ onBack, onViewPostcard, selectedLanguage }) => {
       {/* Outbox Modal - Send postcards */}
       {showOutbox && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto mx-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto mx-4">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xl font-semibold text-gray-800">
@@ -462,21 +486,86 @@ const PostOffice = ({ onBack, onViewPostcard, selectedLanguage }) => {
                   </svg>
                 </button>
               </div>
-              
-              <div className="text-center py-8">
+
+              <div className="py-4">
                 {savedPostcards.length > 0 ? (
                   <div>
-                    <p className="mb-4">{textContent.sendToOthers}</p>
-                    <button
-                      onClick={handleSendPostcard}
-                      className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-                    >
-                      {textContent.goToPostOffice}
-                    </button>
+                    <p className="mb-4 text-center">{textContent.sendToOthers}</p>
+
+                    {/* Postcard selection carousel */}
+                    <div className="flex overflow-x-auto space-x-4 py-4 mb-6">
+                      {savedPostcards.map((postcard, index) => (
+                        <div 
+                          key={postcard.id || index}
+                          className={`flex-shrink-0 cursor-pointer transition-all duration-200 ${
+                            selectedPostcard && selectedPostcard.id === postcard.id 
+                              ? 'transform scale-110' 
+                              : 'opacity-70 hover:opacity-100'
+                          }`}
+                          style={{ width: '200px' }}
+                          onClick={() => handleSelectPostcardForSending(postcard)}
+                        >
+                          <div className="bg-gray-100 rounded-lg p-2 shadow">
+                            {postcard.imageData?.url ? (
+                              <img 
+                                src={postcard.imageData.url} 
+                                alt="Postcard" 
+                                className="w-full h-32 object-cover rounded"
+                              />
+                            ) : (
+                              // 使用 sample 库中的图片作为占位图，修正图片路径
+                              <img 
+                                src={`/sample/sample_0${index % 4 + 1}.png`} 
+                                alt="Sample Postcard Image" 
+                                className="w-full h-32 object-cover rounded"
+                                onError={(e) => {
+                                  // Fallback to another sample image if the first one fails to load
+                                  e.target.src = `/sample/sample_${index % 2 + 1}.png`;
+                                }}
+                              />
+                            )}
+                            <p className="text-xs text-gray-500 mt-2 text-center">
+                              {new Date(postcard.timestamp).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Message input */}
+                    {selectedPostcard && (
+                      <div className="mb-6">
+                        <label className="block text-gray-700 text-sm font-bold mb-2">
+                          {selectedLanguage === 'zh' ? '添加寄语' : 'Add a message'}
+                        </label>
+                        <textarea
+                          value={message}
+                          onChange={(e) => setMessage(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          rows="4"
+                          placeholder={selectedLanguage === 'zh' ? '在此输入您的寄语...' : 'Enter your message here...'}
+                        />
+                      </div>
+                    )}
+
+                    {/* Send button */}
+                    <div className="text-center">
+                      <button
+                        onClick={handleSendPostcardWithMessage}
+                        disabled={!selectedPostcard || !message.trim()}
+                        className={`px-6 py-3 rounded font-bold ${
+                          selectedPostcard && message.trim()
+                            ? 'bg-green-500 hover:bg-green-600 text-white'
+                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        }`}
+                      >
+                        {selectedLanguage === 'zh' ? '发送明信片' : 'Send Postcard'}
+                      </button>
+                    </div>
                   </div>
                 ) : (
-                  <div>
-                    <p className="mb-4">{textContent.noPostcards}</p>
+                  <div className="text-center py-8">
+                    <p className="text-gray-600 mb-4">{textContent.noPostcards}</p>
                   </div>
                 )}
               </div>

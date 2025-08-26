@@ -73,9 +73,6 @@ const Ranking = ({ onBack, selectedLanguage }) => {
         >
           {textContent.communityButton}
         </button>
-        <h1 className="text-3xl font-gloria-hallelujah text-center absolute left-1/2 transform -translate-x-1/2">
-          {textContent.title}
-        </h1>
         <div className="w-32"></div> {/* Spacer for balance */}
       </div>
 
@@ -131,37 +128,30 @@ const Ranking = ({ onBack, selectedLanguage }) => {
         
         {/* Decorative elements */}
         <div className="relative w-full" style={{ height: '50vh' }}>
-          {/* Bird element */}
+          {/* Cat element with jump animation */}
           <div 
             className="absolute"
             style={{ 
-              top: '10%', 
-              left: '10%',
-              width: '80px',
-              height: '80px'
+              top: '0%', 
+              left: '70%',
+              width: '400px',
+              height: '400px'
             }}
           >
-            <img 
-              src="/design/bird.png" 
-              alt="Bird" 
-              className="w-full h-full object-contain"
-            />
-          </div>
-          
-          {/* Cat element */}
-          <div 
-            className="absolute"
-            style={{ 
-              top: '60%', 
-              left: '80%',
-              width: '100px',
-              height: '100px'
-            }}
-          >
+            <style jsx>{`
+              @keyframes jump {
+                0%, 100% { transform: translateY(0); }
+                50% { transform: translateY(-20px); }
+              }
+              
+              .cat-jump {
+                animation: jump 1.5s infinite ease-in-out;
+              }
+            `}</style>
             <img 
               src="/design/cat.png" 
               alt="Cat" 
-              className="w-full h-full object-contain"
+              className="w-full h-full object-contain cat-jump"
             />
           </div>
         </div>

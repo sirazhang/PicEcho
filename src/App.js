@@ -649,6 +649,7 @@ function App() {
           <PostOffice 
             onBack={handleViewCommunity}
             onViewPostcard={handleViewPostcard}
+            selectedLanguage={selectedLanguage}
           />
         )}
         

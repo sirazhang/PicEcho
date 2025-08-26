@@ -67,17 +67,14 @@ const Community = ({ onBack, onNavigateToPostOffice, onNavigateToRanking, select
         >
           {textContent.homeButton}
         </button>
-        <h1 className="text-3xl font-gloria-hallelujah text-center absolute left-1/2 transform -translate-x-1/2">
-          {textContent.title}
-        </h1>
         <div className="w-32"></div> {/* Spacer for balance */}
       </div>
 
       {/* Main content with interactive elements */}
       <div className="relative" style={{ height: '80vh' }}>
-        {/* Post Office element */}
+        {/* Post Office element with glow effect */}
         <div 
-          className="absolute cursor-pointer transform hover:scale-105 transition-transform duration-200"
+          className="absolute cursor-pointer transform hover:scale-110 transition-transform duration-150"
           style={{ 
             top: '62%', 
             left: '78%',
@@ -86,14 +83,17 @@ const Community = ({ onBack, onNavigateToPostOffice, onNavigateToRanking, select
           }}
           onClick={onNavigateToPostOffice}
         >
-          <img 
-            src="/design/postoffice.png" 
-            alt={textContent.postOffice} 
-            className="w-full h-full object-contain"
-          />
+          <div className="relative">
+            <div className="absolute inset-0 rounded-full bg-yellow-200 filter blur-xl opacity-30 animate-pulse"></div>
+            <img 
+              src="/design/postoffice.png" 
+              alt={textContent.postOffice} 
+              className="relative w-full h-full object-contain"
+            />
+          </div>
         </div>
 
-        {/* Bird element */}
+        {/* Bird element with floating animation */}
         <div 
           className="absolute"
           style={{ 
@@ -103,16 +103,26 @@ const Community = ({ onBack, onNavigateToPostOffice, onNavigateToRanking, select
             height: '120px'
           }}
         >
+          <style jsx>{`
+            @keyframes float {
+              0%, 100% { transform: translateY(0); }
+              50% { transform: translateY(-15px); }
+            }
+            
+            .bird-float {
+              animation: float 3s infinite ease-in-out;
+            }
+          `}</style>
           <img 
             src="/design/bird.png" 
             alt={textContent.bird} 
-            className="w-full h-full object-contain"
+            className="w-full h-full object-contain bird-float"
           />
         </div>
 
-        {/* Snow Mountain 1 */}
+        {/* Snow Mountain 1 with glow and shadow effects */}
         <div 
-          className="absolute cursor-pointer transform hover:scale-105 transition-transform duration-200"
+          className="absolute cursor-pointer transform hover:scale-110 transition-transform duration-150"
           style={{ 
             top: '1%', 
             left: '30%',
@@ -121,16 +131,20 @@ const Community = ({ onBack, onNavigateToPostOffice, onNavigateToRanking, select
           }}
           onClick={onNavigateToRanking}
         >
-          <img 
-            src="/design/snow1.png" 
-            alt={textContent.snowMountain} 
-            className="w-full h-full object-contain"
-          />
+          <div className="relative">
+            <div className="absolute inset-0 rounded-full bg-blue-100 filter blur-xl opacity-50"></div>
+            <div className="absolute top-4 left-4 w-full h-full bg-gray-300 filter blur-2xl opacity-10"></div>
+            <img 
+              src="/design/snow1.png" 
+              alt={textContent.snowMountain} 
+              className="relative w-full h-full object-contain"
+            />
+          </div>
         </div>
 
-        {/* Snow Mountain 2 */}
+        {/* Snow Mountain 2 with glow and shadow effects */}
         <div 
-          className="absolute cursor-pointer transform hover:scale-105 transition-transform duration-200"
+          className="absolute cursor-pointer transform hover:scale-110 transition-transform duration-150"
           style={{ 
             top: '3%', 
             left: '32%',
@@ -139,11 +153,15 @@ const Community = ({ onBack, onNavigateToPostOffice, onNavigateToRanking, select
           }}
           onClick={onNavigateToRanking}
         >
-          <img 
-            src="/design/snow2.png" 
-            alt={textContent.snowMountain} 
-            className="w-full h-full object-contain"
-          />
+          <div className="relative">
+            <div className="absolute inset-0 rounded-full bg-blue-100 filter blur-xl opacity-50"></div>
+            <div className="absolute top-4 left-4 w-full h-full bg-gray-800 filter blur-2xl opacity-20"></div>
+            <img 
+              src="/design/snow2.png" 
+              alt={textContent.snowMountain} 
+              className="relative w-full h-full object-contain"
+            />
+          </div>
         </div>
 
         {/* Cat element with jump animation */}
