@@ -13,6 +13,34 @@ const PostOffice = ({ onBack, onViewPostcard, selectedLanguage }) => {
   const [message, setMessage] = useState('');
   const [showLetterAnimation, setShowLetterAnimation] = useState(false); // 添加letter动画状态
   const audioContextRef = useRef(null);
+  const audioRef = useRef(null);
+
+  // Play background music when component mounts
+  useEffect(() => {
+    // Create audio element
+    audioRef.current = new Audio('/music.mp3');
+    audioRef.current.loop = true;
+    audioRef.current.volume = 0.3;
+    
+    // Play the audio
+    const playAudio = async () => {
+      try {
+        await audioRef.current.play();
+      } catch (error) {
+        console.log('Audio play failed:', error);
+      }
+    };
+    
+    playAudio();
+    
+    // Cleanup function to stop audio when component unmounts
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
 
   // Define text content based on selected language
   const getTextContent = () => {

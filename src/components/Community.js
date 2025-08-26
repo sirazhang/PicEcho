@@ -1,7 +1,35 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 const Community = ({ onBack, onNavigateToPostOffice, onNavigateToRanking, selectedLanguage }) => {
   const [activeFeature, setActiveFeature] = useState(null);
+  const audioRef = useRef(null);
+
+  // Play background music when component mounts
+  useEffect(() => {
+    // Create audio element
+    audioRef.current = new Audio('/music.mp3');
+    audioRef.current.loop = true;
+    audioRef.current.volume = 0.3;
+    
+    // Play the audio
+    const playAudio = async () => {
+      try {
+        await audioRef.current.play();
+      } catch (error) {
+        console.log('Audio play failed:', error);
+      }
+    };
+    
+    playAudio();
+    
+    // Cleanup function to stop audio when component unmounts
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
 
   // Define text content based on selected language
   const getTextContent = () => {
