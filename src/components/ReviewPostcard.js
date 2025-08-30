@@ -28,7 +28,14 @@ const saveToLocalStorage = async (key, data) => {
 
 // 工具函数：生成图片路径
 const getImagePath = (propsLevel, imageId) => {
-  return `/Level${propsLevel}/${imageId}.png`;
+  // 确保level是数字且至少为1
+  const level = Math.max(1, parseInt(propsLevel) || 1);
+  
+  // 确保imageId是字符串
+  const id = String(imageId || '');
+  
+  // 生成路径并返回
+  return `/Level${level}/${id}.png`;
 };
 
 const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, selectedLanguage, conversationHistory, onSave, onBack, isLoading, error, onOpenPostOffice }) => {
@@ -488,7 +495,9 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
             minHeight: '40px'
           }}
         >
-          Community
+          {selectedLanguage === 'zh' ? '社区' : 
+           selectedLanguage === 'es' ? 'Comunidad' : 
+           selectedLanguage === 'fr' ? 'Communauté' : 'Community'}
         </button>
       </div>
 

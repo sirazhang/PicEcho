@@ -173,16 +173,10 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
       let loadedQuestions = [];
       
       // Handle different data structures for different levels
+      // For Level 2, imageId format is "img_01" but data key is "image_01"
       if (level === 2) {
-        // Level 2 has a different structure - array of objects
-        const imageData = questionsData.find(item => 
-          item[`image_${imageId.split('_')[1]}`] !== undefined
-        );
-        
-        if (imageData) {
-          const imageKey = `image_${imageId.split('_')[1]}`;
-          loadedQuestions = imageData[imageKey].questions || [];
-        }
+        const imageKey = imageId.replace('img_', 'image_');
+        loadedQuestions = questionsData[imageKey]?.questions || [];
       } else {
         // Level 1 and 3 have simpler structure - direct object mapping
         loadedQuestions = questionsData[imageId]?.questions || [];
@@ -298,11 +292,19 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
 
   useEffect(() => {
     console.log('useEffect for initializeConversation triggered. imageId:', imageId, 'language:', language, 'level:', level);
-    // 只有当imageId存在且尚未初始化时才初始化对话
-    if (imageId && !isInitialized.current) {
-      isInitialized.current = true; // 标记为已初始化
-      initializeConversation();
-    }
+    
+    // 使用函数式更新确保获取最新状态
+    setCurrentUser(prevUser => {
+      // 只有当imageId存在且尚未初始化时才初始化对话
+      if (imageId && !isInitialized.current) {
+        isInitialized.current = true; // 标记为已初始化
+        // 使用setTimeout确保状态更新完成
+        setTimeout(() => {
+          initializeConversation();
+        }, 0);
+      }
+      return prevUser;
+    });
     
     // 组件卸载时重置初始化状态
     return () => {

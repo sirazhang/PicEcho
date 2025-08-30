@@ -232,6 +232,13 @@ const WorldMapReview = ({ onBack, onViewPostcard, onShow, onOpenPostOffice, sele
     };
   }, [selectedPostcard, modalImage]);
 
+  // Get image path based on level
+  const getImagePath = (imageId, level) => {
+    // If level is not specified, default to level 1
+    const validLevel = level || 1;
+    return `/Level${validLevel}/${imageId}.png`;
+  };
+
   // Define text content
   const getTextContent = () => {
     if (selectedLanguage === 'zh') {
