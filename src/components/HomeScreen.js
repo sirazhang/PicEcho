@@ -21,7 +21,12 @@ const getImagePath = (level, imageId) => {
   return `/Level${level}/${imageId}.png`;
 };
 
-const HomeScreen = ({ onStartDialogue, onOpenMapReview, selectedLanguage, setSelectedLanguage }) => {
+const HomeScreen = ({ 
+  onStartDialogue, 
+  onOpenMapReview, 
+  selectedLanguage, 
+  setSelectedLanguage 
+}) => {
   const [selectedLevel, setSelectedLevel] = useState(1);
   const [availableImages, setAvailableImages] = useState([]);
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
@@ -40,7 +45,7 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview, selectedLanguage, setSel
   // Load saved language preference from localStorage on component mount
   useEffect(() => {
     const savedLanguage = localStorage.getItem('selectedLanguage');
-    if (savedLanguage) {
+    if (savedLanguage && savedLanguage !== selectedLanguage) {
       setSelectedLanguage(savedLanguage);
     }
     
@@ -50,7 +55,7 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview, selectedLanguage, setSel
       setIsLoggedIn(true);
       setCurrentUser(user);
     }
-  }, [setSelectedLanguage]);
+  }, [setSelectedLanguage, selectedLanguage]);
 
   // Set random background on component mount
   useEffect(() => {
@@ -316,23 +321,8 @@ const HomeScreen = ({ onStartDialogue, onOpenMapReview, selectedLanguage, setSel
           )}
         </div>
 
-        {/* View Map and Language Selector in top right corner */}
-        <div className="absolute top-6 right-6 flex space-x-2">
-          {/* View Map button */}
-          <div>
-            <button
-              onClick={onOpenMapReview}
-              className="px-4 py-2 rounded-lg font-inter font-bold text-base focus:outline-none flex items-center justify-center shadow-lg"
-              style={{ 
-                backgroundColor: '#3fbdc7',
-                color: 'white'
-              }}
-            >
-              {selectedLanguage === 'zh' ? '查看地图' : 'View Map'}
-            </button>
-          </div>
-          
-          {/* Language Selector */}
+        {/* Language Selector at top right */}
+        <div className="absolute top-6 right-6">
           <div className="relative">
             <button
               onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
