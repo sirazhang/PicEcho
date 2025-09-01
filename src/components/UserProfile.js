@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 
-const UserProfile = ({ user, onUpdateUser, onClose }) => {
+const UserProfile = ({ user, onUpdateUser, onClose, selectedLanguage = 'zh' }) => {
   const [nickname, setNickname] = useState(user?.nickname || '');
   const [avatar, setAvatar] = useState(user?.avatar || '');
   const [selectedBot, setSelectedBot] = useState(user?.chatbot || 'chatbot1');
@@ -8,11 +8,63 @@ const UserProfile = ({ user, onUpdateUser, onClose }) => {
 
   // Chatbot options with names
   const chatbots = [
-    { id: 'chatbot1', name: '皮皮 (Pipi)', image: '/design/chatbot/chatbot1.png' },
-    { id: 'chatbot2', name: '伊伊 (Yiyi)', image: '/design/chatbot/chatbot2.png' },
-    { id: 'chatbot3', name: '可可 (Keke)', image: '/design/chatbot/chatbot3.png' },
-    { id: 'chatbot4', name: '呼呼 (Huhu)', image: '/design/chatbot/chatbot4.png' }
+    { id: 'chatbot1', name: selectedLanguage === 'zh' ? '皮皮 (Pipi)' : 'Pipi', image: '/design/chatbot/chatbot1.png' },
+    { id: 'chatbot2', name: selectedLanguage === 'zh' ? '伊伊 (Yiyi)' : 'Yiyi', image: '/design/chatbot/chatbot2.png' },
+    { id: 'chatbot3', name: selectedLanguage === 'zh' ? '可可 (Keke)' : 'Keke', image: '/design/chatbot/chatbot3.png' },
+    { id: 'chatbot4', name: selectedLanguage === 'zh' ? '呼呼 (Huhu)' : 'Huhu', image: '/design/chatbot/chatbot4.png' }
   ];
+
+  // Text content based on selected language
+  const textContent = {
+    title: selectedLanguage === 'zh' ? '用户设置' : 
+           selectedLanguage === 'en' ? 'User Settings' :
+           selectedLanguage === 'es' ? 'Configuración de Usuario' : 
+           selectedLanguage === 'fr' ? 'Paramètres Utilisateur' : 'User Settings',
+    avatar: selectedLanguage === 'zh' ? '头像' : 
+            selectedLanguage === 'en' ? 'Avatar' :
+            selectedLanguage === 'es' ? 'Avatar' : 
+            selectedLanguage === 'fr' ? 'Avatar' : 'Avatar',
+    noAvatar: selectedLanguage === 'zh' ? '无头像' : 
+              selectedLanguage === 'en' ? 'No Avatar' :
+              selectedLanguage === 'es' ? 'Sin Avatar' : 
+              selectedLanguage === 'fr' ? 'Pas d\'Avatar' : 'No Avatar',
+    uploadAvatar: selectedLanguage === 'zh' ? '上传头像' : 
+                  selectedLanguage === 'en' ? 'Upload Avatar' :
+                  selectedLanguage === 'es' ? 'Subir Avatar' : 
+                  selectedLanguage === 'fr' ? 'Télécharger Avatar' : 'Upload Avatar',
+    nickname: selectedLanguage === 'zh' ? '昵称' : 
+              selectedLanguage === 'en' ? 'Nickname' :
+              selectedLanguage === 'es' ? 'Apodo' : 
+              selectedLanguage === 'fr' ? 'Pseudo' : 'Nickname',
+    selectChatbot: selectedLanguage === 'zh' ? '选择聊天机器人' : 
+                   selectedLanguage === 'en' ? 'Select Chatbot' :
+                   selectedLanguage === 'es' ? 'Seleccionar Chatbot' : 
+                   selectedLanguage === 'fr' ? 'Sélectionner Chatbot' : 'Select Chatbot',
+    logout: selectedLanguage === 'zh' ? '退出登录' : 
+            selectedLanguage === 'en' ? 'Logout' :
+            selectedLanguage === 'es' ? 'Cerrar Sesión' : 
+            selectedLanguage === 'fr' ? 'Déconnexion' : 'Logout',
+    cancel: selectedLanguage === 'zh' ? '取消' : 
+            selectedLanguage === 'en' ? 'Cancel' :
+            selectedLanguage === 'es' ? 'Cancelar' : 
+            selectedLanguage === 'fr' ? 'Annuler' : 'Cancel',
+    save: selectedLanguage === 'zh' ? '保存' : 
+          selectedLanguage === 'en' ? 'Save' :
+          selectedLanguage === 'es' ? 'Guardar' : 
+          selectedLanguage === 'fr' ? 'Sauvegarder' : 'Save',
+    enterValidNickname: selectedLanguage === 'zh' ? '请输入有效的昵称' : 
+                        selectedLanguage === 'en' ? 'Please enter a valid nickname' :
+                        selectedLanguage === 'es' ? 'Por favor ingrese un apodo válido' : 
+                        selectedLanguage === 'fr' ? 'Veuillez entrer un pseudo valide' : 'Please enter a valid nickname',
+    saveFailed: selectedLanguage === 'zh' ? '保存失败，请重试' : 
+                selectedLanguage === 'en' ? 'Save failed, please try again' :
+                selectedLanguage === 'es' ? 'Error al guardar, por favor intente nuevamente' : 
+                selectedLanguage === 'fr' ? 'Échec de la sauvegarde, veuillez réessayer' : 'Save failed, please try again',
+    confirmLogout: selectedLanguage === 'zh' ? '确定要退出登录吗？' : 
+                   selectedLanguage === 'en' ? 'Are you sure you want to logout?' :
+                   selectedLanguage === 'es' ? '¿Está seguro de que desea cerrar sesión?' : 
+                   selectedLanguage === 'fr' ? 'Êtes-vous sûr de vouloir vous déconnecter?' : 'Are you sure you want to logout?'
+  };
 
   useEffect(() => {
     if (user) {
@@ -25,7 +77,7 @@ const UserProfile = ({ user, onUpdateUser, onClose }) => {
   const handleSave = () => {
     // 验证必要字段
     if (!nickname.trim()) {
-      alert('请输入有效的昵称');
+      alert(textContent.enterValidNickname);
       return;
     }
     
@@ -43,7 +95,7 @@ const UserProfile = ({ user, onUpdateUser, onClose }) => {
       onClose();
     } catch (error) {
       console.error('保存用户数据失败:', error);
-      alert('保存失败，请重试');
+      alert(textContent.saveFailed);
     }
   };
 
@@ -65,7 +117,7 @@ const UserProfile = ({ user, onUpdateUser, onClose }) => {
   // 添加退出登录功能
   const handleLogout = () => {
     // 确认退出登录
-    const confirmLogout = window.confirm('确定要退出登录吗？');
+    const confirmLogout = window.confirm(textContent.confirmLogout);
     if (confirmLogout) {
       // 清除本地存储的用户信息
       localStorage.removeItem('currentUser');
@@ -79,7 +131,7 @@ const UserProfile = ({ user, onUpdateUser, onClose }) => {
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-8 w-full max-w-md">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-800">用户设置</h2>
+          <h2 className="text-2xl font-bold text-gray-800">{textContent.title}</h2>
           <button 
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700"
@@ -92,7 +144,7 @@ const UserProfile = ({ user, onUpdateUser, onClose }) => {
         
         <div className="mb-6">
           <label className="block text-gray-700 text-sm font-bold mb-2">
-            头像
+            {textContent.avatar}
           </label>
           <div className="flex items-center">
             {avatar ? (
@@ -103,14 +155,14 @@ const UserProfile = ({ user, onUpdateUser, onClose }) => {
               />
             ) : (
               <div className="w-16 h-16 rounded-full bg-gray-200 mr-4 flex items-center justify-center">
-                <span className="text-gray-500">无头像</span>
+                <span className="text-gray-500">{textContent.noAvatar}</span>
               </div>
             )}
             <button
               onClick={() => fileInputRef.current.click()}
               className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded"
             >
-              上传头像
+              {textContent.uploadAvatar}
             </button>
             <input
               type="file"
@@ -124,7 +176,7 @@ const UserProfile = ({ user, onUpdateUser, onClose }) => {
 
         <div className="mb-4">
           <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="nickname">
-            昵称
+            {textContent.nickname}
           </label>
           <input
             type="text"
@@ -137,7 +189,7 @@ const UserProfile = ({ user, onUpdateUser, onClose }) => {
 
         <div className="mb-6">
           <label className="block text-gray-700 text-sm font-bold mb-2">
-            选择聊天机器人
+            {textContent.selectChatbot}
           </label>
           <div className="grid grid-cols-2 gap-4">
             {chatbots.map((bot) => (
@@ -168,20 +220,20 @@ const UserProfile = ({ user, onUpdateUser, onClose }) => {
             onClick={handleLogout}
             className="px-4 py-2 bg-red-500 hover:bg-red-700 text-white font-bold rounded focus:outline-none focus:shadow-outline"
           >
-            退出登录
+            {textContent.logout}
           </button>
           <div>
             <button
               onClick={onClose}
               className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium mr-2"
             >
-              取消
+              {textContent.cancel}
             </button>
             <button
               onClick={handleSave}
               className="px-4 py-2 bg-blue-500 hover:bg-blue-700 text-white font-bold rounded focus:outline-none focus:shadow-outline"
             >
-              保存
+              {textContent.save}
             </button>
           </div>
         </div>

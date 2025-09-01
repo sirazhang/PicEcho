@@ -684,6 +684,7 @@ const HomeScreen = ({
             user={currentUser}
             onUpdateUser={handleUpdateUser}
             onClose={() => setShowUserProfile(false)}
+            selectedLanguage={selectedLanguage}
           />
         )}
         
