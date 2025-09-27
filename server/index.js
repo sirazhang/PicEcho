@@ -68,6 +68,97 @@ app.get('/', (req, res) => {
   res.json({ message: 'Chatpic server is running!' });
 });
 
+// Add Qwen API proxy route
+app.post('/api/qwen', async (req, res) => {
+  try {
+    console.log('Qwen API proxy called');
+    const { imageDescription, studentResponse, language } = req.body;
+    console.log('Request body:', { imageDescription, studentResponse, language });
+    
+    // 从系统环境变量读取DASHSCOPE_API_KEY
+    const DASHSCOPE_API_KEY = process.env.DASHSCOPE_API_KEY;
+    console.log('DASHSCOPE_API_KEY loaded from env:', DASHSCOPE_API_KEY ? 'Yes' : 'No');
+    
+    if (!DASHSCOPE_API_KEY) {
+      console.log('DASHSCOPE_API_KEY is not set');
+      return res.status(500).json({ error: 'DASHSCOPE_API_KEY is not set' });
+    }
+
+    // 根据语言创建提示词
+    let prompt;
+    if (language === 'zh') {
+      prompt = `图片描述: ${imageDescription}\n学生回答: ${studentResponse}\n\n请根据图片内容和学生的回答，提供简短的、鼓励性的反馈。反馈应包括：1. 对学生回答的肯定 2. 一个相关的后续问题，引导学生更深入思考。请用中文回复。`;
+    } else if (language === 'es') {
+      prompt = `Descripción de la imagen: ${imageDescription}\nRespuesta del estudiante: ${studentResponse}\n\nBasándote en el contenido de la imagen y la respuesta del estudiante, proporciona una retroalimentación breve y alentadora. La retroalimentación debe incluir: 1. Un reconocimiento de la respuesta del estudiante 2. Una pregunta de seguimiento relacionada que guíe al estudiante a pensar más profundamente. Por favor, responde en español。`;
+    } else if (language === 'fr') {
+      prompt = `Description de l'image: ${imageDescription}\nRéponse de l'étudiant: ${studentResponse}\n\nSur la base du contenu de l'image et de la réponse de l'étudiant, veuillez fournir un retour court et encourageant. Le retour doit inclure : 1. Une reconnaissance de la réponse de l'étudiant 2. Une question de suivi pertinente pour guider l'étudiant à réfléchir plus en profondeur. Veuillez répondre en français。`;
+    } else {
+      prompt = `Image description: ${imageDescription}\nStudent response: ${studentResponse}\n\nBased on the image content and the student's response, please provide a brief, encouraging feedback. The feedback should include: 1. An acknowledgment of the student's response 2. A related follow-up question to guide the student to think more deeply. Please respond in English.`;
+    }
+
+    console.log('Prompt created:', prompt);
+
+    // 调用通义千问API
+    const response = await fetch("https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${DASHSCOPE_API_KEY}`,
+        "Content-Type": "application/json",
+        "X-DashScope-DataInspection": "enable"
+      },
+      body: JSON.stringify({
+        "model": "qwen-max",
+        "input": {
+          "prompt": prompt
+        },
+        "parameters": {
+          "max_tokens": 200,
+          "temperature": 0.7
+        }
+      })
+    });
+
+    console.log('Qwen API response status:', response.status);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Qwen API error response:', errorText);
+      throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+    }
+
+    const data = await response.json();
+    console.log('Qwen API response data:', data);
+    res.json({ feedback: data.output.text });
+  } catch (error) {
+    console.error('Error calling Qwen API:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Add route to serve env file content
+app.get('/env', (req, res) => {
+  const envPath = path.resolve(__dirname, '../env');
+  console.log('Attempting to serve env file from:', envPath);
+  fs.access(envPath)
+    .then(() => {
+      console.log('Env file exists, serving it');
+      res.sendFile(envPath);
+    })
+    .catch((err) => {
+      console.error('Env file does not exist or cannot be accessed:', err);
+      res.status(404).send('Env file not found');
+    });
+});
+
+// Add a route to get API keys from system environment variables
+app.get('/api/config', (req, res) => {
+  // 为了安全起见，我们不直接返回API密钥，只返回配置信息
+  res.json({
+    hasKimiApiKey: !!process.env.KIMI_API_KEY,
+    hasDashScopeApiKey: !!process.env.DASHSCOPE_API_KEY
+  });
+});
+
 // POST /postcards - Save a new postcard with image file upload
 app.post('/postcards', upload.single('image'), async (req, res) => {
   console.log('POST /postcards endpoint hit');

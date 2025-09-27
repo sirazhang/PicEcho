@@ -32,26 +32,63 @@ export function switchToNextApiKey() {
 }
 
 // Initialize environment variables
-loadEnv().then(env => {
-  // 支持多个API密钥，用逗号分隔或者使用KIMI_API_KEY_01, KIMI_API_KEY_02等格式
-  if (env.KIMI_API_KEY) {
-    KIMI_API_KEYS = env.KIMI_API_KEY.split(',').map(key => key.trim()).filter(key => key);
-  } else {
-    // Check for individual API keys (KIMI_API_KEY_01, KIMI_API_KEY_02, etc.)
-    const apiKeyPattern = /^KIMI_API_KEY(_\d+)?$/;
-    const apiKeys = [];
+// 为了安全起见，API密钥应该从系统环境变量读取，而不是从env文件读取
+// 但在前端代码中我们无法直接访问系统环境变量，所以需要通过后端API获取
+// 这里保留envLoader仅用于开发环境调试
+
+// loadEnv().then(env => {
+//   // 支持多个API密钥，用逗号分隔或者使用KIMI_API_KEY_01, KIMI_API_KEY_02等格式
+//   if (env.KIMI_API_KEY) {
+//     KIMI_API_KEYS = env.KIMI_API_KEY.split(',').map(key => key.trim()).filter(key => key);
+//   } else {
+//     // Check for individual API keys (KIMI_API_KEY_01, KIMI_API_KEY_02, etc.)
+//     const apiKeyPattern = /^KIMI_API_KEY(_\d+)?$/;
+//     const apiKeys = [];
     
-    for (const [key, value] of Object.entries(env)) {
-      if (apiKeyPattern.test(key) && value) {
-        apiKeys.push(value);
-      }
-    }
+//     for (const [key, value] of Object.entries(env)) {
+//       if (apiKeyPattern.test(key) && value) {
+//         apiKeys.push(value);
+//       }
+//     }
     
-    KIMI_API_KEYS = apiKeys;
-  }
+//     KIMI_API_KEYS = apiKeys;
+//   }
   
-  console.log(`Loaded ${KIMI_API_KEYS.length} Kimi API keys`);
-});
+//   console.log(`Loaded ${KIMI_API_KEYS.length} Kimi API keys`);
+// });
+
+// 在生产环境中，API密钥应通过后端服务获取
+// 这里我们模拟从环境变量获取密钥
+const initializeApiKeys = () => {
+  // 注意：在前端代码中，process.env只能访问以REACT_APP_开头的环境变量
+  // 所以实际使用中，这些密钥应该通过后端API获取
+  if (process.env.REACT_APP_KIMI_API_KEY) {
+    KIMI_API_KEYS = process.env.REACT_APP_KIMI_API_KEY.split(',').map(key => key.trim()).filter(key => key);
+  } else {
+    // 为了兼容之前的实现，仍然尝试从env文件加载（仅用于开发环境）
+    loadEnv().then(env => {
+      if (env.KIMI_API_KEY) {
+        KIMI_API_KEYS = env.KIMI_API_KEY.split(',').map(key => key.trim()).filter(key => key);
+      } else {
+        // Check for individual API keys (KIMI_API_KEY_01, KIMI_API_KEY_02, etc.)
+        const apiKeyPattern = /^KIMI_API_KEY(_\d+)?$/;
+        const apiKeys = [];
+        
+        for (const [key, value] of Object.entries(env)) {
+          if (apiKeyPattern.test(key) && value) {
+            apiKeys.push(value);
+          }
+        }
+        
+        KIMI_API_KEYS = apiKeys;
+      }
+      
+      console.log(`Loaded ${KIMI_API_KEYS.length} Kimi API keys`);
+    });
+  }
+};
+
+initializeApiKeys();
 
 /**
  * Get the current API key, rotating through available keys

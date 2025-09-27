@@ -1,8 +1,38 @@
-# chatpic
+# Chatpic
 
-## Project Overview
+Chatpic 是一个交互式语言学习应用，通过基于图像的对话帮助用户练习英语口语技能。
 
-Chatpic is an interactive language learning application that uses image-based conversations to help users practice English speaking skills.
+## 安全说明
+
+为了防止API密钥泄露，**请勿将真实的API密钥存储在项目中的env文件中**。应该使用系统环境变量来存储敏感信息：
+
+### 设置环境变量
+
+#### 在Linux/macOS系统中：
+```bash
+export KIMI_API_KEY="your_kimi_api_key_here"
+export DASHSCOPE_API_KEY="your_dashscope_api_key_here"
+```
+
+#### 在Windows系统中：
+```cmd
+set KIMI_API_KEY=your_kimi_api_key_here
+set DASHSCOPE_API_KEY=your_dashscope_api_key_here
+```
+
+#### 在Windows PowerShell中：
+```powershell
+$env:KIMI_API_KEY="your_kimi_api_key_here"
+$env:DASHSCOPE_API_KEY="your_dashscope_api_key_here"
+```
+
+### 开发环境
+在开发环境中，为了方便调试，项目保留了从env文件读取API密钥的功能，但**强烈建议在生产环境中使用系统环境变量**。
+
+### 生产环境
+在生产环境中，应始终使用系统环境变量来存储API密钥，并确保env文件不包含真实的API密钥信息。
+
+## 项目结构
 
 ## Setup
 

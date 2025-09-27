@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { getQwenFeedback, getImageDescription } from '../utils/qwenApi'; // 添加导入
 
 // 工具函数：生成图片路径
 const getImagePath = (level, imageId) => {
@@ -18,7 +19,6 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [speechError, setSpeechError] = useState('');
-  const [questions, setQuestions] = useState([]);
   const [showHint, setShowHint] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false); // For text-to-speech
   const [imageLoading, setImageLoading] = useState(true); // For image loading state
@@ -29,6 +29,7 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
     image: '/design/chatbot/chatbot4.png',
     name: language === 'zh' ? '呼呼 (Huhu)' : 'Huhu'
   }); // For chatbot info
+  const [imageDescription, setImageDescription] = useState(''); // 添加图片描述状态
 
   const recognitionRef = useRef(null);
   const textareaRef = useRef(null);
@@ -84,6 +85,7 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
     // 当level或imageId变化时，加载对应的图片
     if (level && imageId) {
       loadImage();
+      loadImageDescription(); // 加载图片描述
     }
   }, [level, imageId]);
 
@@ -150,104 +152,19 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
     }
   };
 
-  // Load questions based on level, language and imageId
-  const loadQuestions = async () => {
+  // 加载图片描述
+  const loadImageDescription = async () => {
+    if (!level || !imageId) return;
+    
     try {
-      // Determine which question file to load based on language
-      let questionFile = 'questions1.json'; // Default to Chinese
-      if (language === 'en') {
-        questionFile = 'questions2.json';
-      } else if (language === 'es') {
-        questionFile = 'questions3.json';
-      } else if (language === 'fr') {
-        questionFile = 'questions4.json';
-      }
-      
-      // Load questions from the appropriate level file
-      const response = await fetch(`/Level${level}/${questionFile}`);
-      const questionsData = await response.json();
-      
-      console.log('Loaded questions for level:', level, 'language:', language, 'imageId:', imageId, 'questions:', questionsData);
-      
-      // Get questions for the specific image
-      let loadedQuestions = [];
-      
-      // Handle different data structures for different levels
-      // For Level 2, imageId format is "img_01" but data key is "image_01"
-      if (level === 2) {
-        const imageKey = imageId.replace('img_', 'image_');
-        loadedQuestions = questionsData[imageKey]?.questions || [];
-      } else {
-        // Level 1 and 3 have simpler structure - direct object mapping
-        loadedQuestions = questionsData[imageId]?.questions || [];
-      }
-      
-      // Limit questions based on level
-      // Level 1: 4 questions, Level 2: 6 questions, Level 3: 6 questions
-      let limitedQuestions = [];
-      switch (level) {
-        case 1:
-          limitedQuestions = loadedQuestions.slice(0, 4);
-          break;
-        case 2:
-          limitedQuestions = loadedQuestions.slice(0, 6);
-          break;
-        case 3:
-          limitedQuestions = loadedQuestions.slice(0, 6);
-          break;
-        default:
-          limitedQuestions = loadedQuestions.slice(0, 4);
-      }
-      
-      setQuestions(limitedQuestions);
-      return limitedQuestions;
+      const description = await getImageDescription(level, imageId, language);
+      setImageDescription(description);
     } catch (error) {
-      console.error('Error loading questions:', error);
-      // Fallback questions
-      const fallbackQuestions = language === 'zh' ? [
-        "这是谁呀？如果给TA起个名字，你会叫什么？ 🤔",
-        "你觉得TA现在在想什么呢？ 💭",
-        "你觉得这个地方在哪里？现实中会有吗？ 🏞️",
-        "如果你能走进画里，你会做什么？ 🚪"
-      ] : language === 'es' ? [
-        "¿Quién es este personaje? Si pudieras darle un nombre, ¿cómo lo llamarías? 🤔",
-        "¿Qué crees que está pensando ahora mismo? 💭",
-        "¿Dónde crees que se encuentra este lugar? ¿Podría existir en la vida real? 🏞️",
-        "Si pudieras entrar en esta imagen, ¿qué harías? 🚪"
-      ] : language === 'fr' ? [
-        "Qui est-ce ? Si tu pouvais lui donner un nom, comment l'appellerais-tu ? 🤔",
-        "Que penses-tu qu'il ou elle pense en ce moment ? 💭",
-        "Où penses-tu que se trouve cet endroit ? Est-ce qu'il pourrait exister dans la vraie vie ? 🏞️",
-        "Si tu pouvais entrer dans ce dessin, que ferais-tu ? 🚪"
-      ] : [
-        "Who is this? If you could give them a name, what would it be?",
-        "What do you think they are thinking about right now?",
-        "Where do you think this place is? Could it exist in real life?",
-        "If you could step inside this picture, what would you do?"
-      ];
-      
-      // Apply level-based limits to fallback questions too
-      let limitedFallback = [];
-      switch (level) {
-        case 1:
-          limitedFallback = fallbackQuestions.slice(0, 4);
-          break;
-        case 2:
-          limitedFallback = fallbackQuestions.slice(0, 6);
-          break;
-        case 3:
-          limitedFallback = fallbackQuestions.slice(0, 6);
-          break;
-        default:
-          limitedFallback = fallbackQuestions.slice(0, 4);
-      }
-      
-      setQuestions(limitedFallback);
-      return limitedFallback;
+      console.error('Error loading image description:', error);
     }
   };
 
-  // Initialize conversation with local questions
+  // Initialize conversation with first AI message
   const initializeConversation = async () => {
     console.log('initializeConversation called with level:', level, 'imageId:', imageId);
     
@@ -255,18 +172,21 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
     isInitialized.current = false;
 
     try {
-      // Load questions
-      const loadedQuestions = await loadQuestions();
-      
       // Set the initial AI message (first question)
-      if (loadedQuestions.length > 0) {
-        setMessages([{
-          id: 1,
-          sender: 'ai',
-          text: loadedQuestions[0],
-          timestamp: new Date()
-        }]);
-      }
+      const initialQuestion = language === 'zh' ? 
+        "你好！让我们一起聊聊这幅图片吧。你看到了什么？" : 
+        language === 'es' ? 
+        "¡Hola! Hablemos sobre esta imagen. ¿Qué ves?" :
+        language === 'fr' ?
+        "Salut ! Parlons de cette image. Que vois-tu ?" :
+        "Hi there! Let's talk about this picture. What do you see?";
+      
+      setMessages([{
+        id: 1,
+        sender: 'ai',
+        text: initialQuestion,
+        timestamp: new Date()
+      }]);
       
       // 标记为已初始化
       isInitialized.current = true;
@@ -278,8 +198,12 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
 
       // Even if there's an error, we still need to start the conversation
       const fallbackQuestion = language === 'zh' ? 
-        "这是谁呀？如果给TA起个名字，你会叫什么？ 🤔" : 
-        "Who is this? If you could give them a name, what would it be?";
+        "你好！让我们一起聊聊这幅图片吧。你看到了什么？" : 
+        language === 'es' ? 
+        "¡Hola! Hablemos sobre esta imagen. ¿Qué ves?" :
+        language === 'fr' ?
+        "Salut ! Parlons de cette image. Que vois-tu ?" :
+        "Hi there! Let's talk about this picture. What do you see?";
       
       setMessages([{
         id: 1,
@@ -417,7 +341,7 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
 
   const startListening = () => {
     if (!recognitionRef.current) {
-      setSpeechError('Speech recognition not initialized');
+      setSpeechError('Speech recognition initialized');
       return;
     }
     
@@ -512,109 +436,47 @@ const DialogueMode = ({ imageId, language, level, onConversationComplete, onCanc
     setIsLoading(true);
 
     try {
-      // 模拟处理时间
-      await new Promise(resolve => setTimeout(resolve, 500));
+      console.log('Attempting to get Qwen feedback with:', { 
+        imageDescription, 
+        studentResponse: userMessage.text, 
+        language 
+      });
       
-      // Get next question based on user response and current question count
-      const userMessagesCount = messages.filter(m => m.sender === 'user').length + 1; // +1 for current message
+      // 获取AI反馈
+      const feedback = await getQwenFeedback(imageDescription, userMessage.text, language);
+      console.log('Received feedback from Qwen API:', feedback);
       
-      let nextQuestion = "";
-      
-      // Check if we've reached the question limit
-      const questionLimit = level === 1 ? 4 : 6;
-      
-      if (userMessagesCount < questionLimit && userMessagesCount < questions.length) {
-        // Positive response before next question
-        const positiveResponse = language === 'zh' ? 
-          "很棒的回答！👍 " : 
-          language === 'es' ?
-          "¡Buena respuesta! 👍 " :
-          language === 'fr' ?
-          "Bonne réponse ! 👍 " :
-          "Great answer! 👍 ";
-        
-        nextQuestion = positiveResponse + questions[userMessagesCount];
-      } else {
-        // Final positive response
-        const finalResponse = language === 'zh' ? 
-          "谢谢你和我练习！🎉" : 
-          language === 'es' ?
-          "¡Gracias por practicar conmigo! 🎉" :
-          language === 'fr' ?
-          "Merci de pratiquer avec moi ! 🎉" :
-          "Thanks for practicing with me! 🎉";
-        
-        nextQuestion = finalResponse;
-      }
-
       const aiMessage = {
         id: newUserMessageId + 1,
         sender: 'ai',
-        text: nextQuestion,
+        text: feedback,
         timestamp: new Date()
       };
 
       setMessages(prev => [...prev, aiMessage]);
       setIsLoading(false);
       lastCallTime.current = Date.now(); // 更新最后调用时间
-      
-      // 检查对话是否完成
-      if (userMessagesCount >= questionLimit || userMessagesCount >= questions.length) {
-        // 延迟一点时间确保状态更新完成
-        setTimeout(() => {
-          onConversationComplete(messages.concat(userMessage, aiMessage));
-        }, 1000);
-      }
     } catch (error) {
-      console.error('Error getting next question:', error);
+      console.error('Error getting AI feedback:', error);
       setIsLoading(false);
       
-      // 使用统一的回退响应处理
-      const userMessagesCount = messages.filter(m => m.sender === 'user').length + 1;
-      const questionLimit = level === 1 ? 4 : 6;
-      
-      let nextQuestion = "";
-      if (userMessagesCount < questionLimit) {
-        const positiveResponse = language === 'zh' ? 
-          "很棒的回答！👍 " : 
-          language === 'es' ?
-          "¡Buena respuesta! 👍 " :
-          language === 'fr' ?
-          "Bonne réponse ! 👍 " :
-          "Great answer! 👍 ";
-        
-        nextQuestion = positiveResponse + (language === 'zh' ? 
-          "你能告诉我更多吗？" : 
-          language === 'es' ?
-          "¿Puedes contarme más?" :
-          language === 'fr' ?
-          "Peux-tu me dire davantage ?" :
-          "Can you tell me more?");
-      } else {
-        nextQuestion = language === 'zh' ? 
-          "谢谢你和我练习！🎉" : 
-          language === 'es' ?
-          "¡Gracias por practicar conmigo! 🎉" :
-          language === 'fr' ?
-          "Merci de pratiquer avec moi ! 🎉" :
-          "Thanks for practicing with me! 🎉";
-      }
+      // 使用回退响应
+      const fallbackResponse = language === 'zh' ? 
+        "很棒的回答！👍 你能告诉我更多关于你的想法吗？" : 
+        language === 'es' ?
+        "¡Buena respuesta! 👍 ¿Puedes contarme más sobre lo que piensas?" :
+        language === 'fr' ?
+        "Bonne réponse ! 👍 Peux-tu me dire plus sur ce que tu penses ?" :
+        "Great answer! 👍 Can you tell me more about what you think?";
       
       const aiMessage = {
         id: newUserMessageId + 1,
         sender: 'ai',
-        text: nextQuestion,
+        text: fallbackResponse,
         timestamp: new Date()
       };
       
       setMessages(prev => [...prev, aiMessage]);
-      
-      // 检查是否达到问题数量限制
-      if (userMessagesCount >= questionLimit) {
-        setTimeout(() => {
-          onConversationComplete(messages.concat(userMessage, aiMessage));
-        }, 1000);
-      }
     } finally {
       isProcessing.current = false;
     }
