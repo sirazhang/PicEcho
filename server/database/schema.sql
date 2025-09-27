@@ -17,6 +17,7 @@ CREATE TABLE postcards (
     sender_token TEXT,
     receiver_token TEXT,
     feedback_text TEXT,
+    conversation_history TEXT,
     postal_code VARCHAR(20)
 );
 

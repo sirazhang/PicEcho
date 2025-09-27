@@ -321,8 +321,21 @@ const HomeScreen = ({
           )}
         </div>
 
-        {/* Language Selector at top right */}
-        <div className="absolute top-6 right-6">
+        {/* Language Selector and Review Button at top right */}
+        <div className="absolute top-6 right-6 flex space-x-2">
+          {/* Review Button */}
+          <button
+            onClick={onOpenMapReview}
+            className="px-4 py-2 bg-white rounded-lg font-inter font-bold text-base focus:outline-none flex items-center shadow-lg"
+            style={{ 
+              border: '2px solid #003153',
+              color: '#003153'
+            }}
+          >
+            {selectedLanguage === 'zh' ? '回顾' : selectedLanguage === 'es' ? 'Revisar' : selectedLanguage === 'fr' ? 'Réviser' : 'Review'}
+          </button>
+          
+          {/* Language Selector */}
           <div className="relative">
             <button
               onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}

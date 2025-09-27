@@ -35,6 +35,7 @@ export const sendPostcard = async (postcardData) => {
     // Add other data
     formData.append('senderToken', postcardData.senderToken);
     formData.append('feedbackText', JSON.stringify(postcardData.feedback));
+    formData.append('conversationHistory', JSON.stringify(postcardData.conversationHistory || []));
     formData.append('postalCode', postcardData.postalCode);
     
     const response = await fetch('/postcards', {
@@ -82,6 +83,11 @@ export const receivePostcard = async (params) => {
           errorSummary: "Minor grammar issues with article usage.",
           suggestions: "Try to practice using articles (a, an, the) in your sentences."
         }),
+        conversation_history: JSON.stringify([
+          {id: 1, sender: 'ai', text: 'Who is this person?', timestamp: new Date()},
+          {id: 2, sender: 'user', text: 'This is a person.', timestamp: new Date()},
+          {id: 3, sender: 'ai', text: 'Great answer!', timestamp: new Date()}
+        ]),
         postal_code: '123456'
       };
     }
@@ -110,6 +116,11 @@ export const receivePostcard = async (params) => {
         errorSummary: "Minor grammar issues with article usage.",
         suggestions: "Try to practice using articles (a, an, the) in your sentences."
       }),
+      conversation_history: JSON.stringify([
+        {id: 1, sender: 'ai', text: 'Who is this person?', timestamp: new Date()},
+        {id: 2, sender: 'user', text: 'This is a person.', timestamp: new Date()},
+        {id: 3, sender: 'ai', text: 'Great answer!', timestamp: new Date()}
+      ]),
       postal_code: '123456'
     };
   }

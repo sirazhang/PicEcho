@@ -141,6 +141,7 @@ const ReviewPostcard = ({ feedback, onNextPicture, level, imageId, onClose, sele
         imageId: imageId,
         level: level,
         feedback: localFeedback,
+        conversationHistory: conversationHistory, // 添加对话历史
         imageData: imageBlob, // Pass the Blob directly
         timestamp: new Date().toISOString(),
         postalCode: postalCode

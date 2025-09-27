@@ -72,7 +72,7 @@ app.get('/', (req, res) => {
 app.post('/postcards', upload.single('image'), async (req, res) => {
   console.log('POST /postcards endpoint hit');
   
-  const { senderToken, feedbackText, postalCode } = req.body;
+  const { senderToken, feedbackText, conversationHistory, postalCode } = req.body;
   const imageFile = req.file;
 
   // Validate required fields
@@ -107,6 +107,7 @@ app.post('/postcards', upload.single('image'), async (req, res) => {
       sender_token: senderToken,
       receiver_token: null,
       feedback_text: typeof feedbackText === 'object' ? JSON.stringify(feedbackText) : feedbackText,
+      conversation_history: typeof conversationHistory === 'object' ? JSON.stringify(conversationHistory) : conversationHistory,
       postal_code: postalCode
     };
     
@@ -114,8 +115,8 @@ app.post('/postcards', upload.single('image'), async (req, res) => {
     const db = require('./config/db').db;
     const insertSql = `
       INSERT INTO postcards 
-      (image_path, postcard_url, status, sender_token, receiver_token, feedback_text, postal_code) 
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      (image_path, postcard_url, status, sender_token, receiver_token, feedback_text, conversation_history, postal_code) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `;
     
     const insertValues = [
@@ -125,6 +126,7 @@ app.post('/postcards', upload.single('image'), async (req, res) => {
       postData.sender_token,
       postData.receiver_token,
       postData.feedback_text,
+      postData.conversation_history,
       postData.postal_code
     ];
     
@@ -206,7 +208,7 @@ app.post('/api/postcards/send', (req, res) => {
   console.log('imageUrl length:', req.body.imageUrl?.length);
   console.log('imageUrl starts with:', req.body.imageUrl?.substring(0, 50));
   
-  const { senderId, imageUrl, feedbackText, postalCode } = req.body;
+  const { senderId, imageUrl, feedbackText, conversationHistory, postalCode } = req.body;
 
   // Validate required fields
   if (!senderId || !imageUrl || !feedbackText) {
@@ -222,7 +224,7 @@ app.post('/api/postcards/send', (req, res) => {
     });
   }
   
-  Postcard.create(senderId, imageUrl, feedbackText, postalCode, (err, postcard) => {
+  Postcard.create(senderId, imageUrl, feedbackText, postalCode, conversationHistory, (err, postcard) => {
     if (err) {
       console.error('Error saving postcard:', err);
       return res.status(500).json({ error: 'Failed to send postcard', details: err.message });

@@ -18,8 +18,8 @@ async function ensureDirectoryExists(directory) {
 
 class Postcard {
   // Create a new postcard
-  static async create(senderId, imageUrl, feedbackText, postalCode, callback) {
-    console.log('Postcard.create called with:', { senderId, imageUrl, feedbackText, postalCode });
+  static async create(senderId, imageUrl, feedbackText, postalCode, conversationHistory, callback) {
+    console.log('Postcard.create called with:', { senderId, imageUrl, feedbackText, postalCode, conversationHistory });
     
     // Generate a UUID for the sender
     const senderToken = uuidv4();
@@ -37,6 +37,7 @@ class Postcard {
         sender_token: senderToken,
         receiver_token: null,
         feedback_text: feedbackText,
+        conversation_history: conversationHistory,
         postal_code: postalCode
       });
     }
@@ -75,8 +76,8 @@ class Postcard {
       // Insert record into database with relative path
       const insertSql = `
         INSERT INTO postcards 
-        (image_path, postcard_url, status, sender_token, receiver_token, feedback_text, postal_code) 
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        (image_path, postcard_url, status, sender_token, receiver_token, feedback_text, conversation_history, postal_code) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `;
       
       const insertValues = [
@@ -86,6 +87,7 @@ class Postcard {
         senderToken,
         null,
         typeof feedbackText === 'object' ? JSON.stringify(feedbackText) : feedbackText,
+        typeof conversationHistory === 'object' ? JSON.stringify(conversationHistory) : conversationHistory,
         postalCode
       ];
       
@@ -107,6 +109,7 @@ class Postcard {
           sender_token: senderToken,
           receiver_token: null,
           feedback_text: feedbackText,
+          conversation_history: conversationHistory,
           postal_code: postalCode
         };
         
@@ -139,6 +142,11 @@ class Postcard {
           errorSummary: "Minor grammar issues with article usage.",
           suggestions: "Try to practice using articles (a, an, the) in your sentences."
         }),
+        conversation_history: JSON.stringify([
+          {id: 1, sender: 'ai', text: 'Who is this person?', timestamp: new Date()},
+          {id: 2, sender: 'user', text: 'This is a person.', timestamp: new Date()},
+          {id: 3, sender: 'ai', text: 'Great answer!', timestamp: new Date()}
+        ]),
         postal_code: 'A1B 2C3'
       });
     }
